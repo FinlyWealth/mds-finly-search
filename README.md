@@ -4,10 +4,10 @@
 1. Download the sample embeddings and images from: https://drive.google.com/file/d/1NW-ZzWFXdKlNZPJ64fkmVotWvr1zQmQx/view?usp=share_link
 2. Extract the zip file in the `data` folder
 3. Set up Python environment using `environment.yaml`
-4. Install postgresql and pgvector extension
+4. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
 5. Create envrionment `.env` file
     ```
-    PGUSER=jchang
+    PGUSER=finly-admin
     PGPASSWORD=123
     PGHOST=localhost
     PGPORT=5432
