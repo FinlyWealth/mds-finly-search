@@ -93,8 +93,33 @@ def hybrid_search(
         pids.append(pid)
         final_scores.append(total_score)
 
-    # Print breakdowns
-    for pid, comp in zip(pids, components):
-        print(f"Product ID: {pid} | Text: {comp['text']} | Image: {comp['image']} | TS: {comp['ts']} | Total: {comp['total']}")
+    # # Print breakdowns
+    # for pid, comp in zip(pids, components):
+    #     print(f"Product ID: {pid} | Text: {comp['text']} | Image: {comp['image']} | TS: {comp['ts']} | Total: {comp['total']}")
 
     return pids, final_scores
+
+def text_search(query, top_k=5):
+    """Find top-k most relevant documents using full-text search"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    
+    query = f"""
+        SELECT Pid, ts_rank(document, plainto_tsquery('english', %s)) as rank
+        FROM products
+        WHERE document @@ plainto_tsquery('english', %s)
+        ORDER BY rank DESC
+        LIMIT %s
+    """
+    
+    cur.execute(query, (query, query, top_k))
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    if not results:
+        return [], []
+    
+    pids, ranks = zip(*results)
+    return list(pids), list(ranks)

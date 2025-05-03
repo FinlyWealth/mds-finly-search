@@ -46,8 +46,15 @@ def get_blip_model():
 def get_text_embedding(text):
     """Get embedding for text input"""
     processor, model = get_clip_model()
+    max_length = 77  # CLIP's max token length
+
     with torch.no_grad():
-        inputs = processor(text=text, return_tensors="pt").to(device)
+        inputs = processor(
+            text=text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+        ).to(device)
         text_features = model.get_text_features(**inputs)
         text_features /= text_features.norm(dim=-1, keepdim=True)
         return text_features.cpu().numpy()
