@@ -1,0 +1,27 @@
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pytorch
+  - pillow
+  - requests
+  - psycopg2
+  - flask
+  - pandas
+  - python-dotenv
+  - transformers
+  - spacy
+  - ipykernel
+  - tqdm
+  - pyarrow
+  - sentencepiece
+  - protobuf
+  - accelerate
+  - streamlit
+  - faiss-cpu=1.11.0
+  - pip
+  - pip:
+    - en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz 
