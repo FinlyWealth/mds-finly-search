@@ -1,0 +1,8 @@
+FinlyWealth is an affiliate marketing platform that offers cashback rewards for product purchases. While their current offerings focus on personal finance products, they aim to expand into the e-commerce space with a broader product portfolio. To support this initiative, a team of Master of Data Science students from the University of British Columbia is collaborating with FinlyWealth to develop an intelligent product search engine powered by machine learning.
+
+### Problem Statement
+The current search system supports only basic keyword-based text queries and lacks semantic understanding (e.g., pants under $100) or support for multimodal inputs (e.g., images). Additionally, the system’s scalability and performance have not been evaluated for large-scale product catalogs, which are expected to grow from hundreds to millions of items.
+
+### Objective
+The goal of this project is to design and implement a fast, scalable product search engine with multimodal semantic capabilities, supporting both text and image-based queries. The system will comprise four core components: a user-facing frontend, a set of backend API endpoints, a similarity computation module and a vector-aware database for efficient retrieval.
+The project will be developed over an 8-week timeline in close collaboration with FinlyWealth. Success will be evaluated using quantitative and qualitative metrics, including query latency, Recall@K for relevance, and human feedback on recommendation quality. The final deliverable will be a functional prototype that demonstrates the potential for large-scale deployment.

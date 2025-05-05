@@ -1,0 +1,30 @@
+---
+title: "Find me a better product"
+author: "Jenson Chang, Chukwunonso Ebele-Muolokwu, Catherine Meng, Jingyuan Wang"
+format:
+  pdf:
+    toc: true
+    toc-depth: 2
+bibliography: references.bib
+execute:
+  echo: false
+  warning: false
+---
+
+## Executive Summary
+
+{{< include _executive_summary.qmd >}}
+
+## Introduction
+
+{{< include _introduction.qmd >}}
+
+## Data Science Techniques
+
+{{< include _data_science_techniques.qmd >}}
+
+## Timeline
+
+{{< include _timeline.qmd >}}
+
+## References
