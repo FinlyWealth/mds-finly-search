@@ -104,8 +104,13 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
     print(f"Device is {device}")
 
+    SAMPLE_SIZE = 100000
+
     # Load data
-    df = pd.read_parquet('../data/merged_output_sample_100k.parquet')
+    df = pd.read_parquet('../data/filtered_data.parquet')
+    # Randomly sample 100k rows
+    df = df.sample(n=SAMPLE_SIZE, random_state=42)
+    print(f"Loaded {len(df)} rows of data")
 
     # Load model
     model_id = "openai/clip-vit-base-patch32"
