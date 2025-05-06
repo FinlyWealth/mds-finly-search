@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import requests
-import os
 from PIL import Image
 from io import BytesIO
 from transformers import AutoModel, AutoProcessor, BlipProcessor, BlipForConditionalGeneration
@@ -57,26 +56,23 @@ def get_text_embedding(text):
         ).to(device)
         text_features = model.get_text_features(**inputs)
         text_features /= text_features.norm(dim=-1, keepdim=True)
-        return text_features.cpu().numpy()
+        return text_features.cpu().numpy()[0]
 
 def get_image_embedding(image_path):
     """Generate embedding for image from local file or URL"""
     processor, model = get_clip_model()
     try:
         if image_path.startswith(('http://', 'https://')):
-            # Load image from URL
             response = requests.get(image_path)
             image = Image.open(BytesIO(response.content))
         else:
-            # Load image from local file
             image = Image.open(image_path)
         
-        # Preprocess and encode image
         inputs = processor(images=image, return_tensors="pt").to(device)
         with torch.no_grad():
             image_features = model.get_image_features(**inputs)
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            return image_features.cpu().numpy()
+            return image_features.cpu().numpy()[0]
     except Exception as e:
         print(f"Error processing image {image_path}: {e}")
         return None
@@ -86,14 +82,11 @@ def generate_image_caption(image_path):
     processor, model = get_blip_model()
     try:
         if image_path.startswith(('http://', 'https://')):
-            # Load image from URL
             response = requests.get(image_path)
             image = Image.open(BytesIO(response.content))
         else:
-            # Load image from local file
             image = Image.open(image_path)
         
-        # Generate caption
         inputs = processor(image, return_tensors="pt").to(device)
         with torch.no_grad():
             out = model.generate(**inputs, max_length=50)
@@ -110,9 +103,5 @@ def generate_embedding(query_text=None, query_image_path=None):
         numpy.ndarray: The embedding vector
     """
     if query_text is not None:
-        query_embedding = get_text_embedding(query_text)
-    else:
-        query_embedding = get_image_embedding(query_image_path)
-    
-    # Both functions now return numpy arrays, so we just need to get the first element
-    return query_embedding[0]
+        return get_text_embedding(query_text)
+    return get_image_embedding(query_image_path)
