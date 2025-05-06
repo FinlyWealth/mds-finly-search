@@ -1,12 +1,140 @@
+---
+bibliography: references.bib
+execute:
+  echo: false
+  warning: false
+---
+
 ### Data source and description
+
 The dataset comprises two primary sources: product images and metadata. The image folder contains approximately 14.68 million JPEG images, totaling 64 GB, with each image roughly sized at 100×100 pixels. Image filenames correspond to the pid (product ID) column in the metadata CSV file. While some products may have multiple associated images, we confirmed with our project partner that we will assume a 1:1 mapping—each product is linked to a single image via its PID. Notably, the number of image files (14,684,588) is slightly fewer than the number of unique product IDs (15,147,805). The metadata is stored in a 12G CSV file containing around 15 million rows, where each row represents one product listing. The file includes 30 columns covering product attributes such as pid, name, description, color, brand, price, image URL, and product link URL.
 
-###Exploratory data analysis
-Many columns in the dataset contain missing values. Approximately 91% of entries in the ShortDescription column and 99% in the Keywords column are missing. After discussion with our partner, we decided to drop both columns and use the more complete Description column instead. Other fields such as Gender, Color, and Brand also have a significant proportion of missing values. However, the most critical columns for our project—such as pid, Name, and Description—are largely complete, making the dataset suitable for our planned modeling and retrieval tasks.
-We examined the unique values in metadata columns such as category, color, size, and brand, and found that each contains over 10,000 distinct values. These high-cardinality categorical features require careful handling when used in modeling. For instance, extremely rare values like the color "Spicy Melon" (which appears in only 0.000007% of records) may be grouped into an "Other" category to reduce noise and prevent overfitting. Additionally, we plan to add two new columns: one to standardize all prices to USD, and another to merge the "Brand" and "Manufacturer" fields to eliminate duplication and ensure consistency. We will also exclude products with currencies outside of USD, CAD, and GBP, as Finly is currently focused on English-language markets.
-To better understand what users are likely to search for, we analyzed the top 30 most frequent words in product names. Common terms like “women,” “men,” and “black” appear frequently and often overlap with metadata fields such as gender and color. This raises the risk of false positives—broad matches like “goes well with black jacket” could incorrectly trigger any product containing the words “black” or “jacket.” To address this, we plan to use contextualized representations (e.g., embeddings) to better capture meaning and reduce noise. Incorporating structured metadata can further improve accuracy by grounding the model in concrete attributes.
+###Exploratory data analysis Many columns in the dataset contain missing values. Approximately 91% of entries in the ShortDescription column and 99% in the Keywords column are missing. After discussion with our partner, we decided to drop both columns and use the more complete Description column instead. Other fields such as Gender, Color, and Brand also have a significant proportion of missing values. However, the most critical columns for our project—such as pid, Name, and Description—are largely complete, making the dataset suitable for our planned modeling and retrieval tasks. We examined the unique values in metadata columns such as category, color, size, and brand, and found that each contains over 10,000 distinct values. These high-cardinality categorical features require careful handling when used in modeling. For instance, extremely rare values like the color "Spicy Melon" (which appears in only 0.000007% of records) may be grouped into an "Other" category to reduce noise and prevent overfitting. Additionally, we plan to add two new columns: one to standardize all prices to USD, and another to merge the "Brand" and "Manufacturer" fields to eliminate duplication and ensure consistency. We will also exclude products with currencies outside of USD, CAD, and GBP, as Finly is currently focused on English-language markets. To better understand what users are likely to search for, we analyzed the top 30 most frequent words in product names. Common terms like “women,” “men,” and “black” appear frequently and often overlap with metadata fields such as gender and color. This raises the risk of false positives—broad matches like “goes well with black jacket” could incorrectly trigger any product containing the words “black” or “jacket.” To address this, we plan to use contextualized representations (e.g., embeddings) to better capture meaning and reduce noise. Incorporating structured metadata can further improve accuracy by grounding the model in concrete attributes.
 
 ### Data challenge
+
 Given the large data size, we face significant challenges related to computing and storage. The product information CSV file is 12GB, which we converted to Parquet format to enable more efficient local processing. The image dataset totals 64GB, which makes local handling less feasible. To address this, we are exploring cloud computing solutions such as AWS. As an initial step, we will build and test our workflow using a randomly selected sample of 100,000 images to ensure scalability and performance before scaling up.
 
 ### Proposed Approach & Methodology
+
+We are developing a multimodal, retrieval-augmented product search system that integrates advanced natural language processing (NLP) techniques. This system will combine OpenAI CLIP[@li2021supervision], TF-IDF[@aizawa2003information], and FAISS[@faiss] (approximate nearest neighbors) to create joint image-text embeddings, enabling seamless cross-modal search. Additionally, a large language model (LLM) will be employed for generative re-ranking and explanation of results, enhancing relevance and user understanding.
+
+At the core of the system, both textual and visual representations of product data are embedded and stored in a searchable database. When a user submits a query—whether as text, image, or both—the system generates a corresponding embedding and compares it to stored representations. The most similar matches are identified using approximate nearest neighbor search, and the top k results (where k is the number of desired outputs) are retrieved and presented to the user.
+
+![Workflow Diagram](../img/workflow.png)
+
+#### Models and Algorithms
+
+To build a robust and scalable multimodal product search system, we will leverage a combination of representation learning, retrieval algorithms, and generative re-ranking approaches. Specifically, we plan to integrate the following components:
+
+1.  **OpenAI CLIP (Contrastive Language–Image Pretraining)**
+
+OpenAI CLIP is a powerful multimodal model trained on image-text pairs to learn a shared embedding space. It allows both images and natural language queries to be embedded into the same vector space, enabling intuitive cross-modal search. This is particularly valuable in e-commerce settings, where users might describe a product in text (e.g., “red leather sneakers with white soles”) and expect relevant image-based results. - Why CLIP? CLIP enables zero-shot retrieval, meaning it generalizes well to unseen categories and is capable of capturing semantic similarity beyond exact keyword matches. It reduces the gap between how humans describe items and how they are visually represented.
+
+2.  **TF-IDF (Term Frequency–Inverse Document Frequency)**
+
+TF-IDF is a classic but effective **baseline** for text-based retrieval. It computes relevance based on the frequency of terms across documents, helping to highlight rare but important words. - Why TF-IDF? While CLIP provides semantic representations, TF-IDF is useful for matching precise textual details (e.g., product SKUs, material names, model numbers). It’s also lightweight and can serve as a strong complementary signal for purely textual queries or structured metadata.
+
+3.  **FAISS (Facebook AI Similarity Search)**
+
+FAISS provides efficient approximate nearest neighbor (ANN) search over high-dimensional vectors, making it ideal for fast retrieval from large-scale datasets. - Why FAISS? With 15 million image-text pairs, brute-force search is computationally infeasible. FAISS allows for scalable vector search with support for indexing strategies like IVF (inverted file index) and PQ (product quantization), enabling fast and memory-efficient retrieval.
+
+#### Hybrid Retrieval: Model Weighting of CLIP and TF-IDF Results
+
+Rather than relying on a single retrieval method, we will use a hybrid search strategy that combines the strengths of both CLIP and TF-IDF. The results from each method will be scored separately and then merged using a weighted ranking strategy. For a given user query: 1. CLIP returns a relevancy score based on the similiarity betweeen the query and the text and image embeddings 2. TF-IDF returns a relevancy scoe=re which is normalized based on term frequency relevance. 3. We assign a configurable weight to each model’s score (e.g., 70% CLIP, 30% TF-IDF), depending on use case or query type. 4. Final ranked results are created by aggregating or re-scoring the union of both top-k sets.
+
+This approach allows us to balance semantic relevance (via CLIP) with textual precision (via TF-IDF), which is especially helpful for diverse user behaviors and data quality variation across product listings.
+
+#### Scalability Considerations: Working with a very large dataset
+
+Operating at this scale introduces several technical challenges: - **Embedding Storage:** CLIP embeddings (e.g., 512 or 768 dimensions per item) require significant storage. We plan to pre-compute and batch store these vectors in compressed FAISS indices. - **Indexing and Latency:** Vector Database aids the latency periods. example of such database includes, Pinecode [@pinecone], Chromadb[@chromadb]. This vector databases speeds up similiarity calculation. FAISS allows indexing via inverted files or hierarchical clustering, helping maintain sub-second retrieval times even at large volumes. GPU acceleration and sharding may be used for further optimization. - **Balanced Retrieval:** Popular or over-represented product categories may dominate search results. Post-processing steps such as diversity sampling or result clustering may help ensure result variety and fairness.
+
+#### Data Preprocessing and Feature Engineering Plans
+
+To ensure high-quality input for both text and image retrieval, **data preprocessing and feature engineering** are critical components of our pipeline. Given the scale and diversity of our product catalog—which includes over 15 million product listings—our goal is to extract clean, semantically rich, and language-agnostic representations for each item.
+
+Below, we outline our preprocessing strategies for text, image, and embedding preparation, with a focus on addressing challenges such as high-cardinality columns, multilingual content, and sparse metadata.
+
+1.  **Text Data Preprocessing**
+
+Most product listings contain multiple fields—such as name, description, category, brand, price, color, and attributes—each potentially containing valuable information. However, we face a few challenges:
+
+a.  **High Cardinality and Sparse Values**
+
+-   Fields like brand, category, or color often have hundreds of thousands of unique values, many of which are inconsistently formatted or sparsely used. • Example: "Nike, NIKE, nike" all refer to the same brand.
+
+**Planned Solutions:** • Normalize values using lowercasing, whitespace trimming, and string standardization. • Use frequency-based filtering to remove rare or noisy entries (e.g., misspelled or one-off terms). • Grouping categories, that refer to the same thing (Same Lemma)
+
+b.  **Multilingual Text** • Our dataset contains product in multiple languages, Our clients told us to remove such products from the dataset
+
+c.  **Combining Text Columns for Robust Embedding** • No single column contains a complete semantic picture of a product.
+
+**Planned Solutions:** • Concatenate and structure the most relevant fields into a unified text template to feed into CLIP or TF-IDF. • Example template: `"{product_title}. {brand}. Category: {category}. Material: {material}. {description}"`
+
+2.  **Feature Engineering for TF-IDF**
+
+For the TF-IDF pipeline, feature engineering will involve more lexical and sparse preprocessing. Tokenization will include stemming, stop-word removal, and lowercasing. We may train separate TF-IDF vectorizers for different fields, such as title and brand, or merge fields into a unified document per item before vectorization. High-cardinality fields will be handled via vocabulary curation to avoid overly sparse vectors and improve retrieval quality.
+
+3.  **Embedding Storage and Optimization** Preprocessed text embeddings (CLIP and TF-IDF) will be stored in a centralized vector index. We will perform batch processing of embeddings and update the index periodically. To potentially reduce embedding size and memory footprint without a major loss in quality, floating precision is changed. E.g. going from 32 bits to 16bits and also dimentionality reduction (e.g., via PCA) may be explored.
+
+#### Baseline Approach: TF-IDF
+
+As a baseline for evaluating the effectiveness of our multimodal retrieval system, we will implement a TF-IDF (Term Frequency–Inverse Document Frequency) based retrieval model. TF-IDF is a well-established, interpretable, and lightweight method for information retrieval that ranks documents based on the importance of query terms within them. It provides a strong lexical matching foundation, especially useful in structured domains like e-commerce where product titles and descriptions often include specific terms such as brand names, sizes, colors, and product categories.
+
+In our implementation, we will treat each product’s metadata as a text document by combining fields like title, brand, category, and description into a single corpus for vectorization. The TF-IDF model will be trained on this combined corpus, generating sparse vectors that can be quickly compared to incoming user queries using cosine similarity. While it lacks the semantic understanding of deep learning-based models like CLIP, TF-IDF excels at matching exact terms and capturing user intent when queries include specific keywords (e.g., “black leather wallet,” “Samsung 55-inch TV”).
+
+#### Interpretability, Deployment, and Latency
+
+When designing a large-scale multimodal product search system, several practical considerations must guide the architecture beyond just accuracy—namely interpretability, deployment complexity, and latency. From an interpretability standpoint, TF-IDF offers a clear advantage: it provides transparent, keyword-driven retrieval where it’s easy to trace which terms contributed to a match. This is useful for debugging, user trust, and generating rationales for search results. In contrast, dense models like CLIP operate in high-dimensional latent spaces, making their decision logic less interpretable. To mitigate this, we plan to surface metadata like matched keywords (from TF-IDF) or visual similarity scores (from CLIP) as user-facing explanations.
+
+From a deployment perspective, we need to manage two distinct pipelines: one for sparse (TF-IDF) vectors and one for dense (CLIP) embeddings. TF-IDF can be deployed efficiently using standard inverted indices and has low memory requirements. CLIP, however, requires GPU-based preprocessing for embeddings and FAISS-based vector indexing for real-time approximate nearest neighbor search. This makes it more resource-intensive and calls for careful infrastructure design, such as embedding caching, pre-computed batch indexing, and possibly GPU-backed retrieval services.
+
+Latency is another key concern, especially when serving queries across 15 million+ items. While TF-IDF retrieval can be executed in milliseconds on a CPU, dense vector search requires more computational overhead. To meet sub-second latency requirements, we plan to use FAISS or vector database storage with optimized indexing strategies. For real-time queries, embedding generation (especially for free-form user input) must also be fast—prompting the use of lightweight versions of CLIP or caching strategies for frequent queries.
+
+#### Modeling Pipeline and Architecture
+
+The process begins with data ingestion and preprocessing, where raw product data—such as name, brand, and categories is cleaned and normalized. We address challenges like inconsistent formatting, high-cardinality fields, and multilingual text by standardizing terms, removing noise, and consolidating relevant fields into a unified textual representation for each item. This combined text is structured using a predefined template that captures product attributes in a consistent, semantically rich format. Images are resized and normalized to meet the input requirements of the CLIP model.
+
+Next, we move into feature extraction, where we generate two types of embeddings. For the lexical representation, we compute TF-IDF vectors from the concatenated text fields. This provides a sparse but highly interpretable feature set that emphasizes important keywords and is effective for exact or near-exact text matching. In parallel, we use the OpenAI CLIP model to generate dense multimodal embeddings from both product images and text. These embeddings allow us to capture semantic similarity between visual and textual data in a shared latent space.
+
+Once features are extracted, we move to indexing. The sparse TF-IDF vectors are indexed using a traditional inverted index, enabling fast and lightweight keyword-based retrieval. The dense CLIP embeddings are stored in a vector database, which supports efficient approximate nearest neighbor search even at scale. To support fast lookups across millions of products, we utilize FAISS’s compressed indexing strategies, such as inverted file systems and product quantization, which balance accuracy and speed.
+
+During the query phase, user input—whether it is text or an image—is processed through both pipelines. The textual query is vectorized using the TF-IDF model, and simultaneously encoded into a dense vector using CLIP. Each representation is used to retrieve the top k most relevant items from its respective index. Because each method captures a different aspect of relevance (lexical precision vs. semantic similarity), both sets of results are merged in a hybrid scoring system.
+
+In the ranking phase, results from both TF-IDF and CLIP retrieval are combined using a weighted scoring function. For example, CLIP-based similarity scores might be weighted more heavily for vague or descriptive queries, while TF-IDF may dominate in technical or specific queries. The weighted scores are normalized and re-ranked to generate a final list of top results. This hybrid strategy ensures robust performance across a wide range of user intents and query types.
+
+```         
+User Query
+   │
+   ├──► TF-IDF Tokenizer ─────────────┐
+   │                                  │
+   ├──► CLIP Encoder ───────┐         │
+   │                        │         ▼
+   ▼                        ▼     TF-IDF Index (Sparse)
+CLIP Embedding        TF-IDF Vector         │
+   │                        │               ▼
+   ▼                        └─────► Retrieve Matches
+FAISS Index (Dense)                     ▲
+   │                                    │
+   └───────────────► Merge & Weight Results ◄──────┐
+                                        │          │
+                                        ▼          │
+                                  Top-K Ranked Results
+```
+
+#### Tools and Libraries
+
+A variety of tools and libraries are used in this project to support data processing, model serving, image handling, and vector search. These tools include Numpy[@harris2020array], Flask[@flask], FastAPI[@fastapi], Pillow[@pillow], Spacy[@spacy], Huggingface[@huggingface] etc. The table below outlines each tool and its role within the system.
+
+| Library       | Purpose in Project                                                                 |
+|---------------|--------------------------------------------------------------------------------------|
+| NumPy         | Efficient numerical operations, especially for vector manipulation and math ops.    |
+| Flask         | Lightweight web framework used for rapid prototyping of API endpoints.              |
+| FastAPI       | High-performance, asynchronous web framework for serving production-grade APIs.     |
+| FAISS         | Approximate nearest neighbor search for CLIP embeddings; enables fast vector search.|
+| Hugging Face  | Access to pretrained models like CLIP; used for text and image embedding.           |
+| Pillow        | Image processing library used for resizing, normalization, and format conversion.   |
+| spaCy         | Natural language processing toolkit for tokenization, NER, and text normalization.  |
+| ChromaDB      | Local or lightweight vector database for storing and querying embeddings.           |
+| Pinecone      | Scalable, cloud-based vector database for fast and persistent similarity search.    |
+| PostgreSQL    | Relational database to store Embeddings. Allows for multiple columns to have ebeddings|
