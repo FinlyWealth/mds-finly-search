@@ -6,6 +6,6 @@ In Week 4, we will initiate performance testing and begin iterative refinements.
 
 We acknowledge the complexity of this project and plan to experiment with a range of techniques. Apart from hard submission deadlines, the timeline will remain flexible to accommodate progress. 
 
-![Timeline](../img/timeline.png)
+![timeline](../img/timeline.png)
 
 
