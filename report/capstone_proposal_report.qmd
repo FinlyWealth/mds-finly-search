@@ -1,5 +1,5 @@
 ---
-title: "Find me a better product"
+title: "Find me a better product!"
 author: "Jenson Chang, Chukwunonso Ebele-Muolokwu, Catherine Meng, Jingyuan Wang"
 format:
   pdf:
