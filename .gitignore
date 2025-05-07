@@ -4,3 +4,4 @@ data/merged_output_sample_100k.parquet
 data/merged_output.parquet
 data/filtered_data.parquet
 /notebook/.ipynb_checkpoints
+/data/faiss_indexes

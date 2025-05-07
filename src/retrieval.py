@@ -5,6 +5,7 @@ import numpy as np
 from typing import Dict, Union, Optional
 from dotenv import load_dotenv
 import faiss
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,6 +18,10 @@ DB_CONFIG = {
     'host': os.getenv('PGHOST', 'localhost'),
     'port': os.getenv('PGPORT', '5432')
 }
+
+# FAISS index configuration
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FAISS_INDEX_DIR = os.path.join(REPO_ROOT, os.getenv('FAISS_INDEX_DIR', 'data/faiss_indexes'))
 
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
@@ -60,13 +65,38 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
         return results
 
 class FaissVectorRetrieval(SimilarityRetrieval):
-    """FAISS vector search"""
-    def __init__(self, index: faiss.Index, pids: list[int], column_name: str):
-        self.index = index
-        self.pids = pids  # Array of PIDs corresponding to FAISS indices
-        self.column_name = column_name
+    """FAISS vector search using saved indexes"""
+    def __init__(self, index_type: str = 'text'):
+        """
+        Initialize FAISS retrieval with saved index.
+        
+        Args:
+            index_type: Either 'text' or 'image' to specify which index to use
+        """
+        if index_type not in ['text', 'image']:
+            raise ValueError("index_type must be either 'text' or 'image'")
+            
+        # Load the index
+        index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
+        if not os.path.exists(index_path):
+            raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
+        self.index = faiss.read_index(index_path)
+        
+        # Load the PID mapping
+        mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
+        if not os.path.exists(mapping_path):
+            raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
+        with open(mapping_path, 'r') as f:
+            self.pid_mapping = json.load(f)
+            
+        # Convert mapping to list for index-based lookup, keeping PIDs as strings
+        self.pids = [pid for _, pid in sorted(self.pid_mapping.items())]
+        self.column_name = f'{index_type}_embedding'
 
-    def score(self, query: np.ndarray, k: int = 10) -> Dict[int, float]:
+    def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
+        # Normalize query vector for cosine similarity
+        faiss.normalize_L2(query.reshape(1, -1))
+        
         # Run FAISS search
         distances, indices = self.index.search(query.reshape(1, -1), k)
         
