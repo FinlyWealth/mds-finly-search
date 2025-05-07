@@ -96,21 +96,26 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         if not os.path.exists(mapping_path):
             raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
         with open(mapping_path, 'r') as f:
-            self.pid_mapping = json.load(f)
+            self.idx_to_pid = json.load(f)
             
-        # Convert mapping to list for index-based lookup, keeping PIDs as strings
-        self.pids = [pid for _, pid in sorted(self.pid_mapping.items())]
         self.column_name = f'{index_type}_embedding'
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
-        # Run FAISS search
+        # Search using FAISS (dot product = cosine similarity since vectors are normalized)
         distances, indices = self.index.search(query.reshape(1, -1), k)
-        
-        # Convert distances to similarity scores and normalize
-        raw_scores = [1 - dist for dist in distances[0]]
-        max_score = max(raw_scores) if raw_scores else 0
-        normalized_scores = {self.pids[idx]: (score/max_score if max_score > 0 else 0) 
-                           for idx, score in zip(indices[0], raw_scores)}
+
+        # Raw cosine similarity scores
+        raw_scores = distances[0]
+        top_indices = indices[0]
+
+        # Normalize scores to [0, 1] based on highest score (assumes higher = more similar)
+        max_score = max(raw_scores) if len(raw_scores) > 0 else 1.0
+        normalized_scores = {
+            self.idx_to_pid[str(idx)]: float(score / max_score) if max_score > 0 else 0.0
+            for idx, score in zip(top_indices, raw_scores)
+            if str(idx) in self.idx_to_pid  # Only include valid indices
+        }
+
         return normalized_scores
 
 class TextSearchRetrieval(SimilarityRetrieval):
@@ -155,7 +160,7 @@ def hybrid_retrieval(
     components: list[SimilarityRetrieval],
     weights: list[float],
     top_k: int = 10
-) -> tuple[list[int], list[float]]:
+) -> tuple[list[str], list[float]]:
     """
     Find top-k most relevant products using hybrid search.
     
@@ -167,7 +172,7 @@ def hybrid_retrieval(
         top_k: Number of results to return
     
     Returns:
-        Tuple of (pids, scores)
+        Tuple of (pids, scores) where pids are strings
     """
     # Filter out components with zero weights
     active_components = [(comp, weight) for comp, weight in zip(components, weights) if weight > 0]
