@@ -5,3 +5,5 @@ data/merged_output.parquet
 data/filtered_data.parquet
 /notebook/.ipynb_checkpoints
 /data/faiss_indexes
+/mlruns
+notebook/mlflow.db
