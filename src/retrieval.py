@@ -49,12 +49,21 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
         query_vector = query.tolist()
         
         sql = f"""
+            WITH scores AS (
+                SELECT 
+                    Pid,
+                    1 - ({self.column_name} <=> %s::vector) AS raw_score
+                FROM products
+                ORDER BY {self.column_name} <=> %s::vector
+                LIMIT %s
+            )
             SELECT 
                 Pid,
-                1 - ({self.column_name} <=> %s::vector) AS score
-            FROM products
-            ORDER BY {self.column_name} <=> %s::vector
-            LIMIT %s
+                CASE 
+                    WHEN MAX(raw_score) OVER () = 0 THEN 0
+                    ELSE raw_score / MAX(raw_score) OVER ()
+                END AS normalized_score
+            FROM scores
         """
         
         cur.execute(sql, [query_vector, query_vector, k])
@@ -94,16 +103,15 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         self.column_name = f'{index_type}_embedding'
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
-        # Normalize query vector for cosine similarity
-        faiss.normalize_L2(query.reshape(1, -1))
-        
         # Run FAISS search
         distances, indices = self.index.search(query.reshape(1, -1), k)
         
-        # Convert results to score dict
-        pids = [self.pids[idx] for idx in indices[0]]
-        scores = {pid: 1 - (dist / 2) for pid, dist in zip(pids, distances[0])}
-        return scores
+        # Convert distances to similarity scores and normalize
+        raw_scores = [1 - dist for dist in distances[0]]
+        max_score = max(raw_scores) if raw_scores else 0
+        normalized_scores = {self.pids[idx]: (score/max_score if max_score > 0 else 0) 
+                           for idx, score in zip(indices[0], raw_scores)}
+        return normalized_scores
 
 class TextSearchRetrieval(SimilarityRetrieval):
     """Text search using PostgreSQL full-text search"""
@@ -116,13 +124,22 @@ class TextSearchRetrieval(SimilarityRetrieval):
         cur = conn.cursor()
         
         sql = f"""
+            WITH scores AS (
+                SELECT 
+                    Pid,
+                    {self.method}(document, plainto_tsquery('english', %s)) AS raw_score
+                FROM products
+                WHERE document @@ plainto_tsquery('english', %s)
+                ORDER BY {self.method}(document, plainto_tsquery('english', %s)) DESC
+                LIMIT %s
+            )
             SELECT 
                 Pid,
-                {self.method}(document, plainto_tsquery('english', %s)) AS score
-            FROM products
-            WHERE document @@ plainto_tsquery('english', %s)
-            ORDER BY {self.method}(document, plainto_tsquery('english', %s)) DESC
-            LIMIT %s
+                CASE 
+                    WHEN MAX(raw_score) OVER () = 0 THEN 0
+                    ELSE raw_score / MAX(raw_score) OVER ()
+                END AS normalized_score
+            FROM scores
         """
         
         cur.execute(sql, [query, query, query, k])
@@ -152,9 +169,12 @@ def hybrid_retrieval(
     Returns:
         Tuple of (pids, scores)
     """
-    # Get scores from each component
+    # Filter out components with zero weights
+    active_components = [(comp, weight) for comp, weight in zip(components, weights) if weight > 0]
+    
+    # Get scores from each active component
     all_scores = []
-    for comp in components:
+    for comp, _ in active_components:
         if isinstance(comp, (PostgresVectorRetrieval, FaissVectorRetrieval)):
             scores = comp.score(query_embedding, k=top_k)
         else:
@@ -163,7 +183,7 @@ def hybrid_retrieval(
 
     # Combine scores
     combined_scores = {}
-    for scores, weight in zip(all_scores, weights):
+    for scores, (_, weight) in zip(all_scores, active_components):
         for pid, score in scores.items():
             combined_scores[pid] = combined_scores.get(pid, 0) + score * weight
 
