@@ -1,28 +1,38 @@
 #### Data Source and Description
 
-The dataset comprises two primary sources: product images and metadata. The image folder contains approximately 15 million, 100x100 pixel JPEG images. It is assumed each product will have a single corresponding image. The metadata file contains 30 columns covering product attributes such as product id, name, description, color, brand and price. FinlyWealth has obtained the dataset from their affiliate network. 
+The dataset consists of multi-modal product data, including images, textual descriptions, and structured metadata. It includes:
 
-**Missing Values**
+- 14,684,588 JPEG images (approximately 67 GB), each under 150×150 pixels. Image filenames correspond to the Pid field in the metadata CSV. Although the number of images is slightly lower than the number of unique product entries (15,147,805), it's possible that some products have multiple images while others have none. However, our project partner confirmed that we will assume a 1:1 mapping between images and product listings based on Pid.
 
-Certain columns have missing values in more than 90% of the data, such as “ShortDescription” and “Keywords”. These are unlikely to be used for our data pipeline. 
-Other fields such as “Gender”, “Color”, and “Brand” also have a significant proportion of missing values. These are expected since these attributes do not apply to some products such as books. 
+- A 12 GB CSV file containing 15,384,100 rows and 30 columns, with each row representing a product listing. The metadata includes attributes such as Pid, Name, Description, Category, Brand, Color, Price, Gender, and product URLs.
 
-**High Cardinality**
+The dataset was provided by FinlyWealth through its affiliate network and will serve as the foundation for both exploratory analysis and model development.
 
-Columns such as “Category”, “Color”, “Size”, and “Brand” have high cardinality as shown in @fig-uniquecounts. In addition, columns "Brand" and "Manufacturer" have a 82% overlap in their unique values so the two columns have been merged into "MergedBrand" to eliminate duplication. 
+#### Exploratory Data Analysis
 
-![Unique Counts per Column Diagram](../img/uniquecounts.png){#fig-uniquecounts}
+Several metadata columns contain substantial missing values and were therefore dropped in favor of more complete fields (see @tbl-dropcolumns). 
 
-**Overlap Between Product Name and Metadata**
+![Information of Dropped Columns](../img/dropcolumns.png){#tbl-dropcolumns}
 
-To better understand what users are likely to search for, we analyzed the top 50 most frequent words in product names as shown in @fig-topwords. Common terms like "womens", "mens", "size", and "black" appear frequently and often overlap with metadata fields such as gender and color.
+Attributes like Color, Gender, and Brand also have missing data but are retained, as they still offer value for modeling (see @tbl-keptcolumns). 
+
+![Information of Kept Columns](../img/keptcolumns.png){#tbl-keptcolumns}
+
+The missingness in these fields may be due to certain product types—such as books—not supporting these attributes (see the category distribution in @fig-categorydist). 
+
+![Top 8 Product Categories with Others Grouped](../img/categorydist.png){#fig-categorydist}
+
+High-cardinality fields such as Category, Size, and Brand (see @fig-uniquecounts) may require grouping rare values to avoid overfitting and reduce memory usage. We merged Brand and Manufacturer into a single MergedBrand column to reduce duplication while preserving distinct information from both fields. We also excluded non-English market entries, keeping approximately 70% of the dataset, as confirmed by the partner. 
+
+![Unique Value Counts per Column After Data Cleaning](../img/uniquecounts.png){#fig-uniquecounts}
+
+To better understand what users are likely to search for, we analyzed the 50 most frequent words in product names, as shown in @fig-topwords. Common terms like "womens", "mens", "size", and "black" appear frequently and often overlap with metadata fields such as gender and color.
 
 ![Top 50 words in product name Diagram](../img/topwords.png){#fig-topwords}
 
 ### Methodology: Capturing User Intent
 
-![Workflow Diagram](../img/workflow.png)
-{#fig-workflow}
+![Workflow Diagram](../img/workflow.png){#fig-workflow}
 
 Figure @fig-workflow illustrates the end-to-end architecture, which includes a user interface, an API server for handling queries and doing computations, and a database for storing embeddings and product metadata. The system is designed to retrieve the most relevant products in response to user queries. The workflow is divided into the User-Interface, Server-Side, Database
 
