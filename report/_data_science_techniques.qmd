@@ -43,7 +43,7 @@ Figure @fig-workflow illustrates the end-to-end architecture, which includes a u
 **API Endpoint & Preprocessing:** As seen in the @fig-workflow, when a user enters a query, the query is sent to our API server. For the current implementation we are using Flask[@flask] which is a lightweight webframework. Here, the raw query undergoes several preprocessing steps to ensure compatibility with our retrieval models.
 
 **Embedding Generation**
-After the preprocessing, The text is transformed to a format can be easily be used to carry out comparism to data stored in the database. This can either be some form of embedding generation using OpenAi CLIP[@li2021supervision] (Contrastive Language-Image Pre-training) embeddings or using the TF-IDF[@aizawa2003information] (Term Frequency–Inverse Document Frequency) model to create a text representation.
+After the preprocessing, The text is transformed to a format can be easily be used to carry out comparism to data stored in the database. This can either be some form of embedding generation using OpenAi CLIP[@openaiclip] (Contrastive Language-Image Pre-training) embeddings or using the TF-IDF[@aizawa2003information] (Term Frequency–Inverse Document Frequency) model to create a text representation.
 
 > **Embedding Generation:** The preprocessed query is then transformed into a numerical representation (an embedding) that captures its semantic meaning.
 

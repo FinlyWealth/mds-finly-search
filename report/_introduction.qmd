@@ -1,8 +1,11 @@
-FinlyWealth is an affiliate marketing platform that offers cashback rewards for product purchases. While their current offerings focus on personal finance products, they aim to expand into the e-commerce space with a broader product portfolio. To support this initiative, a team of Master of Data Science students from the University of British Columbia is collaborating with FinlyWealth to develop an intelligent product search engine powered by machine learning.
+As FinlyWealth expands from personal finance into e-commerce, they face the challenge of building a product search experience that can scale across a diverse and rapidly growing catalog. To support this transition, a team of Master of Data Science students from the University of British Columbia is developing a machine learning-powered search engine capable of handling both text and image queries.
 
-### Problem Statement
-The current search system supports only basic keyword-based text queries and lacks semantic understanding (e.g., pants under $100) or support for multimodal inputs (e.g., images). Additionally, the system’s scalability and performance have not been evaluated for large-scale product catalogs, which are expected to grow from hundreds to millions of items.
+Search in the e-commerce domain is uniquely difficult due to inconsistent metadata, varied product categories, and the need to interpret nuanced user intent—such as “pants under $100” or image-based queries. The current system relies on basic keyword matching, lacking semantic understanding, multimodal input support, and performance benchmarking at scale.
+
+To address these limitations, the project will implement a multimodal, semantic search engine that combines text and image embeddings to enable more accurate and flexible retrieval.
 
 ### Objective
-The goal of this project is to design and implement a fast, scalable product search engine with multimodal semantic capabilities, supporting both text and image-based queries. The system will comprise four core components: a user-facing frontend, a set of backend API endpoints, a similarity computation module and a vector-aware database for efficient retrieval.
-The project will be developed over an 8-week timeline in close collaboration with FinlyWealth. Success will be evaluated using quantitative and qualitative metrics, including query latency, Recall@K for relevance, and human feedback on recommendation quality. The final deliverable will be a functional prototype that demonstrates the potential for large-scale deployment.
+
+The goal is to design and implement a fast, scalable search system with multimodal semantic capabilities. The architecture will include a user-friendly Streamlit [@streamlit] frontend, a Flask [@flask] based backend API, a similarity computation engine, and a vector-aware database for efficient retrieval.
+
+Developed over an 8-week timeline in collaboration with FinlyWealth, the system’s success will be evaluated using both quantitative and qualitative metrics. These include recall@K for retrieval accuracy, latency for inference speed, and manual evaluation to assess the relevance of search results. The final deliverable will be a working prototype capable of intelligent, scalable product retrieval across a multimillion-item catalog.
