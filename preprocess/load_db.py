@@ -19,6 +19,10 @@ DB_CONFIG = {
     'port': os.getenv('PGPORT', '5432')
 }
 
+# File paths configuration
+EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings.npz')
+METADATA_PATH = os.getenv('METADATA_PATH', 'data/sample.csv')
+
 def drop_and_recreate_table(embedding_dim: int):
     """Drop and recreate the products table"""
     conn = psycopg2.connect(**DB_CONFIG)
@@ -36,22 +40,15 @@ def drop_and_recreate_table(embedding_dim: int):
             image_embedding vector({embedding_dim}),
             document tsvector,
             Name TEXT,
-            ShortDescription TEXT,
             Description TEXT,
-            CategoryId TEXT,
             Category TEXT,
             Price DECIMAL,
             PriceCurrency TEXT,
-            SalePrice DECIMAL,
             FinalPrice DECIMAL,
             Discount DECIMAL,
             isOnSale BOOLEAN,
             IsInStock BOOLEAN,
             Brand TEXT,
-            Manufacturer TEXT,
-            MPN TEXT,
-            UPCorEAN TEXT,
-            SKU TEXT,
             Color TEXT,
             Gender TEXT,
             Size TEXT,
@@ -128,22 +125,15 @@ def store_embeddings(text_embeddings, image_embeddings, pids, df):
                 [float(x) for x in img_emb],
                 None,  # Document will be updated separately
                 product_data['Name'],
-                product_data['ShortDescription'],
                 product_data['Description'],
-                product_data['CategoryId'],
                 product_data['Category'],
                 float(product_data['Price']) if pd.notna(product_data['Price']) else None,
                 product_data['PriceCurrency'],
-                float(product_data['SalePrice']) if pd.notna(product_data['SalePrice']) else None,
                 float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
                 float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
                 bool(product_data['isOnSale']), 
                 bool(product_data['IsInStock']),
                 product_data['Brand'],
-                product_data['Manufacturer'],
-                product_data['MPN'],
-                product_data['UPCorEAN'],
-                product_data['SKU'],
                 product_data['Color'],
                 product_data['Gender'],
                 product_data['Size'],
@@ -156,10 +146,10 @@ def store_embeddings(text_embeddings, image_embeddings, pids, df):
         """
         INSERT INTO products (
             Pid, text_embedding, image_embedding, document,
-            Name, ShortDescription, Description, CategoryId, Category,
-            Price, PriceCurrency, SalePrice, FinalPrice, Discount,
-            isOnSale, IsInStock, Brand, Manufacturer, MPN, UPCorEAN,
-            SKU, Color, Gender, Size, Condition
+            Name, Description, Category,
+            Price, PriceCurrency, FinalPrice, Discount,
+            isOnSale, IsInStock, Brand,
+            Color, Gender, Size, Condition
         ) 
         VALUES %s 
         ON CONFLICT (Pid) DO NOTHING
@@ -196,8 +186,8 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(project_root, 'data')
     
-    print(f"Loading embeddings from {data_dir}...")
-    load_path = os.path.join(data_dir, 'embeddings.npz')
+    print(f"Loading embeddings from {EMBEDDINGS_PATH}...")
+    load_path = os.path.join(project_root, EMBEDDINGS_PATH)
     
     data = np.load(load_path)
     
@@ -206,11 +196,11 @@ def main():
     print(f"Embedding dimension: {embedding_dim}")
     
     print("Loading metadata...")
-    df = pd.read_parquet(os.path.join(data_dir, 'merged_output_sample_100k.parquet'))
+    df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
     
     # Text fields to combine for TF-IDF search
-    text_fields = ['Name', 'ShortDescription', 'Category', 'Brand', 
-                   'Manufacturer', 'Color', 'Gender', 'Size', 'Condition']
+    text_fields = ['Name', 'Description', 'Category', 'Brand', 
+                   'Color', 'Gender', 'Size', 'Condition']
     
     # Create combined text
     print("Creating combined text...")
