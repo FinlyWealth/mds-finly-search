@@ -1,0 +1,11 @@
+### Tools and Libraries:
+| Library       | Purpose in Project                                                                 |
+|---------------|--------------------------------------------------------------------------------------|
+| [NumPy](https://numpy.org/)  | Efficient numerical operations, especially for vector manipulation and math ops.    |
+| [Flask](https://flask.palletsprojects.com/en/stable/)| Lightweight web framework used for rapid prototyping of API endpoints.              |
+| [FAISS](https://github.com/facebookresearch/faiss) | Approximate nearest neighbor search for CLIP embeddings; enables fast vector search.|
+| [Hugging Face](https://huggingface.co/)  | Access to pretrained models like CLIP; used for text and image embedding.           |
+| [Pillow](https://pillow.readthedocs.io/en/stable/) | Image processing library used for resizing, normalization, and format conversion.   |
+| [spaCy](https://spacy.io/)   | Natural language processing toolkit for tokenization, NER, and text normalization.  |
+| [Pinecone](https://www.pinecone.io/)      | Scalable, cloud-based vector database for fast and persistent similarity search.    |
+| [PostgreSQL](https://www.postgresql.org/)    | Relational database to store Embeddings. Allows for multiple columns to have ebeddings|
