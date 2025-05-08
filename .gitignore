@@ -11,3 +11,5 @@ data/clean/filtered_data.parquet
 data/clean/filtered_data_100k.csv
 data/embeddings/embeddings_100k.npz
 /data/raw
+*.npz
+preprocess/images_100k_v2.zip
