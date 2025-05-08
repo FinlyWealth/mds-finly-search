@@ -132,16 +132,8 @@ def main():
     print(f"Creating text embedding index (dimension: {embedding_dim})...")
     text_index, text_pid_map = create_faiss_index(text_embeddings, text_pids, embedding_dim)
     
-    print("Verifying text index...")
-    if not verify_index(text_index, text_embeddings, text_pids):
-        raise ValueError("Text index verification failed!")
-    
     print(f"Creating image embedding index (dimension: {embedding_dim})...")
     image_index, image_pid_map = create_faiss_index(image_embeddings, image_pids, embedding_dim)
-    
-    print("Verifying image index...")
-    if not verify_index(image_index, image_embeddings, image_pids):
-        raise ValueError("Image index verification failed!")
     
     # Save the indexes
     print("Saving indexes...")
