@@ -7,7 +7,7 @@ data/filtered_data.parquet
 /data/faiss_indexes
 /mlruns
 notebook/mlflow.db
-data/cleaned/filtered_data.parquet
-data/cleaned/filtered_data_100k.csv
+data/clean/filtered_data.parquet
+data/clean/filtered_data_100k.csv
 data/embeddings/embeddings_100k.npz
 /data/raw
