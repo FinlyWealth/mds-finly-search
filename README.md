@@ -1,18 +1,18 @@
 # mds-finly-search
 
-### Setup Instructions for Experimental Pipeline and MLflow
+### Setup Instructions for Notebook Experiment and MLflow
 The `experiment_pipeline.ipynb` notebook is a testing framework that evaluates different product search methods using the CLIP model and MLflow for experiment tracking. 
 
 Retrieval can be done using a combination of:
 
 - Vector based retrieval using [pgvector](https://github.com/pgvector/pgvector) (cosine distance)
 - Vector based retrieval using [FAISS IVF](https://github.com/facebookresearch/faiss/wiki/Faiss-indexes) (approximate nearest neighbor)
-- Text based retrieval using Postgres [ts_rank](https://www.postgresql.org/docs/current/textsearch-controls.html) (approximate TF-IDF)
+- Text based retrieval using [Postgres ts_rank](https://www.postgresql.org/docs/current/textsearch-controls.html) (approximate TF-IDF)
 
 **Setup**
 
 1. Download the metadata, sample embeddings and images from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
-2. Extract the zip file in the `data` folder
+2. Extract the zip file into the `data` folder
 3. Set up Python environment using `environment.yaml`
 4. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
 5. Create environment variable `.env` file in the root folder
@@ -38,4 +38,6 @@ Retrieval can be done using a combination of:
     ```
 6. Run `python src/util/load_db.py` to load the database with the embeddings and metadata
 7. Run `python src/util/compute_faiss_index.py` to compute the the index used for FAISS search
+8. Run `experiment_pipeline.ipynb` notebook
+9. The results are logged to a hosted MLflow servier: http://35.209.59.178:8591
 
