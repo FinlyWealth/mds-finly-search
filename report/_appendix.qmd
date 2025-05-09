@@ -1,4 +1,4 @@
-### Tools and Libraries:
+### Tools and Libraries
 | Library       | Purpose in Project                                                                 |
 |---------------|--------------------------------------------------------------------------------------|
 | [NumPy](https://numpy.org/)  | Efficient numerical operations, especially for vector manipulation and math ops.    |
@@ -9,3 +9,13 @@
 | [spaCy](https://spacy.io/)   | Natural language processing toolkit for tokenization, NER, and text normalization.  |
 | [Pinecone](https://www.pinecone.io/)      | Scalable, cloud-based vector database for fast and persistent similarity search.    |
 | [PostgreSQL](https://www.postgresql.org/)    | Relational database to store Embeddings. Allows for multiple columns to have ebeddings|
+
+
+### Definitions
+**CLIP:** Generates embeddings for both text and images, mapping them into a shared embedding space. We are not training any embedding model, instead we use off-the-shelf [CLIP models](https://huggingface.co/docs/transformers/en/model_doc/clip) to generate embeddings.
+
+**Embedding Generation:** The preprocessed query is then transformed into a numerical representation (an embedding) that captures its semantic meaning.
+
+**FAISS** (Facebook AI Similarity Search) is a library that allows developers to quickly search for embeddings of multimedia documents.Enables efficient approximate nearest neighbor search over embeddings.
+
+**TF-IDF:** A numerical statistic used to evaluate the importance of a word in a document within a collection of documents

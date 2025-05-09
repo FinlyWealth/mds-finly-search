@@ -27,4 +27,12 @@ execute:
 
 {{< include _timeline.qmd >}}
 
+{{< pagebreak >}}
+
+## Appendix
+
+{{< include _appendix.qmd >}}
+
+{{< pagebreak >}}
+
 ## References
