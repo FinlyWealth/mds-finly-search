@@ -38,6 +38,6 @@ Retrieval can be done using a combination of:
     ```
 6. Run `python src/util/load_db.py` to load the database with the embeddings and metadata
 7. Run `python src/util/compute_faiss_index.py` to compute the the index used for FAISS search
-8. Run `experiment_pipeline.ipynb` notebook
+8. Change configuration in `experiment_pipeline.ipynb` to the desired configuraiton and run the notebook.
 9. The results are logged to a hosted MLflow servier: http://35.209.59.178:8591
 
