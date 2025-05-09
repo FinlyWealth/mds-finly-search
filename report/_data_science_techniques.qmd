@@ -10,15 +10,44 @@ The dataset was provided by FinlyWealth through its affiliate network and will s
 
 #### Exploratory Data Analysis
 
-Several metadata columns contain substantial missing values and were therefore dropped in favor of more complete fields (see @tbl-dropcolumns). 
+Several metadata columns contain substantial missing values and were therefore dropped in favor of more complete fields (see @tbl-dropcolumns). Attributes like Color, Gender, and Brand also have missing data but are retained, as they still offer value for modeling (see @tbl-keptcolumns). The missingness in these fields may be due to certain product types—such as books—not supporting these attributes (see the category distribution in @fig-categorydist). 
 
-![Information of Dropped Columns](../img/dropcolumns.png){#tbl-dropcolumns}
+: Table: Summary of Rropped columns and Reasons {#tbl-dropcolumns}
 
-Attributes like Color, Gender, and Brand also have missing data but are retained, as they still offer value for modeling (see @tbl-keptcolumns). 
+| **Attribute**         | **Reason Dropped**                               |
+|-----------------------|--------------------------------------------------|
+| `ShortDescription`    | 91% missing                                      |
+| `Keywords`            | 99% missing                                      |
+| `CategoryId`          | Redundant with `Category`                        |
+| `ImageURL`            | Not used directly in modeling                    |
+| `SalePrice`           | Redundant with `FinalPrice` / incomplete usage   |
+| `PriceCurrency`       | Not used in current modeling scope               |
+| `MPN`                 | High cardinality (~2.3M values), sparse          |
+| `UPCorEAN`            | High cardinality (~3.5M values), sparse          |
+| `SKU`                 | Redundant with `Pid` (~10M values)               |
+| `AlternateImageUrl*`  | Not used, only primary image needed              |
+| `DeepLinkURL`         | Not relevant for modeling                        |
+| `LinkUrl`             | Not relevant for modeling                        |
 
-![Information of Kept Columns](../img/keptcolumns.png){#tbl-keptcolumns}
+: Table: Summary of Retained Columns and Their Characteristics {#tbl-keptcolumns}
 
-The missingness in these fields may be due to certain product types—such as books—not supporting these attributes (see the category distribution in @fig-categorydist). 
+| **Group**              | **Attribute**     | **Description / Examples**                               |
+|------------------------|-------------------|----------------------------------------------------------|
+| Identifiers            | `Pid`             | Unique product ID; links to image filenames              |
+| Text Fields            | `Name`            | Product title (0.2% missing)                             |
+|                        | `Description`     | Product description (0.03% missing)                      |
+|                        | `Category`        | Product category (28% missing, ~15K values)              |
+| Pricing & Availability | `Price`           | Listed price                                             |
+|                        | `FinalPrice`      | Final price after discounts                              |
+|                        | `Discount`        | Discount percentage or value                             |
+|                        | `isOnSale`        | Boolean flag (2 values)                                  |
+|                        | `IsInStock`       | Boolean flag (2 values)                                  |
+| Branding               | `Brand`           | Brand name (53% missing, ~21K unique)                    |
+|                        | `Manufacturer`    | Manufacturer name (34% missing, ~26K unique)             |
+| Product Features       | `Color`           | Product color (49% missing, ~170K unique)                |
+|                        | `Gender`          | Target gender (54% missing, 3 values: e.g., male/female) |
+|                        | `Size`            | Product size (46% missing, ~55K unique)                  |
+|                        | `Condition`       | Product condition (e.g., new, used; 5 values)            |
 
 ![Top 8 Product Categories with Others Grouped](../img/categorydist.png){#fig-categorydist}
 
