@@ -1,24 +1,12 @@
----
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .qmd
-      format_name: quarto
-      format_version: '1.0'
-      jupytext_version: 1.16.1
-  kernelspec:
-    display_name: dsci532
-    language: python
-    name: '532'
----
+Due to the dataset’s size, we plan to start early to ensure sufficient time for optimization, as shown in @fig-timeline.
 
-Given the large size of the dataset, we anticipate that refinements and optimization will require substantial time; therefore, we plan to begin as early as possible. In Week 1, we will develop the initial pipeline, finalize the project proposal, and complete the necessary exploratory data analysis (EDA).
+- **Week 1:** Develop the initial pipeline, finalize the project proposal, and complete the necessary exploratory data analysis (EDA).
+- **Week 2:** Focus on developing and integrating the core components locally, including the user interface, API, and data processing pipeline, to ensure smooth local operation before cloud deployment.
+- **Week 3:** Process the full dataset on the cloud, connect the frontend with the backend, and explore the impact of advanced NLP techniques such as Named Entity Recognition (NER).
+- **Week 4:** Begin performance testing and refinements, focusing on internal demos and retrieval benchmarks.
+- **By Week 6 (before June 9):** Deliver a runnable draft to our mentor for review and final presentation preparation, ensuring it fully meets our capstone partner’s requirements.
+- **Final Presentation:** Scheduled for June 12 or 13. We will then have 10 days to finalize the product and report, aiming for final submission by **June 26 (Week 8)**.
 
-Week 2 will focus on developing and integrating the core components locally, including the completion of user interface, API, and data processing pipeline. The goal is to ensure the entire product runs smoothly in the local environment before moving to cloud deployment. In Week 3, we will process the full dataset on the cloud, connect the frontend with the backend, and explore the impact of advanced NLP techniques such as Named Entity Recognition (NER).
+We acknowledge the project’s complexity and will adjust the timeline as needed, except for hard submission deadlines.
 
-In Week 4, we will initiate performance testing and begin iterative refinements, focusing on internal demos and establishing initial retrieval performance benchmarks. By Week 6 (before June 9), we aim to deliver a runnable draft to our mentor for review and preparation for the final presentation. This draft should fully meet the requirements set by our capstone partner. The final presentation is scheduled for June 12 or 13. Following that, we will have 10 days to complete and polish both the final product and the accompanying report, with the final submission targeted for June 26 (Week 8).
-
-We acknowledge the complexity of this project and plan to experiment with a range of techniques. Apart from hard submission deadlines, the timeline will remain flexible to accommodate progress. 
-
-![timeline](../img/timeline.png){#fig-timeline}
-
+![Timeline](../img/timeline.png){#fig-timeline}

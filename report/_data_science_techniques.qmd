@@ -52,21 +52,21 @@ Several metadata columns contained substantial missing values and were therefore
 
 High-cardinality fields such as `Category`, `Size`, and `Brand` (see @fig-uniquecounts) may require grouping rare values to avoid overfitting and reduce memory usage. We merged `Brand` and `Manufacturer` into a single `MergedBrand` column to reduce duplication while preserving distinct information. We also excluded non-English market entries—retaining approximately 70% of the dataset—as confirmed by our partner.
 
-![Unique Value Counts per Column After Data Cleaning](../img/uniquecounts.png){#fig-uniquecounts}
-
-To understand likely user searches, we analyzed the 50 most frequent words in product names (see @fig-topwords). Common terms like “womens”, “mens”, “size”, and “black” appear frequently and often overlap with metadata fields such as `Gender` and `Color`.
-
-![Top 50 Words in Product Names](../img/topwords.png){#fig-topwords}
+![Unique Value Counts per Column After Data Cleaning](../img/uniquecounts.png){#fig-uniquecounts width=80%}
 
 {{< pagebreak >}}
 
-### Methodology: Capturing User Intent
+To understand likely user searches, we analyzed the 50 most frequent words in product names (see @fig-topwords). Common terms like “womens”, “mens”, “size”, and “black” appear frequently and often overlap with metadata fields such as `Gender` and `Color`.
+
+![Top 50 Words in Product Names](../img/topwords.png){#fig-topwords width=80%}
+
+{{< pagebreak >}}
+
+### System Workflow
 
 ![Workflow Diagram](../img/workflow.png){#fig-workflow}
 
 @fig-workflow illustrates the end-to-end architecture, including a user interface, an API server for query processing, and a database for storing embeddings and metadata.
-
-#### System Workflow
 
 - **User Interface:** A web interface accepts text or image queries, designed for intuitive interaction.
 - **API Endpoint & Preprocessing:** Queries are sent to our Flask[@flask] server, where they undergo preprocessing.
@@ -78,9 +78,11 @@ To understand likely user searches, we analyzed the 50 most frequent words in pr
 
 **Tools and Libraries:** See the appendix for a complete list.
 
+{{< pagebreak >}}
+
 #### Implementation Challenges
 
-- Scalability (latency and memory) for efficient retrieval over a large catalog  
-- Data-quality issues (e.g., high-cardinality metadata) that can degrade TF-IDF and CLIP performance  
-- Defining and implementing metrics to evaluate multimodal query effectiveness  
+- Scalability (latency and memory) for efficient retrieval over a large catalog
+- Data-quality issues (e.g., high-cardinality metadata) that can degrade TF-IDF and CLIP performance
+- Defining and implementing metrics to evaluate multimodal query effectiveness
 - Experimentally tuning and validating hybrid-retrieval weights (semantic vs. lexical)  
