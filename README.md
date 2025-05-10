@@ -2,18 +2,19 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-### Makefile Commands
+## Makefile
 
-The project includes a Makefile to simplify common tasks. Before running the commands, please see setup instructions below:
+The project includes a Makefile to simplify tasks. Before running the commands, please see setup instructions below:
 
-#### Setup Instructions
+### Setup Instructions
 
-1. Download the metadata, sample embeddings and images from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K: sample_100k_v2.csv, images_100k_v2.zip, embeddings_100k_v2.npz
-2. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
-3. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
-4. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
-5. Create environment variable `.env` file in the root folder
-6. Add the following to environment variables
+1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
+1. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive 
+1. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
+1. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
+1. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
+1. Create environment variable `.env` file in the root folder
+1. Add the following to environment variables
 
     ```
     # User, password and location of the Postgres database
@@ -34,7 +35,9 @@ The project includes a Makefile to simplify common tasks. Before running the com
     FAISS_NLIST=100
     ```
 
-7. Setup postgres database locally:
+1. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
+
+1. Setup postgres database locally:
 
     ```{bash}
     # Install psql command line tool
@@ -56,7 +59,7 @@ The project includes a Makefile to simplify common tasks. Before running the com
     GRANT ALL PRIVILEGES ON DATABASE finly TO "finly-admin";
     ```
 
-8. Add pgvector extenstion
+1. Add pgvector extenstion
 
     ```{bash}
     # Login to finly database
@@ -66,20 +69,21 @@ The project includes a Makefile to simplify common tasks. Before running the com
     CREATE EXTENSION IF NOT EXISTS vector;
     ```
 
-#### Available Commands
+### Available Makefile Commands
+
 - `make all`: Runs all preprocessing steps and generates the report
 
-**Data Proprocessing**
+#### Data Proprocessing
 
 - `make preprocess-all`: Runs all preprocessing steps (generate embeddings, load database, compute FAISS index)
 
-- `make generate-embed`: Generates embeddings for the data
+- `make embed`: Generates embeddings for the data
 
-- `make load-db`: Loads data into the PostgreSQL database
+- `make db`: Loads data into the PostgreSQL database
 
-- `make compute-faiss`: Computes the FAISS index for vector search
+- `make faiss`: Computes the FAISS index for vector search
 
-**Report Rendering**
+#### Report Rendering
 
 - `make report`: Generates the Quarto report
 
