@@ -1,19 +1,19 @@
-.PHONY: report clean preprocess-all generate-embed load-db compute-faiss
+.PHONY: report clean preprocess-all embed db faiss
 
 # Default target
 all: preprocess-all report
 
 # Combined preprocessing target
-preprocess-all: generate-embed load-db compute-faiss
+preprocess-all: embed db faiss
 
 # Individual preprocessing targets
-generate-embed:
+embed:
 	python preprocess/generate_embed.py
 
-load-db:
+db:
 	python preprocess/load_db.py
 
-compute-faiss:
+faiss:
 	python preprocess/compute_faiss_index.py
 
 # Render the Quarto document

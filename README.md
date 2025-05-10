@@ -8,12 +8,13 @@ The project includes a Makefile to simplify common tasks. Before running the com
 
 #### Setup Instructions
 
-1. Download the metadata, sample embeddings and images from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
-2. Extract the zip file into the `data` folder
-3. Set up Python environment using `environment.yaml`
-4. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
-5. Create environment variable `.env` file in the root folder
-6. Add the following to environment variables
+1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K.
+2. Since it takes a while to run `make embed`, this step can be skipped by downloading the pre-generated embedding `embeddings_100k_v2.npz` from the same Google Drive.
+3. Extract the zip file into the `data` folder
+4. Set up Python environment using `environment.yaml`
+5. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
+6. Create environment variable `.env` file in the root folder
+7. Add the following to environment variables
 
     ```
     # User, password and location of the Postgres database
@@ -33,6 +34,7 @@ The project includes a Makefile to simplify common tasks. Before running the com
     # Number of clusters to use
     FAISS_NLIST=100
     ```
+8. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation. Otherwise, skip embedding generation by downloading `embeddings_100k_v2.npz` and only running `make db` and `make faiss`. 
 
 #### Available Commands
 - `make all`: Runs all preprocessing steps and generates the report
@@ -41,11 +43,11 @@ The project includes a Makefile to simplify common tasks. Before running the com
 
 - `make preprocess-all`: Runs all preprocessing steps (generate embeddings, load database, compute FAISS index)
 
-- `make generate-embed`: Generates embeddings for the data
+- `make embed`: Generates embeddings for the data
 
-- `make load-db`: Loads data into the PostgreSQL database
+- `make db`: Loads data into the PostgreSQL database
 
-- `make compute-faiss`: Computes the FAISS index for vector search
+- `make faiss`: Computes the FAISS index for vector search
 
 **Report Rendering**
 
