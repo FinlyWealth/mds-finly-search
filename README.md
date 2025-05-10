@@ -8,13 +8,17 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
 ### Setup Instructions
 
+**Download and Extract Data**
+
 1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
-1. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive 
-1. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
-1. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
-1. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
-1. Create environment variable `.env` file in the root folder
-1. Add the following to environment variables
+2. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive 
+3. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
+
+**Setup Python Environment and Environment Variables**
+
+4. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
+5. Create environment variable `.env` file in the root folder
+6. Add the following to environment variables. Change the Postgres credentials as needed. 
 
     ```
     # User, password and location of the Postgres database
@@ -35,9 +39,9 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
     FAISS_NLIST=100
     ```
 
-1. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
+**Install Postgres and pgvector**
 
-1. Setup postgres database locally:
+7. Setup postgres database locally. The credentials need to match the `.env` file. 
 
     ```{bash}
     # Install psql command line tool
@@ -59,7 +63,7 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
     GRANT ALL PRIVILEGES ON DATABASE finly TO "finly-admin";
     ```
 
-1. Add pgvector extenstion
+8. Add pgvector extenstion
 
     ```{bash}
     # Login to finly database
@@ -68,6 +72,8 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
     # Create the extension
     CREATE EXTENSION IF NOT EXISTS vector;
     ```
+
+9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
 ### Available Makefile Commands
 
@@ -88,11 +94,3 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 - `make report`: Generates the Quarto report
 
 - `make clean`: Removes generated report files
-
-To use these commands, simply run them from the project root directory. For example:
-
-```bash
-make preprocess-all  # Run all preprocessing steps
-make report         # Generate the report
-make clean          # Clean up generated files
-```
