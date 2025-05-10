@@ -23,43 +23,6 @@ DB_CONFIG = {
 EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings.npz')
 METADATA_PATH = os.getenv('METADATA_PATH', 'data/sample.csv')
 
-def drop_and_recreate_table(embedding_dim: int):
-    """Drop and recreate the products table"""
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    
-    # Drop the table if it exists
-    cur.execute("DROP TABLE IF EXISTS products;")
-    
-    # Create the table with dynamic vector dimensions and metadata columns
-    cur.execute(f"""
-        CREATE TABLE products (
-            id SERIAL PRIMARY KEY,
-            Pid TEXT UNIQUE,
-            text_embedding vector({embedding_dim}),
-            image_embedding vector({embedding_dim}),
-            document tsvector,
-            Name TEXT,
-            Description TEXT,
-            Category TEXT,
-            Price DECIMAL,
-            PriceCurrency TEXT,
-            FinalPrice DECIMAL,
-            Discount DECIMAL,
-            isOnSale BOOLEAN,
-            IsInStock BOOLEAN,
-            Brand TEXT,
-            Color TEXT,
-            Gender TEXT,
-            Size TEXT,
-            Condition TEXT
-        );
-    """)
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-
 def init_db(embedding_dim: int):
     """Initialize the database and create necessary tables"""
     conn = psycopg2.connect(**DB_CONFIG)
@@ -68,9 +31,12 @@ def init_db(embedding_dim: int):
     # Enable pgvector extension
     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
+    # Drop the table if it exists
+    cur.execute("DROP TABLE IF EXISTS products;")
+    
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE products (
             id SERIAL PRIMARY KEY,
             Pid TEXT UNIQUE,
             text_embedding vector({embedding_dim}),
@@ -208,9 +174,6 @@ def main():
     
     print("Initializing database...")
     init_db(embedding_dim)
-    
-    print("Dropping and recreating table...")
-    drop_and_recreate_table(embedding_dim)
     
     print("Storing embeddings in database...")
     store_embeddings(data['text_embeddings'], data['image_embeddings'], data['product_ids'].astype(str), df)
