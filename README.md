@@ -4,12 +4,12 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 
 ## Makefile
 
-The project includes a Makefile to simplify common tasks. Before running the commands, please see setup instructions below:
+The project includes a Makefile to simplify tasks. Before running the commands, please see setup instructions below:
 
 ### Setup Instructions
 
 1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K.
-2. Since it takes a while to run `make embed`, this step can be skipped by downloading the pre-generated embedding `embeddings_100k_v2.npz` from the same Google Drive.
+2. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive. 
 3. Extract the zip file into the `data` folder
 4. Set up Python environment using `environment.yaml`
 5. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
@@ -34,7 +34,7 @@ The project includes a Makefile to simplify common tasks. Before running the com
     # Number of clusters to use
     FAISS_NLIST=100
     ```
-8. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation. Otherwise, skip embedding generation by downloading `embeddings_100k_v2.npz` and only running `make db` and `make faiss`. 
+8.  Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
 ### Available Makefile Commands
 - `make all`: Runs all preprocessing steps and generates the report
