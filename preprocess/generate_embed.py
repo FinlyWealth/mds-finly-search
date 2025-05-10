@@ -9,6 +9,10 @@ from transformers import AutoModel, AutoProcessor
 from tqdm.auto import tqdm
 import pyarrow.parquet as pq
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config.path import EMBEDDINGS_PATH, METADATA_PATH
+
 
 def save_embeddings(text_embeddings, image_embeddings, product_ids, save_path='embeddings.npz'):
     """
@@ -106,7 +110,7 @@ def calculate_embeddings(df, model, processor, device, batch_size=100):
     
     return text_embeddings, image_embeddings, product_ids
 
-def zip_product_images(df, output_zip_path="product_images.zip"):
+def filter_and_zip_product_images(df, output_zip_path="product_images.zip"):
     """
     Creates a zip file containing all product images that exist in the data/images directory.
     Returns a filtered DataFrame containing only rows where images exist.
@@ -154,10 +158,10 @@ def main():
     print(f"Device is {device}")
 
     # Load data
-    df = pd.read_csv("data/csv/sample_100k_v2.csv")
+    df = pd.read_csv(METADATA_PATH)
 
     # Zip product images
-    filtered_df = zip_product_images(df)
+    filtered_df = filter_and_zip_product_images(df)
 
     # Load model
     model_id = "openai/clip-vit-base-patch32"
@@ -178,7 +182,7 @@ def main():
         text_embeddings=text_embeddings,
         image_embeddings=image_embeddings,
         product_ids=product_ids,
-        save_path='embeddings.npz'
+        save_path=EMBEDDINGS_PATH
     )
 
 if __name__ == "__main__":

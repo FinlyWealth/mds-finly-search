@@ -6,32 +6,24 @@ import psycopg2
 from psycopg2.extras import execute_values, Json
 from typing import List, Tuple
 from dotenv import load_dotenv
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config.db import DB_CONFIG
+from config.path import EMBEDDINGS_PATH, METADATA_PATH
 
-# Load environment variables from .env file
-load_dotenv()
 
-# Database configuration
-DB_CONFIG = {
-    'dbname': os.getenv('PGDATABASE', 'finly'),
-    'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres'),
-    'host': os.getenv('PGHOST', 'localhost'),
-    'port': os.getenv('PGPORT', '5432')
-}
-
-# File paths configuration
-EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings.npz')
-METADATA_PATH = os.getenv('METADATA_PATH', 'data/sample.csv')
-
-def drop_and_recreate_table(embedding_dim: int):
-    """Drop and recreate the products table"""
+def init_db(embedding_dim: int):
+    """Initialize the database and create necessary tables"""
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
+    
+    # Enable pgvector extension
+    # cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
     # Drop the table if it exists
     cur.execute("DROP TABLE IF EXISTS products;")
     
-    # Create the table with dynamic vector dimensions and metadata columns
+    # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
         CREATE TABLE products (
             id SERIAL PRIMARY KEY,
@@ -49,50 +41,6 @@ def drop_and_recreate_table(embedding_dim: int):
             isOnSale BOOLEAN,
             IsInStock BOOLEAN,
             Brand TEXT,
-            Color TEXT,
-            Gender TEXT,
-            Size TEXT,
-            Condition TEXT
-        );
-    """)
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def init_db(embedding_dim: int):
-    """Initialize the database and create necessary tables"""
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    
-    # Enable pgvector extension
-    cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-    
-    # Create single products table with dynamic vector dimensions and metadata columns
-    cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS products (
-            id SERIAL PRIMARY KEY,
-            Pid TEXT UNIQUE,
-            text_embedding vector({embedding_dim}),
-            image_embedding vector({embedding_dim}),
-            document tsvector,
-            Name TEXT,
-            ShortDescription TEXT,
-            Description TEXT,
-            CategoryId TEXT,
-            Category TEXT,
-            Price DECIMAL,
-            PriceCurrency TEXT,
-            SalePrice DECIMAL,
-            FinalPrice DECIMAL,
-            Discount DECIMAL,
-            isOnSale BOOLEAN,
-            IsInStock BOOLEAN,
-            Brand TEXT,
-            Manufacturer TEXT,
-            MPN TEXT,
-            UPCorEAN TEXT,
-            SKU TEXT,
             Color TEXT,
             Gender TEXT,
             Size TEXT,
@@ -133,7 +81,7 @@ def store_embeddings(text_embeddings, image_embeddings, pids, df):
                 float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
                 bool(product_data['isOnSale']), 
                 bool(product_data['IsInStock']),
-                product_data['Brand'],
+                product_data['MergedBrand'],
                 product_data['Color'],
                 product_data['Gender'],
                 product_data['Size'],
@@ -190,7 +138,7 @@ def main():
     load_path = os.path.join(project_root, EMBEDDINGS_PATH)
     
     data = np.load(load_path)
-    
+
     # Get embedding dimensions from the file
     embedding_dim = data['text_embeddings'].shape[1]
     print(f"Embedding dimension: {embedding_dim}")
@@ -199,7 +147,7 @@ def main():
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
     
     # Text fields to combine for TF-IDF search
-    text_fields = ['Name', 'Description', 'Category', 'Brand', 
+    text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
     # Create combined text
@@ -208,9 +156,6 @@ def main():
     
     print("Initializing database...")
     init_db(embedding_dim)
-    
-    print("Dropping and recreating table...")
-    drop_and_recreate_table(embedding_dim)
     
     print("Storing embeddings in database...")
     store_embeddings(data['text_embeddings'], data['image_embeddings'], data['product_ids'].astype(str), df)
