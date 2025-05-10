@@ -2,11 +2,11 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-### Makefile Commands
+## Makefile
 
 The project includes a Makefile to simplify common tasks. Before running the commands, please see setup instructions below:
 
-#### Setup Instructions
+### Setup Instructions
 
 1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K.
 2. Since it takes a while to run `make embed`, this step can be skipped by downloading the pre-generated embedding `embeddings_100k_v2.npz` from the same Google Drive.
@@ -36,7 +36,7 @@ The project includes a Makefile to simplify common tasks. Before running the com
     ```
 8. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation. Otherwise, skip embedding generation by downloading `embeddings_100k_v2.npz` and only running `make db` and `make faiss`. 
 
-#### Available Commands
+### Available Makefile Commands
 - `make all`: Runs all preprocessing steps and generates the report
 
 **Data Proprocessing**
