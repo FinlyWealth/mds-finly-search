@@ -2,3 +2,7 @@
 data/embeddings.npz
 data/merged_output.parquet
 data/merged_output_sample_100k.parquet
+/data/faiss_indexes
+data/csv/sample_100k_v2.csv
+data/embeddings/embeddings_100k_v2.npz
+notebook/mlflow.db
