@@ -1,3 +1,4 @@
+name: 'finly'
 channels:
   - conda-forge
   - pytorch

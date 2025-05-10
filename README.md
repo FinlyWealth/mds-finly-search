@@ -8,9 +8,9 @@ The project includes a Makefile to simplify common tasks. Before running the com
 
 #### Setup Instructions
 
-1. Download the metadata, sample embeddings and images from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
-2. Extract the zip file into the `data` folder
-3. Set up Python environment using `environment.yaml`
+1. Download the metadata, sample embeddings and images from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K: sample_100k_v2.csv, images_100k_v2.zip, embeddings_100k_v2.npz
+2. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
+3. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
 4. Install [postgresql](https://www.postgresql.org) and [pgvector](https://github.com/pgvector/pgvector) extension
 5. Create environment variable `.env` file in the root folder
 6. Add the following to environment variables
@@ -34,6 +34,38 @@ The project includes a Makefile to simplify common tasks. Before running the com
     FAISS_NLIST=100
     ```
 
+7. Setup postgres database locally:
+
+    ```{bash}
+    # Install psql command line tool
+    conda install -c conda-forge postgresql
+
+    # Login to postgres, username and password will be the one you set when install the postgres
+    psql -U postgres
+
+    # Create new finly database user
+    CREATE USER "finly-admin" WITH PASSWORD '123';
+
+    # Give the user permission to create databases
+    ALTER USER "finly-admin" CREATEDB;
+
+    # Create the database finly
+    CREATE DATABASE finly OWNER "finly-admin";
+
+    # Grant all privileges on the database to finly-admin user
+    GRANT ALL PRIVILEGES ON DATABASE finly TO "finly-admin";
+    ```
+
+8. Add pgvector extenstion
+
+    ```{bash}
+    # Login to finly database
+    psql -U postgres -d finly
+
+    # Create the extension
+    CREATE EXTENSION IF NOT EXISTS vector;
+    ```
+
 #### Available Commands
 - `make all`: Runs all preprocessing steps and generates the report
 
@@ -54,11 +86,9 @@ The project includes a Makefile to simplify common tasks. Before running the com
 - `make clean`: Removes generated report files
 
 To use these commands, simply run them from the project root directory. For example:
+
 ```bash
 make preprocess-all  # Run all preprocessing steps
 make report         # Generate the report
 make clean          # Clean up generated files
 ```
-
-
-
