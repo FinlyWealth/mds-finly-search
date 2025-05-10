@@ -1,4 +1,6 @@
-# mds-finly-search
+# FinlyWealth Product Search Engine
+
+A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
 ### Makefile Commands
 

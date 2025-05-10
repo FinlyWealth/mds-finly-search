@@ -6,3 +6,4 @@ data/merged_output_sample_100k.parquet
 data/csv/sample_100k_v2.csv
 data/embeddings/embeddings_100k_v2.npz
 notebook/mlflow.db
+.env
