@@ -5,19 +5,9 @@ import psycopg2
 import pgvector.psycopg2
 import json
 from psycopg2.extras import execute_values
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# Database configuration
-DB_CONFIG = {
-    'dbname': os.getenv('PGDATABASE', 'finly'),
-    'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres'),
-    'host': os.getenv('PGHOST', 'localhost'),
-    'port': os.getenv('PGPORT', '5432')
-}
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config.db import DB_CONFIG
 
 # FAISS configuration
 N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
