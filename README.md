@@ -78,6 +78,71 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
 9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
+### Running Experiments
+
+`experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
+
+1. Edit `config/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config. 
+   ```json
+    {
+        "experiment_group_name": [
+            {
+                "name": "experiment_name",
+                "components": [
+                    {
+                        "type": "PostgresVectorRetrieval",
+                        "params": {
+                            "column_name": "text_embedding"
+                        }
+                    },
+                    {
+                        "type": "PostgresVectorRetrieval",
+                        "params": {
+                            "column_name": "image_embedding"
+                        }
+                    },
+                    {
+                        "type": "TextSearchRetrieval",
+                        "params": {
+                            "rank_method": "ts_rank_cd"
+                        }
+                    }
+                ],
+                "weights": [0.4, 0.3, 0.3]
+            }
+        ]
+    } 
+   ```
+
+2. Run experiments using the make command:
+   ```bash
+   make experiments
+   ```
+   This will:
+   - Execute each experiment defined in experiment_configs.json
+   - Log results to MLflow
+
+3. View experiment results: http://35.209.59.178:8591
+
+### Supported Retrieval Components
+
+The search engine supports the following retrieval components that can be combined in experiments:
+
+1. **PostgresVectorRetrieval**
+   - Uses pgvector for vector similarity search
+   - Parameters:
+     - `column_name`: Name of the vector column to search (e.g., "text_embedding" or "image_embedding")
+
+2. **FaissVectorRetrieval**
+   - Uses FAISS for efficient vector similarity search
+   - Parameters:
+     - `index_type`: Either "text" or "image" to specify which pre-computed index to use
+
+3. **TextSearchRetrieval**
+   - Uses PostgreSQL full-text search capabilities
+   - Parameters:
+     - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
+
 ### Available Makefile Commands
 
 - `make all`: Runs all preprocessing steps and generates the report
@@ -91,6 +156,10 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 - `make db`: Loads data into the PostgreSQL database
 
 - `make faiss`: Computes the FAISS index for vector search
+
+#### MLflow experiments
+
+- `make experiments`: Run all experiments and log results to MLflow
 
 #### Report Rendering
 
