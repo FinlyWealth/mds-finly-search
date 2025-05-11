@@ -15,7 +15,9 @@ from tqdm import tqdm
 load_dotenv()
 
 # Add src directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+root_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(root_dir))
+sys.path.insert(0, str(root_dir / "src"))
 
 from embedding import initialize_clip_model, generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
@@ -149,7 +151,7 @@ def main():
     print(f"MLflow tracking URI: {MLFLOW_TRACKING_URI}")
 
     # Load configurations
-    config_path = Path(__file__).parent.parent / "config" / "experiment_configs.json"
+    config_path = Path(__file__).parent / "experiment_configs.json"
     configs = load_configs(config_path)
     print(f"Loaded {len(configs)} experiment configurations")
 

@@ -18,7 +18,7 @@ faiss:
 
 # Run experiments and track results on MLflow
 experiments:
-	python src/experiment_pipeline.py
+	python experiments/experiment_pipeline.py
 
 # Render the Quarto document
 report: report/capstone_proposal_report.qmd

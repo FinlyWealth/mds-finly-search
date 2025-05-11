@@ -76,9 +76,9 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 
 ## Running Experiments
 
-`src/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
+`experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
 
-1. Edit `config/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config. 
+1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config. 
    ```json
     {
         "experiment_group_name": [
