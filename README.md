@@ -2,11 +2,7 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Makefile
-
-The project includes a Makefile to simplify tasks. Before running the commands, please see setup instructions below:
-
-### Setup Instructions
+## Setup Instructions
 
 **Download and Extract Data**
 
@@ -78,9 +74,9 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
 9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
-### Running Experiments
+## Running Experiments
 
-`experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
+`src/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
 
 1. Edit `config/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config. 
    ```json
@@ -118,9 +114,7 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
    ```bash
    make experiments
    ```
-   This will:
-   - Execute each experiment defined in experiment_configs.json
-   - Log results to MLflow
+   This will execute each experiment defined in experiment_configs.json and log results to MLflow
 
 3. View experiment results: http://35.209.59.178:8591
 
@@ -143,11 +137,11 @@ The search engine supports the following retrieval components that can be combin
    - Parameters:
      - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
 
-### Available Makefile Commands
+## Available Makefile Commands
 
 - `make all`: Runs all preprocessing steps and generates the report
 
-#### Data Proprocessing
+### Data Proprocessing
 
 - `make preprocess-all`: Runs all preprocessing steps (generate embeddings, load database, compute FAISS index)
 
@@ -157,11 +151,11 @@ The search engine supports the following retrieval components that can be combin
 
 - `make faiss`: Computes the FAISS index for vector search
 
-#### MLflow experiments
+### MLflow Experiments
 
 - `make experiments`: Run all experiments and log results to MLflow
 
-#### Report Rendering
+### Report Rendering
 
 - `make report`: Generates the Quarto report
 
