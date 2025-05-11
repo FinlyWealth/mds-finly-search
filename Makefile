@@ -1,4 +1,4 @@
-.PHONY: report clean preprocess-all embed db faiss
+.PHONY: report clean preprocess-all embed db faiss experiments
 
 # Default target
 all: preprocess-all report
@@ -15,6 +15,10 @@ db:
 
 faiss:
 	python preprocess/compute_faiss_index.py
+
+# Run experiments and track results on MLflow
+experiments:
+	python src/experiment_pipeline.py
 
 # Render the Quarto document
 report: report/capstone_proposal_report.qmd

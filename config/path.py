@@ -7,3 +7,6 @@ load_dotenv()
 # File paths configuration
 EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings.npz')
 METADATA_PATH = os.getenv('METADATA_PATH', 'data/sample.csv')
+
+# MLflow configuration
+MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI')

@@ -37,6 +37,9 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
     # Number of clusters to use
     FAISS_NLIST=100
+
+    # URL of mlflow server
+    MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
 **Install Postgres and pgvector**
