@@ -8,7 +8,7 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 
 1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
 2. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive 
-3. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
+3. Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`. Put `embeddings_100k_v2.npz` under `data/embeddings`.
 
 **Setup Python Environment and Environment Variables**
 
