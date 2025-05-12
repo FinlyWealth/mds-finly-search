@@ -8,11 +8,7 @@ import mlflow.pytorch
 from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
-from dotenv import load_dotenv
 from tqdm import tqdm
-
-# Load environment variables
-load_dotenv()
 
 # Add src directory to path
 root_dir = Path(__file__).parent.parent

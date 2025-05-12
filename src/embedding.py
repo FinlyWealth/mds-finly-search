@@ -81,9 +81,11 @@ def generate_image_caption(image_path):
     """Generate caption for image using BLIP"""
     processor, model = get_blip_model()
     try:
+        # If the image path is a URL, download the image
         if image_path.startswith(('http://', 'https://')):
             response = requests.get(image_path)
             image = Image.open(BytesIO(response.content))
+        # If the image path is a local file, open the image
         else:
             image = Image.open(image_path)
         

@@ -3,21 +3,9 @@ import psycopg2
 from psycopg2.extras import execute_values, Json
 import numpy as np
 from typing import Dict, Union, Optional
-from dotenv import load_dotenv
+from config.db import DB_CONFIG
 import faiss
 import json
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Database configuration
-DB_CONFIG = {
-    'dbname': os.getenv('PGDATABASE', 'finly'),
-    'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres'),
-    'host': os.getenv('PGHOST', 'localhost'),
-    'port': os.getenv('PGPORT', '5432')
-}
 
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
