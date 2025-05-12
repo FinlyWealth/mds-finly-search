@@ -5,7 +5,6 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values, Json
 from typing import List, Tuple
-from dotenv import load_dotenv
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG

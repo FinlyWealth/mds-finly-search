@@ -2,17 +2,13 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Makefile
-
-The project includes a Makefile to simplify tasks. Before running the commands, please see setup instructions below:
-
-### Setup Instructions
+## Setup Instructions
 
 **Download and Extract Data**
 
 1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K
 2. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive 
-3. Extract the zip file and rename it into the `data/images` folder. Put sample_100k_v2.csv under `data/csv`. Put embeddings_100k_v2.npz under `data/embeddings`
+3. Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`. Put `embeddings_100k_v2.npz` under `data/embeddings`.
 
 **Setup Python Environment and Environment Variables**
 
@@ -37,6 +33,9 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
     # Number of clusters to use
     FAISS_NLIST=100
+
+    # URL of mlflow server
+    MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
 **Install Postgres and pgvector**
@@ -75,11 +74,74 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
 9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
-### Available Makefile Commands
+## Running Experiments
+
+`experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
+
+1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config. 
+   ```json
+    {
+        "experiment_group_name": [
+            {
+                "name": "experiment_name",
+                "components": [
+                    {
+                        "type": "PostgresVectorRetrieval",
+                        "params": {
+                            "column_name": "text_embedding"
+                        }
+                    },
+                    {
+                        "type": "PostgresVectorRetrieval",
+                        "params": {
+                            "column_name": "image_embedding"
+                        }
+                    },
+                    {
+                        "type": "TextSearchRetrieval",
+                        "params": {
+                            "rank_method": "ts_rank_cd"
+                        }
+                    }
+                ],
+                "weights": [0.4, 0.3, 0.3]
+            }
+        ]
+    } 
+   ```
+
+2. Run experiments using the make command:
+   ```bash
+   make experiments
+   ```
+   This will execute each experiment defined in experiment_configs.json and log results to MLflow
+
+3. View experiment results: http://35.209.59.178:8591
+
+### Supported Retrieval Components
+
+The search engine supports the following retrieval components that can be combined in experiments:
+
+1. **PostgresVectorRetrieval**
+   - Uses pgvector for vector similarity search
+   - Parameters:
+     - `column_name`: Name of the vector column to search (e.g., "text_embedding" or "image_embedding")
+
+2. **FaissVectorRetrieval**
+   - Uses FAISS for efficient vector similarity search
+   - Parameters:
+     - `index_type`: Either "text" or "image" to specify which pre-computed index to use
+
+3. **TextSearchRetrieval**
+   - Uses PostgreSQL full-text search capabilities
+   - Parameters:
+     - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
+
+## Available Makefile Commands
 
 - `make all`: Runs all preprocessing steps and generates the report
 
-#### Data Proprocessing
+### Data Proprocessing
 
 - `make preprocess-all`: Runs all preprocessing steps (generate embeddings, load database, compute FAISS index)
 
@@ -89,7 +151,11 @@ The project includes a Makefile to simplify tasks. Before running the commands, 
 
 - `make faiss`: Computes the FAISS index for vector search
 
-#### Report Rendering
+### MLflow Experiments
+
+- `make experiments`: Run all experiments and log results to MLflow
+
+### Report Rendering
 
 - `make report`: Generates the Quarto report
 
