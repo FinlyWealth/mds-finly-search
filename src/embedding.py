@@ -101,6 +101,11 @@ def generate_image_caption(image_path):
 def generate_embedding(query_text=None, query_image_path=None):
     """
     Generate embedding for text or image query
+    
+    Args:
+        query_text (str, optional): Text query to generate embedding for. If provided, query_image_path should be None.
+        query_image_path (str, optional): Path to image file or URL to generate embedding for. If provided, query_text should be None.
+    
     Returns:
         numpy.ndarray: The embedding vector
     """
