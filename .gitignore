@@ -15,3 +15,4 @@ data/embeddings/embeddings_100k.npz
 preprocess/images_100k_v2.zip
 data/csv/sample_100k_v2.csv
 .env
+**/__pycache__/
