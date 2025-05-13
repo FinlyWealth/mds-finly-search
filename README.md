@@ -74,6 +74,12 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 
 9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
 
+**Start frontend application**
+
+```{bash}
+streamlit run src/frontend/ap.py
+```
+
 ## Running Experiments
 
 `experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
