@@ -5,40 +5,52 @@ import shutil
 from pathlib import Path
 import tempfile
 from PIL import Image
-from transformers import AutoModel, AutoProcessor
+from transformers import AutoModel, AutoProcessor, AutoTokenizer
 from tqdm.auto import tqdm
 import pyarrow.parquet as pq
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.path import EMBEDDINGS_PATH, METADATA_PATH
+from config.path import METADATA_PATH
+from config.embeddings import EMBEDDINGS_PATH, EMBEDDING_TYPES, get_enabled_embedding_types
 
 
-def save_embeddings(text_embeddings, image_embeddings, product_ids, save_path='embeddings.npz'):
+def save_embeddings(embeddings, product_ids, embedding_type, save_path):
     """
     Save embeddings and product IDs to a numpy compressed file.
     
     Args:
-        text_embeddings (np.ndarray): Array of text embeddings
-        image_embeddings (np.ndarray): Array of image embeddings
+        embeddings (np.ndarray): Array of embeddings
         product_ids (np.ndarray): Array of product IDs
+        embedding_type (str): Type of embeddings
         save_path (str): Path where the embeddings should be saved
     """
-    np.savez(save_path, 
-             text_embeddings=np.array(text_embeddings),
-             image_embeddings=np.array(image_embeddings),
-             product_ids=np.array(product_ids))
-    print(f"Saved embeddings to {save_path}")
-
-def calculate_embeddings(df, model, processor, device, batch_size=100):
-    text_embeddings = []
-    image_embeddings = []
-    product_ids = []
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
-    # Keep track of valid indices
+    np.savez(save_path, 
+             embeddings=np.array(embeddings),
+             product_ids=np.array(product_ids),
+             embedding_type=embedding_type)
+    print(f"\nSaved {embedding_type} embeddings to {save_path}")
+
+def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100):
+    """
+    Calculate image embeddings for the given DataFrame using CLIP model.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing product information
+        model: CLIP model for generating embeddings
+        processor: CLIP processor for image preprocessing
+        device: Device to run the model on
+        batch_size (int): Size of batches for processing
+        
+    Returns:
+        tuple: (image_embeddings, valid_indices)
+    """
+    image_embeddings = []
     valid_indices = []
     
-    # Batch image embedding first to determine which samples are valid
     image_paths = [f"data/images/{pid}.jpeg" for pid in df['Pid'].tolist()]
     total_image_batches = (len(image_paths) + batch_size - 1) // batch_size
     
@@ -48,16 +60,14 @@ def calculate_embeddings(df, model, processor, device, batch_size=100):
         
         for idx, path in enumerate(image_paths[i:i+batch_size]):
             try:
-                # Open and convert image to RGB
                 image = Image.open(path).convert("RGB")
                 batch_images.append(image)
-                batch_valid_indices.append(i + idx)  # Store the global index
+                batch_valid_indices.append(i + idx)
             except Exception as e:
                 print(f"Skipping problematic image {path}: {e}")
         
         if batch_images:
             try:
-                # Process images using the CLIP processor
                 inputs = processor(
                     images=batch_images,
                     return_tensors="pt",
@@ -73,16 +83,37 @@ def calculate_embeddings(df, model, processor, device, batch_size=100):
                 
             except Exception as e:
                 print(f"Error processing batch {batch_num}: {e}")
-                # Skip the problematic batch
                 continue
                 
         print(f"\rImage embedding batch {batch_num}/{total_image_batches} processed", end='', flush=True)
     
     print(f"\nProcessed {len(valid_indices)} valid images out of {len(image_paths)} total images")
+    return image_embeddings, valid_indices
+
+def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=None, batch_size=100):
+    """
+    Calculate text embeddings for the given DataFrame using CLIP model.
     
-    # Now process text only for valid indices
-    texts = df['Name'].iloc[valid_indices].tolist()
-    ids = df['Pid'].iloc[valid_indices].tolist()
+    Args:
+        df (pd.DataFrame): DataFrame containing product information
+        model: CLIP model for generating embeddings
+        processor: CLIP processor for text preprocessing
+        device: Device to run the model on
+        valid_indices (list): Optional list of valid indices to process
+        batch_size (int): Size of batches for processing
+        
+    Returns:
+        tuple: (text_embeddings, product_ids)
+    """
+    text_embeddings = []
+    product_ids = []
+    
+    if valid_indices is not None:
+        texts = df['Name'].iloc[valid_indices].tolist()
+        ids = df['Pid'].iloc[valid_indices].tolist()
+    else:
+        texts = df['Name'].tolist()
+        ids = df['Pid'].tolist()
     
     # Filter out blank or NaN texts
     filtered_texts = []
@@ -94,7 +125,6 @@ def calculate_embeddings(df, model, processor, device, batch_size=100):
         else:
             print(f"Skipping empty or invalid text for pid {pid}")
     
-    # Proceed with text embedding only for filtered inputs
     total_text_batches = (len(filtered_texts) + batch_size - 1) // batch_size
     for batch_num, i in enumerate(range(0, len(filtered_texts), batch_size), 1):
         batch_texts = filtered_texts[i:i+batch_size]
@@ -108,36 +138,108 @@ def calculate_embeddings(df, model, processor, device, batch_size=100):
         product_ids.extend(filtered_ids[i:i+batch_size])
         print(f"\rText embedding batch {batch_num}/{total_text_batches} processed", end='', flush=True)
     
-    return text_embeddings, image_embeddings, product_ids
+    return text_embeddings, product_ids
 
-def filter_and_zip_product_images(df, output_zip_path="product_images.zip"):
+def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None, batch_size=100):
     """
-    Creates a zip file containing all product images that exist in the data/images directory.
-    Returns a filtered DataFrame containing only rows where images exist.
+    Calculate sentence embeddings using MiniLM model for the given DataFrame.
     
     Args:
-        df (pd.DataFrame): DataFrame containing the 'Pid' column
-        output_zip_path (str): Path where the zip file should be saved
+        df (pd.DataFrame): DataFrame containing product information
+        model: Sentence transformer model for generating embeddings
+        tokenizer: Tokenizer for text preprocessing
+        device: Device to run the model on
+        valid_indices (list): Optional list of valid indices to process
+        batch_size (int): Size of batches for processing
         
     Returns:
-        pd.DataFrame: Filtered DataFrame containing only rows where images exist
+        tuple: (sentence_embeddings, product_ids)
+    """
+    sentence_embeddings = []
+    product_ids = []
+    
+    if valid_indices is not None:
+        texts = df['Name'].iloc[valid_indices].tolist()
+        ids = df['Pid'].iloc[valid_indices].tolist()
+    else:
+        texts = df['Name'].tolist()
+        ids = df['Pid'].tolist()
+    
+    # Filter out blank or NaN texts
+    filtered_texts = []
+    filtered_ids = []
+    for text, pid in zip(texts, ids):
+        if isinstance(text, str) and text.strip():
+            filtered_texts.append(text)
+            filtered_ids.append(pid)
+        else:
+            print(f"Skipping empty or invalid text for pid {pid}")
+    
+    total_batches = (len(filtered_texts) + batch_size - 1) // batch_size
+    for batch_num, i in enumerate(range(0, len(filtered_texts), batch_size), 1):
+        batch_texts = filtered_texts[i:i+batch_size]
+        inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
+        
+        with torch.no_grad():
+            # Get the model output and use the last hidden state
+            outputs = model(**inputs)
+            # Use the [CLS] token embedding (first token) as the sentence embedding
+            batch_features = outputs.last_hidden_state[:, 0, :]
+            batch_features /= batch_features.norm(dim=-1, keepdim=True)
+            
+        sentence_embeddings.extend(batch_features.cpu().numpy())
+        product_ids.extend(filtered_ids[i:i+batch_size])
+        print(f"\rSentence embedding batch {batch_num}/{total_batches} processed", end='', flush=True)
+    
+    return sentence_embeddings, product_ids
+
+def filter_valid_products(df):
+    """
+    Filters the DataFrame to only include rows with valid product names and existing images.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing the 'Pid' and 'Name' columns
+        
+    Returns:
+        pd.DataFrame: Filtered DataFrame containing only rows with valid products
+    """
+    # Get the list of Pids from the DataFrame
+    pids = df['Pid'].tolist()
+    
+    # Track which Pids have images
+    valid_pids = set()
+    
+    # Check for existing images
+    for pid in pids:
+        src_path = f"data/images/{pid}.jpeg"
+        if os.path.exists(src_path):
+            valid_pids.add(pid)
+    
+    # Filter DataFrame for valid Pids and non-null names
+    filtered_df = df[
+        (df['Pid'].isin(valid_pids)) & 
+        (df['Name'].notna()) & 
+        (df['Name'].str.strip() != '')
+    ].copy()
+    
+    print(f"Final filtered DataFrame has {len(filtered_df)} rows")
+    
+    return filtered_df
+
+def zip_product_images(df, output_zip_path="product_images.zip"):
+    """
+    Creates a zip file containing all product images from the filtered DataFrame.
+    
+    Args:
+        df (pd.DataFrame): Filtered DataFrame containing valid 'Pid' values
+        output_zip_path (str): Path where the zip file should be saved
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Get the list of Pids from the DataFrame
-        pids = df['Pid'].tolist()
-        
-        # Track which Pids have images
-        valid_pids = set()
-        
         # Copy existing images to temp directory
-        for pid in pids:
+        for pid in df['Pid']:
             src_path = f"data/images/{pid}.jpeg"
-            if os.path.exists(src_path):
-                dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
-                shutil.copy2(src_path, dst_path)
-                valid_pids.add(pid)
-        
-        print(f"Found {len(valid_pids)} existing images out of {len(pids)} Pids")
+            dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
+            shutil.copy2(src_path, dst_path)
         
         # Create zip file
         shutil.make_archive(
@@ -147,10 +249,6 @@ def filter_and_zip_product_images(df, output_zip_path="product_images.zip"):
         )
         
         print(f"Created zip file: {output_zip_path}")
-        
-        # Return filtered DataFrame
-        filtered_df = df[df['Pid'].isin(valid_pids)].copy()
-        return filtered_df
 
 def main():
     # Set device
@@ -160,30 +258,69 @@ def main():
     # Load data
     df = pd.read_csv(METADATA_PATH)
 
+    # Filter for valid products
+    filtered_df = filter_valid_products(df)
+
+    # Process each enabled embedding type
+    for embedding_type in get_enabled_embedding_types():
+        config = EMBEDDING_TYPES[embedding_type]
+        if not config['enabled']:
+            print(f"\nSkipping {embedding_type} embeddings as it is disabled")
+            continue
+            
+        print(f"\nProcessing {embedding_type} embeddings...")
+        
+        if embedding_type in ['text_clip', 'image_clip']:
+            # Load CLIP model
+            model = AutoModel.from_pretrained(config['model']).to(device)
+            processor = AutoProcessor.from_pretrained(config['model'])
+            model.eval()
+            
+            if embedding_type == 'image_clip':
+                # Calculate image embeddings first
+                embeddings, valid_indices = calculate_image_clip_embeddings(
+                    filtered_df,
+                    model=model,
+                    processor=processor,
+                    device=device
+                )
+                product_ids = filtered_df['Pid'].iloc[valid_indices].tolist()
+            else:  # text_clip
+                # Calculate text embeddings for valid indices
+                embeddings, product_ids = calculate_text_clip_embeddings(
+                    filtered_df,
+                    model=model,
+                    processor=processor,
+                    device=device,
+                    valid_indices=valid_indices if 'valid_indices' in locals() else None
+                )
+                
+        elif embedding_type == 'minilm':
+            # Load MiniLM model
+            model = AutoModel.from_pretrained(config['model']).to(device)
+            tokenizer = AutoTokenizer.from_pretrained(config['model'])
+            model.eval()
+            
+            # Calculate MiniLM embeddings
+            embeddings, product_ids = calculate_minilm_embeddings(
+                filtered_df,
+                model=model,
+                tokenizer=tokenizer,
+                device=device,
+                valid_indices=valid_indices if 'valid_indices' in locals() else None
+            )
+        
+        # Save embeddings
+        save_path = os.path.join(EMBEDDINGS_PATH, config['filename'])
+        save_embeddings(
+            embeddings=embeddings,
+            product_ids=product_ids,
+            embedding_type=embedding_type,
+            save_path=save_path
+        )
+
     # Zip product images
-    filtered_df = filter_and_zip_product_images(df)
-
-    # Load model
-    model_id = "openai/clip-vit-base-patch32"
-    processor = AutoProcessor.from_pretrained(model_id)
-    model = AutoModel.from_pretrained(model_id).to(device)
-    model.eval()
-
-    # Calculate embeddings
-    text_embeddings, image_embeddings, product_ids = calculate_embeddings(
-        filtered_df, 
-        model=model,
-        processor=processor,
-        device=device
-    )
-
-    # Save embeddings
-    save_embeddings(
-        text_embeddings=text_embeddings,
-        image_embeddings=image_embeddings,
-        product_ids=product_ids,
-        save_path=EMBEDDINGS_PATH
-    )
+    zip_product_images(filtered_df)
 
 if __name__ == "__main__":
     main() 

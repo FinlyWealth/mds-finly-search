@@ -25,8 +25,19 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
     PGDATABASE=finly
 
     # Location of the embeddings and metadata that'll be imported in to the database
-    EMBEDDINGS_PATH=data/embeddings/embeddings_100k_v2.npz
+    EMBEDDINGS_PATH=data/embeddings
     METADATA_PATH=data/csv/sample_100k_v2.csv
+
+    # Type of embeddings to generate
+    ENABLE_TEXT_CLIP=true
+    ENABLE_IMAGE_CLIP=true
+    ENABLE_MINILM=true
+
+    # Model configurations
+    TEXT_CLIP_MODEL=openai/clip-vit-base-patch32
+    IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
+    MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
+
 
     # Location to save the index
     FAISS_INDEX_DIR=data/faiss_indexes
@@ -73,6 +84,12 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
     ```
 
 9. Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
+
+**Start frontend application**
+
+```{bash}
+streamlit run src/frontend/ap.py
+```
 
 ## Running Experiments
 
