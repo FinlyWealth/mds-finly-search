@@ -18,6 +18,8 @@ app = Flask(__name__)
 # Initialize spaCy
 nlp = spacy.load("en_core_web_sm")
 
+top_k = 20
+
 components_config = [
     {
         "type": "PostgresVectorRetrieval",
@@ -106,7 +108,7 @@ def search_by_text():
             query_embedding=query_embedding,
             components=components, 
             weights=weights,
-            top_k=5
+            top_k=top_k
         )
         response = {
             'results': format_results(pids, scores)
@@ -162,7 +164,7 @@ def search_by_image():
             query_embedding=query_embedding,
             components=components, 
             weights=weights,
-            top_k=5
+            top_k=top_k
         )
         
         response = {
