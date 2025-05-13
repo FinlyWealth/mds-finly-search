@@ -13,7 +13,7 @@ from tqdm import tqdm
 # Add src directory to path
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
-sys.path.insert(0, str(root_dir / "src"))
+sys.path.insert(0, str(root_dir / "src" / "backend"))
 
 from embedding import initialize_clip_model, generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
