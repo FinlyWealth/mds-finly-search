@@ -8,38 +8,46 @@ from psycopg2.extras import execute_values
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG
+from config.embeddings import get_enabled_embedding_types
 
 # FAISS configuration
 N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
 
 def load_embeddings_from_db():
-    """Load text and image embeddings from the database"""
+    """Load embeddings from the database for all enabled embedding types"""
     conn = psycopg2.connect(**DB_CONFIG)
     pgvector.psycopg2.register_vector(conn)
     cur = conn.cursor()
     
-    # Load text embeddings
-    cur.execute("SELECT Pid, text_embedding FROM products WHERE text_embedding IS NOT NULL ORDER BY Pid")
-    text_data = cur.fetchall()
-    text_pids = [row[0] for row in text_data]
-    text_embeddings = np.array([row[1] for row in text_data], dtype=np.float32)
+    embeddings_data = {}
+    embedding_dim = None
     
-    # Get embedding dimension from the first embedding
-    if len(text_embeddings) > 0:
-        embedding_dim = len(text_embeddings[0])
-    else:
-        raise ValueError("No text embeddings found in the database")
-    
-    # Load image embeddings
-    cur.execute("SELECT Pid, image_embedding FROM products WHERE image_embedding IS NOT NULL ORDER BY Pid")
-    image_data = cur.fetchall()
-    image_pids = [row[0] for row in image_data]
-    image_embeddings = np.array([row[1] for row in image_data], dtype=np.float32)
+    # Load embeddings for each enabled type
+    for embedding_type in get_enabled_embedding_types():
+        column_name = f"{embedding_type}_embedding"
+        cur.execute(f"SELECT Pid, {column_name} FROM products WHERE {column_name} IS NOT NULL ORDER BY Pid")
+        data = cur.fetchall()
+        pids = [row[0] for row in data]
+        embeddings = np.array([row[1] for row in data], dtype=np.float32)
+        
+        # Verify embedding dimension
+        if len(embeddings) > 0:
+            if embedding_dim is None:
+                embedding_dim = len(embeddings[0])
+            elif len(embeddings[0]) != embedding_dim:
+                raise ValueError(f"Inconsistent embedding dimensions: {embedding_type} has {len(embeddings[0])} dimensions")
+        else:
+            raise ValueError(f"No {embedding_type} embeddings found in the database")
+        
+        embeddings_data[embedding_type] = {
+            'pids': pids,
+            'embeddings': embeddings
+        }
     
     cur.close()
     conn.close()
     
-    return text_pids, text_embeddings, image_pids, image_embeddings, embedding_dim
+    return embeddings_data, embedding_dim
 
 def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
     """
@@ -117,29 +125,39 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     
     print("Loading embeddings from database...")
-    text_pids, text_embeddings, image_pids, image_embeddings, embedding_dim = load_embeddings_from_db()
+    embeddings_data, embedding_dim = load_embeddings_from_db()
     
-    print(f"Creating text embedding index (dimension: {embedding_dim})...")
-    text_index, text_pid_map = create_faiss_index(text_embeddings, text_pids, embedding_dim)
+    # Create and save indexes for each embedding type
+    for embedding_type, data in embeddings_data.items():
+        print(f"\nProcessing {embedding_type} embeddings...")
+        print(f"Creating {embedding_type} index (dimension: {embedding_dim})...")
+        
+        index, pid_map = create_faiss_index(
+            data['embeddings'], 
+            data['pids'], 
+            embedding_dim
+        )
+        
+        # Save the index
+        index_path = os.path.join(output_dir, f'{embedding_type}_index.faiss')
+        print(f"Saving index to {index_path}...")
+        save_index(index, index_path)
+        
+        # Save the mapping
+        mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping.json')
+        print(f"Saving index mapping to {mapping_path}...")
+        save_mapping(pid_map, mapping_path)
+        
+        # Save the product IDs (keeping this for backward compatibility)
+        pids_path = os.path.join(output_dir, f'{embedding_type}_pids.npy')
+        print(f"Saving product IDs to {pids_path}...")
+        np.save(pids_path, data['pids'])
+        
+        # Verify the index
+        print(f"Verifying {embedding_type} index...")
+        verify_index(index, data['embeddings'], data['pids'])
     
-    print(f"Creating image embedding index (dimension: {embedding_dim})...")
-    image_index, image_pid_map = create_faiss_index(image_embeddings, image_pids, embedding_dim)
-    
-    # Save the indexes
-    print("Saving indexes...")
-    save_index(text_index, os.path.join(output_dir, 'text_index.faiss'))
-    save_index(image_index, os.path.join(output_dir, 'image_index.faiss'))
-    
-    # Save the mappings
-    print("Saving index mappings...")
-    save_mapping(text_pid_map, os.path.join(output_dir, 'text_index_mapping.json'))
-    save_mapping(image_pid_map, os.path.join(output_dir, 'image_index_mapping.json'))
-    
-    # Save the product IDs (keeping this for backward compatibility)
-    np.save(os.path.join(output_dir, 'text_pids.npy'), text_pids)
-    np.save(os.path.join(output_dir, 'image_pids.npy'), image_pids)
-    
-    print("Done!")
+    print("\nDone!")
 
 if __name__ == '__main__':
     main()

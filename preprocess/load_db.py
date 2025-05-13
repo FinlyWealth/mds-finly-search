@@ -8,7 +8,8 @@ from typing import List, Tuple
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG
-from config.path import EMBEDDINGS_PATH, METADATA_PATH
+from config.path import METADATA_PATH
+from config.embeddings import get_embedding_paths, get_enabled_embedding_types
 
 
 def init_db(embedding_dim: int):
@@ -22,13 +23,17 @@ def init_db(embedding_dim: int):
     # Drop the table if it exists
     cur.execute("DROP TABLE IF EXISTS products;")
     
+    # Create embedding columns based on enabled types
+    embedding_columns = []
+    for embedding_type in get_enabled_embedding_types():
+        embedding_columns.append(f"{embedding_type}_embedding vector({embedding_dim})")
+    
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
         CREATE TABLE products (
             id SERIAL PRIMARY KEY,
             Pid TEXT UNIQUE,
-            text_embedding vector({embedding_dim}),
-            image_embedding vector({embedding_dim}),
+            {', '.join(embedding_columns)},
             document tsvector,
             Name TEXT,
             Description TEXT,
@@ -51,8 +56,14 @@ def init_db(embedding_dim: int):
     cur.close()
     conn.close()
 
-def store_embeddings(text_embeddings, image_embeddings, pids, df):
-    """Store embeddings and metadata in the database"""
+def store_embeddings(embeddings_dict, pids, df):
+    """Store embeddings and metadata in the database
+    
+    Args:
+        embeddings_dict (dict): Dictionary containing different types of embeddings
+        pids (list): List of product IDs
+        df (pd.DataFrame): DataFrame containing product metadata
+    """
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
     
@@ -61,15 +72,21 @@ def store_embeddings(text_embeddings, image_embeddings, pids, df):
     data = []
     
     # Only add the first occurrence of each Pid
-    for pid, text_emb, img_emb in zip(pids, text_embeddings, image_embeddings):
+    for i, pid in enumerate(pids):
         if pid not in seen_ids:
             seen_ids.add(pid)
             # Get metadata for this product
             product_data = df[df['Pid'] == pid].iloc[0]
-            data.append((
+            
+            # Prepare embedding values
+            embedding_values = []
+            for embedding_type in get_enabled_embedding_types():
+                embedding_values.append([float(x) for x in embeddings_dict[embedding_type][i]])
+            
+            # Prepare metadata values
+            metadata_values = [
                 pid,
-                [float(x) for x in text_emb],
-                [float(x) for x in img_emb],
+                *embedding_values,  # Unpack embedding values
                 None,  # Document will be updated separately
                 product_data['Name'],
                 product_data['Description'],
@@ -85,18 +102,25 @@ def store_embeddings(text_embeddings, image_embeddings, pids, df):
                 product_data['Gender'],
                 product_data['Size'],
                 product_data['Condition']
-            ))
+            ]
+            
+            data.append(tuple(metadata_values))
+    
+    # Prepare column names for SQL query
+    embedding_columns = [f"{embedding_type}_embedding" for embedding_type in get_enabled_embedding_types()]
+    columns = ['Pid'] + embedding_columns + [
+        'document', 'Name', 'Description', 'Category',
+        'Price', 'PriceCurrency', 'FinalPrice', 'Discount',
+        'isOnSale', 'IsInStock', 'Brand',
+        'Color', 'Gender', 'Size', 'Condition'
+    ]
     
     # Store all data in a single table
     execute_values(
         cur,
-        """
+        f"""
         INSERT INTO products (
-            Pid, text_embedding, image_embedding, document,
-            Name, Description, Category,
-            Price, PriceCurrency, FinalPrice, Discount,
-            isOnSale, IsInStock, Brand,
-            Color, Gender, Size, Condition
+            {', '.join(columns)}
         ) 
         VALUES %s 
         ON CONFLICT (Pid) DO NOTHING
@@ -133,13 +157,23 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(project_root, 'data')
     
-    print(f"Loading embeddings from {EMBEDDINGS_PATH}...")
-    load_path = os.path.join(project_root, EMBEDDINGS_PATH)
+    # Load all embedding files
+    embedding_files = get_embedding_paths()
+    embeddings_dict = {}
+    embedding_dim = None
     
-    data = np.load(load_path)
-
-    # Get embedding dimensions from the file
-    embedding_dim = data['text_embeddings'].shape[1]
+    print("Loading embeddings...")
+    for name, path in embedding_files.items():
+        print(f"Loading {name} embeddings from {path}...")
+        data = np.load(os.path.join(project_root, path))
+        embeddings_dict[name] = data['embeddings']
+        
+        # Verify embedding dimensions are consistent
+        if embedding_dim is None:
+            embedding_dim = data['embeddings'].shape[1]
+        elif data['embeddings'].shape[1] != embedding_dim:
+            raise ValueError(f"Inconsistent embedding dimensions: {name} has {data['embeddings'].shape[1]} dimensions")
+    
     print(f"Embedding dimension: {embedding_dim}")
     
     print("Loading metadata...")
@@ -157,7 +191,7 @@ def main():
     init_db(embedding_dim)
     
     print("Storing embeddings in database...")
-    store_embeddings(data['text_embeddings'], data['image_embeddings'], data['product_ids'].astype(str), df)
+    store_embeddings(embeddings_dict, data['product_ids'].astype(str), df)
     
     # Prepare product texts for update
     print("Preparing product texts...")
