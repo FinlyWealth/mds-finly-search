@@ -224,7 +224,8 @@ def main():
     """
 
     # Upload to Pinecone
-    df = pd.read_csv("data/csv/merged_df.csv")
+    data_path = ""  # Replace with actual data path
+    df = pd.read_csv(data_path)
     uploader.process_dataframe(df, text_config, image_config)
 
 
