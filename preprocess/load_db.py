@@ -76,6 +76,11 @@ def store_embeddings(embeddings_dict, pids, df):
     seen_ids = set()
     data = []
     
+    # Create a mapping of product IDs to their indices for each embedding type
+    embedding_indices = {}
+    for embedding_type, embeddings in embeddings_dict.items():
+        embedding_indices[embedding_type] = {pid: idx for idx, pid in enumerate(pids)}
+    
     # Only add the first occurrence of each Pid
     for i, pid in enumerate(pids):
         if pid not in seen_ids:
@@ -86,7 +91,19 @@ def store_embeddings(embeddings_dict, pids, df):
             # Prepare embedding values
             embedding_values = []
             for embedding_type in get_enabled_embedding_types():
-                embedding_values.append([float(x) for x in embeddings_dict[embedding_type][i]])
+                try:
+                    # Get the index for this product ID in the current embedding type
+                    idx = embedding_indices[embedding_type].get(pid)
+                    if idx is not None:
+                        embedding_values.append([float(x) for x in embeddings_dict[embedding_type][idx]])
+                    else:
+                        # If no embedding exists for this product, use zeros
+                        dim = embeddings_dict[embedding_type].shape[1]
+                        embedding_values.append([0.0] * dim)
+                except IndexError as e:
+                    raise IndexError(f"Failed to access embedding at index {idx} for type {embedding_type}. "
+                                   f"Embedding length: {len(embeddings_dict[embedding_type])}, "
+                                   f"PIDs length: {len(pids)}") from e
             
             # Prepare metadata values
             metadata_values = [
@@ -166,6 +183,7 @@ def main():
     embedding_files = get_embedding_paths()
     embeddings_dict = {}
     embedding_dims = {}
+    product_ids = None
     
     print("Loading embeddings...")
     for name, path in embedding_files.items():
@@ -174,9 +192,15 @@ def main():
         embeddings_dict[name] = data['embeddings']
         embedding_dims[name] = data['embeddings'].shape[1]
         print(f"{name} embedding dimension: {embedding_dims[name]}")
+        
+        # Use product IDs from the first embedding file
+        if product_ids is None:
+            product_ids = data['product_ids'].astype(str)
+            print(f"Number of products: {len(product_ids)}")
     
     print("Loading metadata...")
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
+    print(f"Number of metadata entries: {len(df)}")
     
     # Text fields to combine for TF-IDF search
     text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
@@ -190,7 +214,7 @@ def main():
     init_db(embedding_dims)
     
     print("Storing embeddings in database...")
-    store_embeddings(embeddings_dict, data['product_ids'].astype(str), df)
+    store_embeddings(embeddings_dict, product_ids, df)
     
     # Prepare product texts for update
     print("Preparing product texts...")
