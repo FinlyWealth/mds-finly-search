@@ -5,10 +5,6 @@ import numpy as np
 from typing import Dict, Union, Optional
 import faiss
 import json
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from config.db import DB_CONFIG
 
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
