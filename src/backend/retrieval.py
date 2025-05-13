@@ -3,7 +3,6 @@ import psycopg2
 from psycopg2.extras import execute_values, Json
 import numpy as np
 from typing import Dict, Union, Optional
-from config.db import DB_CONFIG
 import faiss
 import json
 
@@ -142,6 +141,22 @@ class TextSearchRetrieval(SimilarityRetrieval):
         conn.close()
         return results
 
+
+def create_retrieval_component(component_config, db_config=None):
+    """Create a retrieval component from config."""
+    component_type = component_config['type']
+    params = component_config['params']
+    
+    if component_type == 'PostgresVectorRetrieval':
+        return PostgresVectorRetrieval(params['column_name'], db_config)
+    elif component_type == 'TextSearchRetrieval':
+        return TextSearchRetrieval(params['rank_method'], db_config)
+    elif component_type == 'FaissVectorRetrieval':
+        return FaissVectorRetrieval(params['column_name'])
+    else:
+        raise ValueError(f"Unknown component type: {component_type}")
+
+        
 def hybrid_retrieval(
     query: str,
     query_embedding: np.ndarray,

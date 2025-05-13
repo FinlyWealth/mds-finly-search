@@ -91,6 +91,24 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 streamlit run src/frontend/ap.py
 ```
 
+**Start backend api**
+
+```{bash}
+# from the root directory, the api will be running at http://127.0.0.1:5001
+python src/backend/api.py
+```
+
+To test the api through command line:
+
+```{bash}
+# test text search
+curl -X POST http://127.0.0.1:5001/api/search/text -H "Content-Type: application/json" -d '{"query": "red pant"}'
+
+# test image search
+# download any product image and stored as test-img.jpeg
+curl -X POST http://127.0.0.1:5001/api/search/image -H "Content-Type: application/json" -d '{"image_path": "{absolute-path-to-repo}/mds-finly-search/test-img.jpeg"}'
+```
+
 ## Running Experiments
 
 `experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
