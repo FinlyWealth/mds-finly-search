@@ -65,8 +65,8 @@ def store_embeddings(embeddings_dict, pids, df):
     """Store embeddings and metadata in the database
     
     Args:
-        embeddings_dict (dict): Dictionary containing different types of embeddings
-        pids (list): List of product IDs
+        embeddings_dict (dict): Dictionary containing different types of embeddings and their product IDs
+        pids (list): List of product IDs that have all required embeddings
         df (pd.DataFrame): DataFrame containing product metadata
     """
     conn = psycopg2.connect(**DB_CONFIG)
@@ -78,8 +78,9 @@ def store_embeddings(embeddings_dict, pids, df):
     
     # Create a mapping of product IDs to their indices for each embedding type
     embedding_indices = {}
-    for embedding_type, embeddings in embeddings_dict.items():
-        embedding_indices[embedding_type] = {pid: idx for idx, pid in enumerate(pids)}
+    for embedding_type in get_enabled_embedding_types():
+        embedding_pids = embeddings_dict[f"{embedding_type}_pids"]
+        embedding_indices[embedding_type] = {pid: idx for idx, pid in enumerate(embedding_pids)}
     
     # Only add the first occurrence of each Pid
     for i, pid in enumerate(pids):
@@ -179,11 +180,14 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(project_root, 'data')
     
+    print("Loading metadata...")
+    df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
+    print(f"Number of metadata entries: {len(df)}")
+    
     # Load all embedding files
     embedding_files = get_embedding_paths()
     embeddings_dict = {}
     embedding_dims = {}
-    product_ids = None
     
     print("Loading embeddings...")
     for name, path in embedding_files.items():
@@ -193,14 +197,18 @@ def main():
         embedding_dims[name] = data['embeddings'].shape[1]
         print(f"{name} embedding dimension: {embedding_dims[name]}")
         
-        # Use product IDs from the first embedding file
-        if product_ids is None:
-            product_ids = data['product_ids'].astype(str)
-            print(f"Number of products: {len(product_ids)}")
+        # Create mapping of product IDs to indices for this embedding type
+        embedding_pids = data['product_ids'].astype(str)
+        embeddings_dict[f"{name}_pids"] = embedding_pids
+        print(f"Number of {name} embeddings: {len(embedding_pids)}")
     
-    print("Loading metadata...")
-    df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
-    print(f"Number of metadata entries: {len(df)}")
+    # Find intersection of product IDs that have all required embeddings
+    common_pids = set(df['Pid'].astype(str))
+    for name in get_enabled_embedding_types():
+        common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
+    
+    common_pids = list(common_pids)
+    print(f"Number of products with all required embeddings: {len(common_pids)}")
     
     # Text fields to combine for TF-IDF search
     text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
@@ -214,7 +222,7 @@ def main():
     init_db(embedding_dims)
     
     print("Storing embeddings in database...")
-    store_embeddings(embeddings_dict, product_ids, df)
+    store_embeddings(embeddings_dict, common_pids, df)
     
     # Prepare product texts for update
     print("Preparing product texts...")

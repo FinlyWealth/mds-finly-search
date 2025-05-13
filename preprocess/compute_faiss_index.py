@@ -20,7 +20,6 @@ def load_embeddings_from_db():
     cur = conn.cursor()
     
     embeddings_data = {}
-    embedding_dim = None
     
     # Load embeddings for each enabled type
     for embedding_type in get_enabled_embedding_types():
@@ -30,24 +29,19 @@ def load_embeddings_from_db():
         pids = [row[0] for row in data]
         embeddings = np.array([row[1] for row in data], dtype=np.float32)
         
-        # Verify embedding dimension
-        if len(embeddings) > 0:
-            if embedding_dim is None:
-                embedding_dim = len(embeddings[0])
-            elif len(embeddings[0]) != embedding_dim:
-                raise ValueError(f"Inconsistent embedding dimensions: {embedding_type} has {len(embeddings[0])} dimensions")
-        else:
+        if len(embeddings) == 0:
             raise ValueError(f"No {embedding_type} embeddings found in the database")
         
         embeddings_data[embedding_type] = {
             'pids': pids,
-            'embeddings': embeddings
+            'embeddings': embeddings,
+            'dim': len(embeddings[0])
         }
     
     cur.close()
     conn.close()
     
-    return embeddings_data, embedding_dim
+    return embeddings_data
 
 def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
     """
@@ -125,17 +119,17 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     
     print("Loading embeddings from database...")
-    embeddings_data, embedding_dim = load_embeddings_from_db()
+    embeddings_data = load_embeddings_from_db()
     
     # Create and save indexes for each embedding type
     for embedding_type, data in embeddings_data.items():
         print(f"\nProcessing {embedding_type} embeddings...")
-        print(f"Creating {embedding_type} index (dimension: {embedding_dim})...")
+        print(f"Creating {embedding_type} index (dimension: {data['dim']})...")
         
         index, pid_map = create_faiss_index(
             data['embeddings'], 
             data['pids'], 
-            embedding_dim
+            data['dim']
         )
         
         # Save the index
