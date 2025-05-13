@@ -12,8 +12,12 @@ from config.path import METADATA_PATH
 from config.embeddings import get_embedding_paths, get_enabled_embedding_types
 
 
-def init_db(embedding_dim: int):
-    """Initialize the database and create necessary tables"""
+def init_db(embedding_dims: dict):
+    """Initialize the database and create necessary tables
+    
+    Args:
+        embedding_dims (dict): Dictionary mapping embedding types to their dimensions
+    """
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
     
@@ -23,10 +27,11 @@ def init_db(embedding_dim: int):
     # Drop the table if it exists
     cur.execute("DROP TABLE IF EXISTS products;")
     
-    # Create embedding columns based on enabled types
+    # Create embedding columns based on enabled types and their dimensions
     embedding_columns = []
     for embedding_type in get_enabled_embedding_types():
-        embedding_columns.append(f"{embedding_type}_embedding vector({embedding_dim})")
+        dim = embedding_dims[embedding_type]
+        embedding_columns.append(f"{embedding_type}_embedding vector({dim})")
     
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
@@ -160,21 +165,15 @@ def main():
     # Load all embedding files
     embedding_files = get_embedding_paths()
     embeddings_dict = {}
-    embedding_dim = None
+    embedding_dims = {}
     
     print("Loading embeddings...")
     for name, path in embedding_files.items():
         print(f"Loading {name} embeddings from {path}...")
         data = np.load(os.path.join(project_root, path))
         embeddings_dict[name] = data['embeddings']
-        
-        # Verify embedding dimensions are consistent
-        if embedding_dim is None:
-            embedding_dim = data['embeddings'].shape[1]
-        elif data['embeddings'].shape[1] != embedding_dim:
-            raise ValueError(f"Inconsistent embedding dimensions: {name} has {data['embeddings'].shape[1]} dimensions")
-    
-    print(f"Embedding dimension: {embedding_dim}")
+        embedding_dims[name] = data['embeddings'].shape[1]
+        print(f"{name} embedding dimension: {embedding_dims[name]}")
     
     print("Loading metadata...")
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
@@ -188,7 +187,7 @@ def main():
     df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
     
     print("Initializing database...")
-    init_db(embedding_dim)
+    init_db(embedding_dims)
     
     print("Storing embeddings in database...")
     store_embeddings(embeddings_dict, data['product_ids'].astype(str), df)

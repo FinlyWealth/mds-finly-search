@@ -32,7 +32,7 @@ def save_embeddings(embeddings, product_ids, embedding_type, save_path):
              embeddings=np.array(embeddings),
              product_ids=np.array(product_ids),
              embedding_type=embedding_type)
-    print(f"Saved {embedding_type} embeddings to {save_path}")
+    print(f"\nSaved {embedding_type} embeddings to {save_path}")
 
 def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100):
     """
@@ -181,8 +181,10 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
         inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
         
         with torch.no_grad():
-            # MiniLM model directly outputs sentence embeddings
-            batch_features = model(**inputs).sentence_embedding
+            # Get the model output and use the last hidden state
+            outputs = model(**inputs)
+            # Use the [CLS] token embedding (first token) as the sentence embedding
+            batch_features = outputs.last_hidden_state[:, 0, :]
             batch_features /= batch_features.norm(dim=-1, keepdim=True)
             
         sentence_embeddings.extend(batch_features.cpu().numpy())
@@ -191,34 +193,53 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
     
     return sentence_embeddings, product_ids
 
-def filter_and_zip_product_images(df, output_zip_path="product_images.zip"):
+def filter_valid_products(df):
     """
-    Creates a zip file containing all product images that exist in the data/images directory.
-    Returns a filtered DataFrame containing only rows where images exist.
+    Filters the DataFrame to only include rows with valid product names and existing images.
     
     Args:
-        df (pd.DataFrame): DataFrame containing the 'Pid' column
-        output_zip_path (str): Path where the zip file should be saved
+        df (pd.DataFrame): DataFrame containing the 'Pid' and 'Name' columns
         
     Returns:
-        pd.DataFrame: Filtered DataFrame containing only rows where images exist
+        pd.DataFrame: Filtered DataFrame containing only rows with valid products
+    """
+    # Get the list of Pids from the DataFrame
+    pids = df['Pid'].tolist()
+    
+    # Track which Pids have images
+    valid_pids = set()
+    
+    # Check for existing images
+    for pid in pids:
+        src_path = f"data/images/{pid}.jpeg"
+        if os.path.exists(src_path):
+            valid_pids.add(pid)
+    
+    # Filter DataFrame for valid Pids and non-null names
+    filtered_df = df[
+        (df['Pid'].isin(valid_pids)) & 
+        (df['Name'].notna()) & 
+        (df['Name'].str.strip() != '')
+    ].copy()
+    
+    print(f"Final filtered DataFrame has {len(filtered_df)} rows")
+    
+    return filtered_df
+
+def zip_product_images(df, output_zip_path="product_images.zip"):
+    """
+    Creates a zip file containing all product images from the filtered DataFrame.
+    
+    Args:
+        df (pd.DataFrame): Filtered DataFrame containing valid 'Pid' values
+        output_zip_path (str): Path where the zip file should be saved
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Get the list of Pids from the DataFrame
-        pids = df['Pid'].tolist()
-        
-        # Track which Pids have images
-        valid_pids = set()
-        
         # Copy existing images to temp directory
-        for pid in pids:
+        for pid in df['Pid']:
             src_path = f"data/images/{pid}.jpeg"
-            if os.path.exists(src_path):
-                dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
-                shutil.copy2(src_path, dst_path)
-                valid_pids.add(pid)
-        
-        print(f"Found {len(valid_pids)} existing images out of {len(pids)} Pids")
+            dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
+            shutil.copy2(src_path, dst_path)
         
         # Create zip file
         shutil.make_archive(
@@ -228,10 +249,6 @@ def filter_and_zip_product_images(df, output_zip_path="product_images.zip"):
         )
         
         print(f"Created zip file: {output_zip_path}")
-        
-        # Return filtered DataFrame
-        filtered_df = df[df['Pid'].isin(valid_pids)].copy()
-        return filtered_df
 
 def main():
     # Set device
@@ -241,12 +258,16 @@ def main():
     # Load data
     df = pd.read_csv(METADATA_PATH)
 
-    # Identify rows with product images available and zip them
-    filtered_df = filter_and_zip_product_images(df)
+    # Filter for valid products
+    filtered_df = filter_valid_products(df)
 
     # Process each enabled embedding type
     for embedding_type in get_enabled_embedding_types():
         config = EMBEDDING_TYPES[embedding_type]
+        if not config['enabled']:
+            print(f"\nSkipping {embedding_type} embeddings as it is disabled")
+            continue
+            
         print(f"\nProcessing {embedding_type} embeddings...")
         
         if embedding_type in ['text_clip', 'image_clip']:
@@ -297,6 +318,9 @@ def main():
             embedding_type=embedding_type,
             save_path=save_path
         )
+
+    # Zip product images
+    zip_product_images(filtered_df)
 
 if __name__ == "__main__":
     main() 
