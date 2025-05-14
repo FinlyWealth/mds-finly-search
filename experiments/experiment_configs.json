@@ -1,24 +1,12 @@
 {
-    "postgres_retrieval": [
-        {
-            "name": "text_search_only",
-            "components": [
-                {
-                    "type": "TextSearchRetrieval",
-                    "params": {
-                        "rank_method": "ts_rank_cd"
-                    }
-                }
-            ],
-            "weights": [1]
-        },
+    "combined_vector_experiments": [
         {
             "name": "text_embedding_only",
             "components": [
                 {
                     "type": "PostgresVectorRetrieval",
                     "params": {
-                        "column_name": "text_embedding"
+                        "column_name": "text_clip_embedding"
                     }
                 }
             ],
@@ -30,7 +18,7 @@
                 {
                     "type": "PostgresVectorRetrieval",
                     "params": {
-                        "column_name": "image_embedding"
+                        "column_name": "image_clip_embedding"
                     }
                 }
             ],
@@ -42,109 +30,17 @@
                 {
                     "type": "PostgresVectorRetrieval",
                     "params": {
-                        "column_name": "text_embedding"
+                        "column_name": "text_clip_embedding"
                     }
                 },
                 {
                     "type": "PostgresVectorRetrieval",
                     "params": {
-                        "column_name": "image_embedding"
+                        "column_name": "image_clip_embedding"
                     }
                 }
             ],
             "weights": [0.5, 0.5]
-        },
-        {
-            "name": "hybrid_pg_vector_ts",
-            "components": [
-                {
-                    "type": "PostgresVectorRetrieval",
-                    "params": {
-                        "column_name": "text_embedding"
-                    }
-                },
-                {
-                    "type": "PostgresVectorRetrieval",
-                    "params": {
-                        "column_name": "image_embedding"
-                    }
-                },
-                {
-                    "type": "TextSearchRetrieval",
-                    "params": {
-                        "rank_method": "ts_rank_cd"
-                    }
-                }
-            ],
-            "weights": [0.4, 0.3, 0.3]
-        }
-    ],
-    "faiss_retrieval": [
-        {
-            "name": "text_embedding_only",
-            "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "text"
-                    }
-                }
-            ],
-            "weights": [1]
-        },
-        {
-            "name": "image_embedding_only",
-            "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "image"
-                    }
-                }
-            ],
-            "weights": [1]
-        },
-        {
-            "name": "text_and_image_embedding",
-            "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "text"
-                    }
-                },
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "image"
-                    }
-                }
-            ],
-            "weights": [0.5, 0.5]
-        },
-        {
-            "name": "hybrid_pg_vector_ts",
-            "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "text"
-                    }
-                },
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "image"
-                    }
-                },
-                {
-                    "type": "TextSearchRetrieval",
-                    "params": {
-                        "rank_method": "ts_rank_cd"
-                    }
-                }
-            ],
-            "weights": [0.4, 0.3, 0.3]
         }
     ]
 } 
