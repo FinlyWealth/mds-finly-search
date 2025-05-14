@@ -18,7 +18,7 @@ app = Flask(__name__)
 # Initialize spaCy
 nlp = spacy.load("en_core_web_sm")
 
-top_k = 20
+top_k = 10
 
 components_config = [
     {
@@ -64,7 +64,7 @@ def format_results(indices, scores):
                     'Name': str(product['Name']),
                     'Description': str(product['Description']),
                     'Brand': str(product['Brand']),
-                    'Manufacturer': str(product['Manufacturer']),
+                    'Category': str(product['Category']),
                     'Color': str(product['Color']),
                     'Gender': str(product['Gender']),
                     'Size': str(product['Size']),
@@ -101,7 +101,7 @@ def search_by_text():
         
         print("Performing hybrid search...")
         # Get hybrid search results
-        weights = [0.4, 0.3, 0.3]
+        weights = [0.5, 0.3, 0.2]
         components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
         pids, scores = hybrid_retrieval(
             query=query_text,
@@ -126,20 +126,23 @@ def search_by_text():
 @app.route('/api/search/image', methods=['POST'])
 def search_by_image():
     try:
-        data = request.get_json()
-        image_path = data.get('image_path')
-        
-        if not image_path:
-            return jsonify({'error': 'Image path is required'}), 400
-            
-        # Load and validate image
-        image = load_image(image_path)
+        if 'file' in request.files:
+            # uploaded image
+            file = request.files['file']
+            image = Image.open(file.stream)
+        else:
+            # image from url
+            image_path = request.form.get('image_path')
+            if not image_path:
+                return jsonify({'error': 'Image path or file required'}), 400
+            image = load_image(image_path)
+
         if not image:
             return jsonify({'error': 'Failed to load image'}), 400
-            
+
         print("Generating image caption...")
         # Generate caption using BLIP
-        caption = generate_image_caption(image_path)
+        caption = generate_image_caption(image)
         if not caption:
             return jsonify({'error': 'Failed to generate image caption'}), 500
         print(f"Generated caption: {caption}")
@@ -152,12 +155,12 @@ def search_by_image():
             
         print("Generating embedding...")
         # Generate embedding and get results from database
-        query_embedding = generate_embedding(query_image_path=image_path)
+        query_embedding = generate_embedding(query_image=image)
         print(f"Generated embedding shape: {query_embedding.shape}")
         
         print("Performing hybrid search...")
         # Get hybrid search results
-        weights = [0.3, 0.6, 0.1]
+        weights = [0.3, 0.5, 0.2]
         components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
         pids, scores = hybrid_retrieval(
             query=brand_names,

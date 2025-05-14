@@ -11,7 +11,7 @@ def fetch_product_by_pid(pid):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT Name, Description, Brand, Manufacturer, Color, Gender, Size
+        SELECT Name, Description, Brand, Category, Color, Gender, Size
         FROM products WHERE Pid = %s
     """, (pid,))
     row = cur.fetchone()
@@ -23,7 +23,7 @@ def fetch_product_by_pid(pid):
             'Name': row[0],
             'Description': row[1],
             'Brand': row[2],
-            'Manufacturer': row[3],
+            'Category': row[3],
             'Color': row[4],
             'Gender': row[5],
             'Size': row[6]
