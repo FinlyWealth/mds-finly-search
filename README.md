@@ -88,7 +88,7 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 **Start frontend application**
 
 ```{bash}
-streamlit run src/frontend/ap.py
+streamlit run src/frontend/app.py
 ```
 
 **Start backend api**
