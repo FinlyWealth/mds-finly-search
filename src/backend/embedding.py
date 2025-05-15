@@ -58,57 +58,43 @@ def get_text_embedding(text):
         text_features /= text_features.norm(dim=-1, keepdim=True)
         return text_features.cpu().numpy()[0]
 
-def get_image_embedding(image_path):
+def get_image_embedding(image):
     """Generate embedding for image from local file or URL"""
     processor, model = get_clip_model()
     try:
-        if image_path.startswith(('http://', 'https://')):
-            response = requests.get(image_path)
-            image = Image.open(BytesIO(response.content))
-        else:
-            image = Image.open(image_path)
-        
         inputs = processor(images=image, return_tensors="pt").to(device)
         with torch.no_grad():
             image_features = model.get_image_features(**inputs)
             image_features /= image_features.norm(dim=-1, keepdim=True)
             return image_features.cpu().numpy()[0]
     except Exception as e:
-        print(f"Error processing image {image_path}: {e}")
+        print(f"Error processing image: {e}")
         return None
 
-def generate_image_caption(image_path):
+def generate_image_caption(image):
     """Generate caption for image using BLIP"""
     processor, model = get_blip_model()
     try:
-        # If the image path is a URL, download the image
-        if image_path.startswith(('http://', 'https://')):
-            response = requests.get(image_path)
-            image = Image.open(BytesIO(response.content))
-        # If the image path is a local file, open the image
-        else:
-            image = Image.open(image_path)
-        
         inputs = processor(image, return_tensors="pt").to(device)
         with torch.no_grad():
             out = model.generate(**inputs, max_length=50)
             caption = processor.decode(out[0], skip_special_tokens=True)
             return caption
     except Exception as e:
-        print(f"Error generating caption for image {image_path}: {e}")
+        print(f"Error generating caption for image: {e}")
         return None
 
-def generate_embedding(query_text=None, query_image_path=None):
+def generate_embedding(query_text=None, query_image=None):
     """
     Generate embedding for text or image query
     
     Args:
-        query_text (str, optional): Text query to generate embedding for. If provided, query_image_path should be None.
-        query_image_path (str, optional): Path to image file or URL to generate embedding for. If provided, query_text should be None.
+        query_text (str, optional): Text query to generate embedding for. If provided, query_image should be None.
+        query_image (Image): Image file to generate embedding for. If provided, query_text should be None.
     
     Returns:
         numpy.ndarray: The embedding vector
     """
     if query_text is not None:
         return get_text_embedding(query_text)
-    return get_image_embedding(query_image_path)
+    return get_image_embedding(query_image)
