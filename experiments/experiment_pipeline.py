@@ -5,7 +5,6 @@ import os
 import json
 import mlflow
 import mlflow.pytorch
-import plotly.express as px
 from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
@@ -41,45 +40,6 @@ def create_retrieval_component(component_config, db_config=None):
         return FaissVectorRetrieval(params['column_name'])
     else:
         raise ValueError(f"Unknown component type: {component_type}")
-
-def create_recall_plot(results, experiment_name):
-    """Create a bar plot of recall metrics by query type."""
-    # Prepare data for plotting
-    plot_data = []
-    for query_type in ['basic_query', 'attribute_query', 'natural_query']:
-        if results[query_type]['total'] > 0:
-            recall = results[query_type]['hits'] / results[query_type]['total']
-            plot_data.append({
-                'Query Type': query_type.replace('_', ' ').title(),
-                'Recall': recall
-            })
-    
-    # Create the bar plot
-    fig = px.bar(
-        pd.DataFrame(plot_data),
-        x='Query Type',
-        y='Recall',
-        title=f'Recall@{TOP_K} by Query Type - {experiment_name}',
-        labels={'Recall': f'Recall@{TOP_K}'},
-        color='Query Type',
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    
-    # Update layout
-    fig.update_layout(
-        yaxis_tickformat='.1%',
-        yaxis_range=[0, 1],
-        showlegend=False,
-        template='plotly_white'
-    )
-    
-    # Save the plot
-    plot_path = Path(__file__).parent / 'plots' / f'{experiment_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
-    plot_path.parent.mkdir(exist_ok=True)
-    fig.write_html(str(plot_path))
-    
-    # Log the plot to MLflow
-    mlflow.log_artifact(str(plot_path))
 
 def run_experiment(config, dataset_name=None, model_name=None, db_config=None):
     """Run a single experiment and log results to MLflow."""
@@ -173,9 +133,6 @@ def run_experiment(config, dataset_name=None, model_name=None, db_config=None):
                 if category_results[category][query_type]['total'] > 0:
                     recall = category_results[category][query_type]['hits'] / category_results[category][query_type]['total']
                     mlflow.log_metric(f"{category}_{query_type}_recall_at_k", round(recall, 2))
-        
-        # Create and save the recall plot
-        # create_recall_plot(results, config['name'])
 
 def main():
     # Set up device
