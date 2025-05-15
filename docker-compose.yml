@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./src/backend/Dockerfile
+    container_name: finly-backend
+    ports:
+      - "5001:5001"   # Map host 5001 to container 5000
+    env_file:
+      - .env
+    environment:
+      - PGHOST=host.docker.internal  # Override PGHOST in .env file
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: finly-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:5001
+    depends_on:
+      - backend

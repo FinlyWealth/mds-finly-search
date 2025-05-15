@@ -211,41 +211,41 @@ def main():
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
     print(f"Number of metadata entries: {len(df)}")
     
-    # # Load all embedding files
-    # embedding_files = get_embedding_paths()
-    # embeddings_dict = {}
-    # embedding_dims = {}
+    # Load all embedding files
+    embedding_files = get_embedding_paths()
+    embeddings_dict = {}
+    embedding_dims = {}
     
-    # print("\nLoading embeddings...")
-    # for name, path in embedding_files.items():
-    #     print(f"\nLoading {name} embeddings from {path}...")
-    #     data = np.load(os.path.join(project_root, path))
-    #     embeddings_dict[name] = data['embeddings']
-    #     embedding_dims[name] = data['embeddings'].shape[1]
-    #     print(f"{name} embedding dimension: {embedding_dims[name]}")
+    print("\nLoading embeddings...")
+    for name, path in embedding_files.items():
+        print(f"\nLoading {name} embeddings from {path}...")
+        data = np.load(os.path.join(project_root, path))
+        embeddings_dict[name] = data['embeddings']
+        embedding_dims[name] = data['embeddings'].shape[1]
+        print(f"{name} embedding dimension: {embedding_dims[name]}")
         
-    #     # Create mapping of product IDs to indices for this embedding type
-    #     embedding_pids = data['product_ids'].astype(str)
-    #     embeddings_dict[f"{name}_pids"] = embedding_pids
-    #     print(f"Number of {name} embeddings: {len(embedding_pids)}")
+        # Create mapping of product IDs to indices for this embedding type
+        embedding_pids = data['product_ids'].astype(str)
+        embeddings_dict[f"{name}_pids"] = embedding_pids
+        print(f"Number of {name} embeddings: {len(embedding_pids)}")
     
-    # # Find intersection of product IDs that have all required embeddings
-    # common_pids = set(df['Pid'].astype(str))
-    # for name in get_enabled_embedding_types():
-    #     common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
+    # Find intersection of product IDs that have all required embeddings
+    common_pids = set(df['Pid'].astype(str))
+    for name in get_enabled_embedding_types():
+        common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
     
-    # common_pids = list(common_pids)
-    # print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
+    common_pids = list(common_pids)
+    print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     # Text fields to combine for TF-IDF search
     text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
-    # print("\nInitializing database...")
-    # init_db(embedding_dims)
+    print("\nInitializing database...")
+    init_db(embedding_dims)
     
-    # print("\nStoring embeddings in database...")
-    # store_embeddings(embeddings_dict, common_pids, df)
+    print("\nStoring embeddings in database...")
+    store_embeddings(embeddings_dict, common_pids, df)
     
     # Prepare product texts for ts_vector
     df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
