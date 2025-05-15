@@ -19,6 +19,14 @@ faiss:
 # Run experiments and track results on MLflow
 experiments:
 	python experiments/experiment_pipeline.py
+	
+# Start frontend web server
+frontend:
+	streamlit run src/frontend/app.py
+
+# Start backend api server
+backend:
+	python src/backend/api.py
 
 # Render the Quarto document
 report: report/capstone_proposal_report.qmd
