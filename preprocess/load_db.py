@@ -172,7 +172,10 @@ def update_documents(product_texts):
     
     # Update documents in batches using execute_values
     batch_size = 1000
-    for i in range(0, len(product_texts), batch_size):
+    total_batches = (len(product_texts) + batch_size - 1) // batch_size
+    
+    print("\nUpdating ts_vector in database...")
+    for i in tqdm(range(0, len(product_texts), batch_size), total=total_batches, desc="Processing batches"):
         batch = product_texts[i:i + batch_size]
         data = [(text, pid) for pid, text in batch]
         
@@ -186,7 +189,6 @@ def update_documents(product_texts):
             data
         )
         conn.commit()
-        print(f"Processed batch {i//batch_size + 1}/{(len(product_texts) + batch_size - 1)//batch_size}")
     
     cur.close()
     conn.close()

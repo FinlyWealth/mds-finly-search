@@ -43,7 +43,7 @@ proxy:
 
 # Start both frontend and backend applications
 run:
-	streamlit run src/frontend/ap.py & \
+	streamlit run src/frontend/app.py & \
 	python src/backend/api.py & \
 	wait
 
