@@ -52,10 +52,16 @@ def display_product_card(product, score):
     with st.container():
         # Product image
         try:
-            image_path = f"data/images/{product['Pid']}.jpeg"
-            st.image(image_path, use_container_width=True)
+            # Try GCS first
+            image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
+            st.image(image_url, use_container_width=True)
         except:
-            st.write("No image available")
+            try:
+                # Fall back to local path
+                local_path = f"data/images/{product['Pid']}.jpeg"
+                st.image(local_path, use_container_width=True)
+            except:
+                st.write("No image available")
         
         # Product details
         st.write(f"**Similarity:** {score*100:.1f}%")
