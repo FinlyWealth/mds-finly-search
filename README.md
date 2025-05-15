@@ -60,7 +60,9 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-2.  To setup the proxy connection:
+2.  Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: https://cloud.google.com/sdk/docs/install-sdk
+
+3.  To setup the proxy connection:
 
     ```{bash}
     # If running for the first time, this will setup and run the proxy
@@ -70,7 +72,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     make proxy
     ```
 
-3.  To start the app and the server:
+4.  To start the app and the server:
 
     ```{bash}
     # Starts streamlit frontend and API backend
@@ -81,7 +83,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
 This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings.
 
-1.  Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive. Put `embeddings_100k_v2.npz` under `data/embeddings`.
+1.  Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `text_clip.npz`, `image_clip.npz` and `minilm.npz` from the same Google Drive. Put all 3 files under `data/embeddings`.
 
 2.  Add the following to environment variables. Change the Postgres credentials as needed to the local db.
 
