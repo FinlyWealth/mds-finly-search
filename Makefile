@@ -43,8 +43,10 @@ proxy:
 
 # Start both frontend and backend applications
 run:
-	streamlit run src/frontend/app.py & \
+	$(MAKE) proxy & \
 	python src/backend/api.py & \
+	sleep 2 && \
+	streamlit run src/frontend/app.py & \
 	wait
 
 # Clean up temporary files
