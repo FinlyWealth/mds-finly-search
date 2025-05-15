@@ -2,24 +2,26 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
+
 ## Setup Instructions - User
 
 TODO: Add Docker instructions
 
+
 ## Setup Instructions - Developer
 
-###Step 1. Download product data and product images**
+### Step 1. Download product data and product images
 
 1.  Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: <https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K>
 
 2.  Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`.
 
-###Step 2. Setup Python environment and environment variables**
+### Step 2. Setup Python environment and environment variables
 
 1.  Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
 2.  Create environment variable `.env` file in the root folder
 
-###Step 3. Database Setup**
+### Step 3. Database Setup
 
 Choose Option A or Option B based on your use case.
 
@@ -144,6 +146,7 @@ This setup is for a running the app with a local Postgres database. You would us
     make run
     ```
 
+
 ## Setup Troubleshooting
 
 **To test the api through command line**
@@ -186,6 +189,7 @@ sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.cont
 
 sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
 ```
+
 
 ## Running Experiments
 
