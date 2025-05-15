@@ -1,4 +1,4 @@
-.PHONY: report clean preprocess-all embed db faiss experiments proxy proxy-setup run
+.PHONY: report clean preprocess-all embed db-setup db-load faiss experiments proxy proxy-setup run
 
 # Default target
 all: proxy-setup run
@@ -10,7 +10,11 @@ preprocess-all: embed db faiss
 embed:
 	python preprocess/generate_embed.py
 
-db:
+db-setup:
+	chmod +x scripts/setup_local_db.sh
+	./scripts/setup_local_db.sh
+
+db-load:
 	python preprocess/load_db.py
 
 faiss:

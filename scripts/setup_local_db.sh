@@ -36,6 +36,6 @@ echo "Database setup complete!"
 
 # Run make commands
 echo "Running database initialization..."
-make db
+make db-load
 
 echo "Setup complete! You can now start the application." 

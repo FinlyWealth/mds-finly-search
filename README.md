@@ -4,20 +4,26 @@ A scalable, multimodal product search engine developed for [FinlyWealth](https:/
 
 ## Setup Instructions - User
 
+TODO: Add Docker instructions
+
 ## Setup Instructions - Developer
 
-**Step 1. Download product data and product images**
+###Step 1. Download product data and product images**
 
 1.  Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: <https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K>
 
 2.  Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`.
 
-**Step 2. Setup Python environment and environment variables**
+###Step 2. Setup Python environment and environment variables**
 
 1.  Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
 2.  Create environment variable `.env` file in the root folder
 
-**Step 3a. Database Setup - Google Cloud**
+###Step 3. Database Setup**
+
+Choose Option A or Option B based on your use case.
+
+**Option A: Google Cloud**
 
 This setup uses the Google Cloud SQL proxy. It connects to the cloud database via a localhost connection. Requires Google authentication.
 
@@ -54,23 +60,30 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-2.  To setup the proxy connection.
+2.  To setup the proxy connection:
 
     ```{bash}
     # If running for the first time, this will setup and run the proxy
     make proxy-setup
-    
+
     # Use the following to start the proxy after a reboot
     make proxy
     ```
 
-**Step 3b. Database Setup - Local Postgres**
+3.  To start the app and the server:
 
-This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings. 
+    ```{bash}
+    # Starts streamlit frontend and API backend
+    make run
+    ```
 
-4.  Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive. Put `embeddings_100k_v2.npz` under `data/embeddings`.
+**Option B: Local Postgres**
 
-5.  Add the following to environment variables. Change the Postgres credentials as needed.
+This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings.
+
+1.  Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `embeddings_100k_v2.npz` from the same Google Drive. Put `embeddings_100k_v2.npz` under `data/embeddings`.
+
+2.  Add the following to environment variables. Change the Postgres credentials as needed to the local db.
 
     ```         
     # User, password and location of the Postgres database
@@ -94,7 +107,6 @@ This setup is for a running the app with a local Postgres database. You would us
     IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
     MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
 
-
     # Location to save the index
     FAISS_INDEX_DIR=data/faiss_indexes
 
@@ -105,56 +117,34 @@ This setup is for a running the app with a local Postgres database. You would us
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-**Install Postgres and pgvector**
-
-7.  Setup postgres database locally. The credentials need to match the `.env` file.
+3.  To setup the database:
 
     ```{bash}
-    # Install psql command line tool
-    conda install -c conda-forge postgresql
+    # If running for the first time, this will setup the sql table, add pgvector and load the embedding files in to the db
+    make db-setup
 
-    # Login to postgres, username and password will be the one you set when install the postgres
-    psql -U postgres
-
-    # Create new finly database user
-    CREATE USER "finly-admin" WITH PASSWORD '123';
-
-    # Give the user permission to create databases
-    ALTER USER "finly-admin" CREATEDB;
-
-    # Create the database finly
-    CREATE DATABASE finly OWNER "finly-admin";
-
-    # Grant all privileges on the database to finly-admin user
-    GRANT ALL PRIVILEGES ON DATABASE finly TO "finly-admin";
+    # Once the db is setup and you want to use other types of embeddings, use the following to load the db
+    # CAUTION: This will drop the existing table and create a new one
+    make db-load
     ```
 
-8.  Add pgvector extenstion
+4.  Optional: If using FAISS indexes, run the following to build the indexes after the embeddings have been imported.
 
     ```{bash}
-    # Login to finly database
-    psql -U postgres -d finly
-
-    # Create the extension
-    CREATE EXTENSION IF NOT EXISTS vector;
+    # If running for the first time, this will setup and run the proxy
+    make faiss
     ```
 
-9.  Run `make db` and then `make faiss` from the root folder. Run `make preprocess all` if you want to run all 3 preprocessing scripts including embedding generation.
+5.  To start the app and the server:
 
-**Start frontend application**
+    ```{bash}
+    # Starts streamlit frontend and API backend
+    make run
+    ```
 
-```{bash}
-streamlit run src/frontend/ap.py
-```
+## Setup Troubleshooting
 
-**Start backend api**
-
-```{bash}
-# from the root directory, the api will be running at http://127.0.0.1:5001
-python src/backend/api.py
-```
-
-To test the api through command line:
+**To test the api through command line**
 
 ```{bash}
 # test text search
@@ -163,6 +153,36 @@ curl -X POST http://127.0.0.1:5001/api/search/text -H "Content-Type: application
 # test image search
 # download any product image and stored as test-img.jpeg
 curl -X POST http://127.0.0.1:5001/api/search/image -H "Content-Type: application/json" -d '{"image_path": "{absolute-path-to-repo}/mds-finly-search/test-img.jpeg"}'
+```
+
+**Postgres not installed through homebrew**
+
+In case your postgres is installed at `/Library/PostgreSQL/16`, not through home brew, try the following method to install pgvector.
+
+In the finly conda environment, from any directory:
+
+```{bash}
+git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git
+cd pgvector
+make
+sudo make install
+```
+
+If you see any error like `make: arm64-apple-darwin20.0.0-clang: No such file or directory` when run the `make` command, try to run the following, and then run `make` again:
+
+```{bash}
+export PG_CONFIG=/Library/PostgreSQL/16/bin/pg_config
+```
+
+Now we need to copy the pgvector we installed in the finly conda enviornment into place where our Postgres database is installed.
+
+```{bash}
+# create the postgres extension folder
+sudo mkdir -p /Library/PostgreSQL/16/share/extension
+
+sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.control /Library/PostgreSQL/16/share/extension/
+
+sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
 ```
 
 ## Running Experiments
@@ -228,27 +248,3 @@ The search engine supports the following retrieval components that can be combin
     -   Uses PostgreSQL full-text search capabilities
     -   Parameters:
         -   `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
-
-## Available Makefile Commands
-
--   `make all`: Runs all preprocessing steps and generates the report
-
-### Data Proprocessing
-
--   `make preprocess-all`: Runs all preprocessing steps (generate embeddings, load database, compute FAISS index)
-
--   `make embed`: Generates embeddings for the data
-
--   `make db`: Loads data into the PostgreSQL database
-
--   `make faiss`: Computes the FAISS index for vector search
-
-### MLflow Experiments
-
--   `make experiments`: Run all experiments and log results to MLflow
-
-### Report Rendering
-
--   `make report`: Generates the Quarto report
-
--   `make clean`: Removes generated report files
