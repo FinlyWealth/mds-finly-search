@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import execute_values, Json
 from typing import List, Tuple
 import sys
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG
 from config.path import METADATA_PATH
@@ -22,7 +23,7 @@ def init_db(embedding_dims: dict):
     cur = conn.cursor()
     
     # Enable pgvector extension
-    # cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
     # Drop the table if it exists
     cur.execute("DROP TABLE IF EXISTS products;")
@@ -83,7 +84,8 @@ def store_embeddings(embeddings_dict, pids, df):
         embedding_indices[embedding_type] = {pid: idx for idx, pid in enumerate(embedding_pids)}
     
     # Only add the first occurrence of each Pid
-    for i, pid in enumerate(pids):
+    print("\nPreparing data for database insertion...")
+    for i, pid in enumerate(tqdm(pids, desc="Processing products")):
         if pid not in seen_ids:
             seen_ids.add(pid)
             # Get metadata for this product
@@ -138,20 +140,26 @@ def store_embeddings(embeddings_dict, pids, df):
         'Color', 'Gender', 'Size', 'Condition'
     ]
     
-    # Store all data in a single table
-    execute_values(
-        cur,
-        f"""
-        INSERT INTO products (
-            {', '.join(columns)}
-        ) 
-        VALUES %s 
-        ON CONFLICT (Pid) DO NOTHING
-        """,
-        data
-    )
+    print("\nInserting data into database...")
+    # Store data in batches
+    batch_size = 1000
+    total_batches = (len(data) + batch_size - 1) // batch_size
     
-    conn.commit()
+    for i in tqdm(range(0, len(data), batch_size), desc="Inserting batches", total=total_batches):
+        batch = data[i:i + batch_size]
+        execute_values(
+            cur,
+            f"""
+            INSERT INTO products (
+                {', '.join(columns)}
+            ) 
+            VALUES %s 
+            ON CONFLICT (Pid) DO NOTHING
+            """,
+            batch
+        )
+        conn.commit()
+    
     cur.close()
     conn.close()
 
@@ -180,6 +188,14 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(project_root, 'data')
     
+    # Print database connection info
+    print("\nDatabase Connection Info:")
+    print(f"Host: {DB_CONFIG['host']}")
+    print(f"Database: {DB_CONFIG['dbname']}")
+    print(f"User: {DB_CONFIG['user']}")
+    print(f"Port: {DB_CONFIG['port']}")
+    print("\n" + "="*50 + "\n")
+    
     print("Loading metadata...")
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
     print(f"Number of metadata entries: {len(df)}")
@@ -189,9 +205,9 @@ def main():
     embeddings_dict = {}
     embedding_dims = {}
     
-    print("Loading embeddings...")
+    print("\nLoading embeddings...")
     for name, path in embedding_files.items():
-        print(f"Loading {name} embeddings from {path}...")
+        print(f"\nLoading {name} embeddings from {path}...")
         data = np.load(os.path.join(project_root, path))
         embeddings_dict[name] = data['embeddings']
         embedding_dims[name] = data['embeddings'].shape[1]
@@ -208,31 +224,29 @@ def main():
         common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
     
     common_pids = list(common_pids)
-    print(f"Number of products with all required embeddings: {len(common_pids)}")
+    print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     # Text fields to combine for TF-IDF search
     text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
-    # Create combined text
-    print("Creating combined text...")
-    df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
+
     
-    print("Initializing database...")
+    print("\nInitializing database...")
     init_db(embedding_dims)
     
-    print("Storing embeddings in database...")
+    print("\nStoring embeddings in database...")
     store_embeddings(embeddings_dict, common_pids, df)
     
-    # Prepare product texts for update
-    print("Preparing product texts...")
+    # Prepare product texts for ts_vector
+    df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
     product_texts = list(zip(df['Pid'].tolist(), df['combined_text'].tolist()))
     
-    # Update documents in database
-    print("Updating documents in database...")
+    # Update ts_vector in database
+    print("\nUpdating ts_vector in database...")
     update_documents(product_texts)
     
-    print("Done!")
+    print("\nDone!")
 
 if __name__ == '__main__':
     main()

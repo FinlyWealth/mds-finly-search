@@ -1,16 +1,22 @@
 {
-    "fusion_vector_experiments": [
+    "fusion_vector_experiments_32": [
         {
-            "name": "fusion_embedding_only",
+            "name": "fusion_ts",
             "components": [
                 {
                     "type": "PostgresVectorRetrieval",
                     "params": {
                         "column_name": "fusion_embedding"
                     }
+                },
+                {
+                    "type": "TextSearchRetrieval",
+                    "params": {
+                        "rank_method": "ts_rank_cd"
+                    }
                 }
             ],
-            "weights": [1]
+            "weights": [0.5, 0.5]
         }
     ]
 } 
