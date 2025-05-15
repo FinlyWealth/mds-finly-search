@@ -135,7 +135,7 @@ This setup is for a running the app with a local Postgres database. You would us
 4.  Optional: If using FAISS indexes, run the following to build the indexes after the embeddings have been imported.
 
     ```{bash}
-    # If running for the first time, this will setup and run the proxy
+    # Builds FAISS index for each embedding column
     make faiss
     ```
 
