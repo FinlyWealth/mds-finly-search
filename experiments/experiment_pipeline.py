@@ -14,9 +14,11 @@ from tqdm import tqdm
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 sys.path.insert(0, str(root_dir / "src" / "backend"))
+sys.path.insert(0, str(root_dir / "preprocess"))
 
 from embedding import initialize_clip_model, generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
+from concatenate import generate_fusion_embeddings
 from config.db import DB_CONFIG
 from config.path import MLFLOW_TRACKING_URI
 
@@ -91,7 +93,8 @@ def run_experiment(config, dataset_name=None, model_name=None, db_config=None):
                     category = row['Category']
                     
                     # Generate embedding and run hybrid search
-                    query_embedding = generate_embedding(query_text=query)
+                    #query_embedding = generate_embedding(query_text=query)
+                    query_embedding = generate_fusion_embeddings(query)
                     pids, _ = hybrid_retrieval(
                         query=query,
                         query_embedding=query_embedding,

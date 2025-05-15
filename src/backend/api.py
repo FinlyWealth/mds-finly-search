@@ -24,13 +24,13 @@ components_config = [
     {
         "type": "PostgresVectorRetrieval",
         "params": {
-            "column_name": "text_embedding"
+            "column_name": "text_clip_embedding"
         }
     },
     {
         "type": "PostgresVectorRetrieval",
         "params": {
-            "column_name": "image_embedding"
+            "column_name": "image_clip_embedding"
         }
     },
     {

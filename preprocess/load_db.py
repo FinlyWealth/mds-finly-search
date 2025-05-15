@@ -3,9 +3,10 @@ import json
 import numpy as np
 import pandas as pd
 import psycopg2
-from psycopg2.extras import execute_values, Json
+from psycopg2.extras import execute_values, execute_batch, Json
 from typing import List, Tuple
 import sys
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG
 from config.path import METADATA_PATH
@@ -22,7 +23,7 @@ def init_db(embedding_dims: dict):
     cur = conn.cursor()
     
     # Enable pgvector extension
-    # cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
     # Drop the table if it exists
     cur.execute("DROP TABLE IF EXISTS products;")
@@ -74,60 +75,12 @@ def store_embeddings(embeddings_dict, pids, df):
     
     # Create a set to track seen Pids
     seen_ids = set()
-    data = []
     
     # Create a mapping of product IDs to their indices for each embedding type
     embedding_indices = {}
     for embedding_type in get_enabled_embedding_types():
         embedding_pids = embeddings_dict[f"{embedding_type}_pids"]
         embedding_indices[embedding_type] = {pid: idx for idx, pid in enumerate(embedding_pids)}
-    
-    # Only add the first occurrence of each Pid
-    for i, pid in enumerate(pids):
-        if pid not in seen_ids:
-            seen_ids.add(pid)
-            # Get metadata for this product
-            product_data = df[df['Pid'] == pid].iloc[0]
-            
-            # Prepare embedding values
-            embedding_values = []
-            for embedding_type in get_enabled_embedding_types():
-                try:
-                    # Get the index for this product ID in the current embedding type
-                    idx = embedding_indices[embedding_type].get(pid)
-                    if idx is not None:
-                        embedding_values.append([float(x) for x in embeddings_dict[embedding_type][idx]])
-                    else:
-                        # If no embedding exists for this product, use zeros
-                        dim = embeddings_dict[embedding_type].shape[1]
-                        embedding_values.append([0.0] * dim)
-                except IndexError as e:
-                    raise IndexError(f"Failed to access embedding at index {idx} for type {embedding_type}. "
-                                   f"Embedding length: {len(embeddings_dict[embedding_type])}, "
-                                   f"PIDs length: {len(pids)}") from e
-            
-            # Prepare metadata values
-            metadata_values = [
-                pid,
-                *embedding_values,  # Unpack embedding values
-                None,  # Document will be updated separately
-                product_data['Name'],
-                product_data['Description'],
-                product_data['Category'],
-                float(product_data['Price']) if pd.notna(product_data['Price']) else None,
-                product_data['PriceCurrency'],
-                float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
-                float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
-                bool(product_data['isOnSale']), 
-                bool(product_data['IsInStock']),
-                product_data['MergedBrand'],
-                product_data['Color'],
-                product_data['Gender'],
-                product_data['Size'],
-                product_data['Condition']
-            ]
-            
-            data.append(tuple(metadata_values))
     
     # Prepare column names for SQL query
     embedding_columns = [f"{embedding_type}_embedding" for embedding_type in get_enabled_embedding_types()]
@@ -138,20 +91,77 @@ def store_embeddings(embeddings_dict, pids, df):
         'Color', 'Gender', 'Size', 'Condition'
     ]
     
-    # Store all data in a single table
-    execute_values(
-        cur,
-        f"""
-        INSERT INTO products (
-            {', '.join(columns)}
-        ) 
-        VALUES %s 
-        ON CONFLICT (Pid) DO NOTHING
-        """,
-        data
-    )
+    # Process in batches
+    batch_size = 1000
+    total_products = len(pids)
     
-    conn.commit()
+    print("\nInserting data into database...")
+    for i in range(0, total_products, batch_size):
+        batch_pids = pids[i:i + batch_size]
+        batch_data = []
+        
+        for pid in batch_pids:
+            if pid not in seen_ids:
+                seen_ids.add(pid)
+                # Get metadata for this product
+                product_data = df[df['Pid'] == pid].iloc[0]
+                
+                # Prepare embedding values
+                embedding_values = []
+                for embedding_type in get_enabled_embedding_types():
+                    try:
+                        # Get the index for this product ID in the current embedding type
+                        idx = embedding_indices[embedding_type].get(pid)
+                        if idx is not None:
+                            embedding_values.append([float(x) for x in embeddings_dict[embedding_type][idx]])
+                        else:
+                            # If no embedding exists for this product, use zeros
+                            dim = embeddings_dict[embedding_type].shape[1]
+                            embedding_values.append([0.0] * dim)
+                    except IndexError as e:
+                        raise IndexError(f"Failed to access embedding at index {idx} for type {embedding_type}. "
+                                       f"Embedding length: {len(embeddings_dict[embedding_type])}, "
+                                       f"PIDs length: {len(pids)}") from e
+                
+                # Prepare metadata values
+                metadata_values = [
+                    pid,
+                    *embedding_values,  # Unpack embedding values
+                    None,  # Document will be updated separately
+                    product_data['Name'],
+                    product_data['Description'],
+                    product_data['Category'],
+                    float(product_data['Price']) if pd.notna(product_data['Price']) else None,
+                    product_data['PriceCurrency'],
+                    float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
+                    float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
+                    bool(product_data['isOnSale']), 
+                    bool(product_data['IsInStock']),
+                    product_data['MergedBrand'],
+                    product_data['Color'],
+                    product_data['Gender'],
+                    product_data['Size'],
+                    product_data['Condition']
+                ]
+                
+                batch_data.append(tuple(metadata_values))
+        
+        if batch_data:
+            execute_values(
+                cur,
+                f"""
+                INSERT INTO products (
+                    {', '.join(columns)}
+                ) 
+                VALUES %s 
+                ON CONFLICT (Pid) DO NOTHING
+                """,
+                batch_data
+            )
+            conn.commit()
+        
+        print(f"Processed batch {i//batch_size + 1}/{(total_products + batch_size - 1)//batch_size}")
+    
     cur.close()
     conn.close()
 
@@ -160,16 +170,25 @@ def update_documents(product_texts):
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
     
-    # Update documents in batches to avoid memory issues
+    # Update documents in batches using execute_batch
     batch_size = 1000
-    for i in range(0, len(product_texts), batch_size):
+    total_batches = (len(product_texts) + batch_size - 1) // batch_size
+    
+    print("\nUpdating ts_vector in database...")
+    for i in tqdm(range(0, len(product_texts), batch_size), total=total_batches, desc="Processing batches"):
         batch = product_texts[i:i + batch_size]
-        for pid, text in batch:
-            cur.execute("""
-                UPDATE products 
-                SET document = to_tsvector('english', %s)
-                WHERE Pid = %s
-            """, (text, pid))
+        data = [(text, pid) for pid, text in batch]
+        
+        execute_batch(
+            cur,
+            """
+            UPDATE products 
+            SET document = to_tsvector('english', %s)
+            WHERE Pid = %s
+            """,
+            data,
+            page_size=batch_size
+        )
         conn.commit()
     
     cur.close()
@@ -180,59 +199,63 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(project_root, 'data')
     
+    # Print database connection info
+    print("\nDatabase Connection Info:")
+    print(f"Host: {DB_CONFIG['host']}")
+    print(f"Database: {DB_CONFIG['dbname']}")
+    print(f"User: {DB_CONFIG['user']}")
+    print(f"Port: {DB_CONFIG['port']}")
+    print("\n" + "="*50 + "\n")
+    
     print("Loading metadata...")
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
     print(f"Number of metadata entries: {len(df)}")
     
-    # Load all embedding files
-    embedding_files = get_embedding_paths()
-    embeddings_dict = {}
-    embedding_dims = {}
+    # # Load all embedding files
+    # embedding_files = get_embedding_paths()
+    # embeddings_dict = {}
+    # embedding_dims = {}
     
-    print("Loading embeddings...")
-    for name, path in embedding_files.items():
-        print(f"Loading {name} embeddings from {path}...")
-        data = np.load(os.path.join(project_root, path))
-        embeddings_dict[name] = data['embeddings']
-        embedding_dims[name] = data['embeddings'].shape[1]
-        print(f"{name} embedding dimension: {embedding_dims[name]}")
+    # print("\nLoading embeddings...")
+    # for name, path in embedding_files.items():
+    #     print(f"\nLoading {name} embeddings from {path}...")
+    #     data = np.load(os.path.join(project_root, path))
+    #     embeddings_dict[name] = data['embeddings']
+    #     embedding_dims[name] = data['embeddings'].shape[1]
+    #     print(f"{name} embedding dimension: {embedding_dims[name]}")
         
-        # Create mapping of product IDs to indices for this embedding type
-        embedding_pids = data['product_ids'].astype(str)
-        embeddings_dict[f"{name}_pids"] = embedding_pids
-        print(f"Number of {name} embeddings: {len(embedding_pids)}")
+    #     # Create mapping of product IDs to indices for this embedding type
+    #     embedding_pids = data['product_ids'].astype(str)
+    #     embeddings_dict[f"{name}_pids"] = embedding_pids
+    #     print(f"Number of {name} embeddings: {len(embedding_pids)}")
     
-    # Find intersection of product IDs that have all required embeddings
-    common_pids = set(df['Pid'].astype(str))
-    for name in get_enabled_embedding_types():
-        common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
+    # # Find intersection of product IDs that have all required embeddings
+    # common_pids = set(df['Pid'].astype(str))
+    # for name in get_enabled_embedding_types():
+    #     common_pids = common_pids.intersection(set(embeddings_dict[f"{name}_pids"]))
     
-    common_pids = list(common_pids)
-    print(f"Number of products with all required embeddings: {len(common_pids)}")
+    # common_pids = list(common_pids)
+    # print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     # Text fields to combine for TF-IDF search
     text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
-    # Create combined text
-    print("Creating combined text...")
+    # print("\nInitializing database...")
+    # init_db(embedding_dims)
+    
+    # print("\nStoring embeddings in database...")
+    # store_embeddings(embeddings_dict, common_pids, df)
+    
+    # Prepare product texts for ts_vector
     df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
-    
-    print("Initializing database...")
-    init_db(embedding_dims)
-    
-    print("Storing embeddings in database...")
-    store_embeddings(embeddings_dict, common_pids, df)
-    
-    # Prepare product texts for update
-    print("Preparing product texts...")
     product_texts = list(zip(df['Pid'].tolist(), df['combined_text'].tolist()))
     
-    # Update documents in database
-    print("Updating documents in database...")
+    # Update ts_vector in database
+    print("\nUpdating ts_vector in database...")
     update_documents(product_texts)
     
-    print("Done!")
+    print("\nDone!")
 
 if __name__ == '__main__':
     main()

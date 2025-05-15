@@ -16,3 +16,4 @@ preprocess/images_100k_v2.zip
 data/csv/sample_100k_v2.csv
 .env
 **/__pycache__/
+/.cloud_sql_proxy
