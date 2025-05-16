@@ -27,7 +27,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API configuration
-API_BASE_URL = "http://localhost:5001"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5001")
 
 # Function to load image from URL or local path
 def load_image(image_path):

@@ -2,24 +2,28 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-
 ## Setup Instructions - User
 
-TODO: Add Docker instructions
+Follow the instructions below to set up the database, then run the command to start the frontend and backend applications in Docker containers:
 
+```{bash}
+docker-compose up --build
+```
+
+The frontend Streamlit application is at `http://0.0.0.0:8501`.
 
 ## Setup Instructions - Developer
 
 ### Step 1. Download product data and product images
 
-1.  Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: <https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K>
+1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: <https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K>
 
-2.  Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`.
+2. Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`.
 
 ### Step 2. Setup Python environment and environment variables
 
-1.  Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
-2.  Create environment variable `.env` file in the root folder
+1. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
+2. Create environment variable `.env` file in the root folder
 
 ### Step 3. Database Setup
 
@@ -29,7 +33,7 @@ Choose Option A or Option B based on your use case.
 
 This setup uses the Google Cloud SQL proxy. It connects to the cloud database via a localhost connection. Requires Google authentication.
 
-1.  Copy and paste the following in to the `.env` file.
+1. Copy and paste the following in to the `.env` file.
 
     ```         
     # User, password and location of the Postgres database
@@ -62,9 +66,9 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-2.  Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: https://cloud.google.com/sdk/docs/install-sdk
+2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: https://cloud.google.com/sdk/docs/install-sdk
 
-3.  To setup the proxy connection:
+3. To setup the proxy connection:
 
     ```{bash}
     # If running for the first time, this will setup and run the proxy
@@ -74,7 +78,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     make proxy
     ```
 
-4.  To start the app and the server:
+4. To start the app and the server:
 
     ```{bash}
     # Starts streamlit frontend and API backend
@@ -85,9 +89,9 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
 This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings.
 
-1.  Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `text_clip.npz`, `image_clip.npz` and `minilm.npz` from the same Google Drive. Put all 3 files under `data/embeddings`.
+1. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `text_clip.npz`, `image_clip.npz` and `minilm.npz` from the same Google Drive. Put all 3 files under `data/embeddings`.
 
-2.  Add the following to environment variables. Change the Postgres credentials as needed to the local db.
+2. Add the following to environment variables. Change the Postgres credentials as needed to the local db.
 
     ```         
     # User, password and location of the Postgres database
@@ -121,7 +125,7 @@ This setup is for a running the app with a local Postgres database. You would us
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-3.  To setup the database:
+3. To setup the database:
 
     ```{bash}
     # If running for the first time, this will setup the sql table, add pgvector and load the embedding files in to the db
@@ -132,14 +136,14 @@ This setup is for a running the app with a local Postgres database. You would us
     make db-load
     ```
 
-4.  Optional: If using FAISS indexes, run the following to build the indexes after the embeddings have been imported.
+4. Optional: If using FAISS indexes, run the following to build the indexes after the embeddings have been imported.
 
     ```{bash}
     # Builds FAISS index for each embedding column
     make faiss
     ```
 
-5.  To start the app and the server:
+5. To start the app and the server:
 
     ```{bash}
     # Starts streamlit frontend and API backend
@@ -190,12 +194,11 @@ sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.cont
 sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
 ```
 
-
 ## Running Experiments
 
 `experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
 
-1.  Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config.
+1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config.
 
     ``` json
      {
@@ -228,7 +231,7 @@ sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/P
      } 
     ```
 
-2.  Run experiments using the make command:
+2. Run experiments using the make command:
 
     ``` bash
     make experiments
@@ -236,21 +239,21 @@ sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/P
 
     This will execute each experiment defined in experiment_configs.json and log results to MLflow
 
-3.  View experiment results: <http://35.209.59.178:8591>
+3. View experiment results: <http://35.209.59.178:8591>
 
 ### Supported Retrieval Components
 
 The search engine supports the following retrieval components that can be combined in experiments:
 
-1.  **PostgresVectorRetrieval**
-    -   Uses pgvector for vector similarity search
-    -   Parameters:
-        -   `column_name`: Name of the vector column to search (e.g., "text_embedding" or "image_embedding")
-2.  **FaissVectorRetrieval**
-    -   Uses FAISS for efficient vector similarity search
-    -   Parameters:
-        -   `index_type`: Either "text" or "image" to specify which pre-computed index to use
-3.  **TextSearchRetrieval**
-    -   Uses PostgreSQL full-text search capabilities
-    -   Parameters:
-        -   `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
+1. **PostgresVectorRetrieval**
+    - Uses pgvector for vector similarity search
+    - Parameters:
+        - `column_name`: Name of the vector column to search (e.g., "text_embedding" or "image_embedding")
+2. **FaissVectorRetrieval**
+    - Uses FAISS for efficient vector similarity search
+    - Parameters:
+        - `index_type`: Either "text" or "image" to specify which pre-computed index to use
+3. **TextSearchRetrieval**
+    - Uses PostgreSQL full-text search capabilities
+    - Parameters:
+        - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
