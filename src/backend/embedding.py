@@ -3,7 +3,7 @@ import torch
 import requests
 from PIL import Image
 from io import BytesIO
-from transformers import AutoModel, AutoProcessor, BlipProcessor, BlipForConditionalGeneration
+from transformers import AutoModel, AutoProcessor, BlipProcessor, BlipForConditionalGeneration, AutoTokenizer
 
 # Initialize device
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
@@ -13,6 +13,8 @@ _siglip_processor = None
 _siglip_model = None
 _blip_processor = None
 _blip_model = None
+_minilm_model = None
+_minilm_tokenizer = None
 
 def initialize_clip_model(model_id="openai/clip-vit-base-patch32"):
     """Initialize CLIP model and processor"""
@@ -28,6 +30,13 @@ def initialize_blip_model(model_id="Salesforce/blip-image-captioning-base"):
     _blip_model = BlipForConditionalGeneration.from_pretrained(model_id).to(device)
     return _blip_processor, _blip_model
 
+def initialize_minilm_model(model_id="sentence-transformers/all-MiniLM-L6-v2"):
+    """Initialize MiniLM model and tokenizer"""
+    global _minilm_model, _minilm_tokenizer
+    _minilm_model = AutoModel.from_pretrained(model_id).to(device)
+    _minilm_tokenizer = AutoTokenizer.from_pretrained(model_id)
+    return _minilm_model, _minilm_tokenizer
+
 def get_clip_model():
     """Get or initialize CLIP model and processor"""
     global _siglip_processor, _siglip_model
@@ -41,6 +50,13 @@ def get_blip_model():
     if _blip_processor is None or _blip_model is None:
         return initialize_blip_model()
     return _blip_processor, _blip_model
+
+def get_minilm_model():
+    """Get or initialize MiniLM model and tokenizer"""
+    global _minilm_model, _minilm_tokenizer
+    if _minilm_model is None or _minilm_tokenizer is None:
+        return initialize_minilm_model()
+    return _minilm_model, _minilm_tokenizer
 
 def get_text_embedding(text):
     """Get embedding for text input"""
@@ -71,6 +87,19 @@ def get_image_embedding(image):
         print(f"Error processing image: {e}")
         return None
 
+def get_minilm_embeddings(text):
+    """Get embedding for text input using MiniLM"""
+    model, tokenizer = get_minilm_model()
+    
+    # Process text with MiniLM
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
+    with torch.no_grad():
+        outputs = model(**inputs)
+        # Use the [CLS] token embedding (first token) as the sentence embedding
+        minilm_embedding = outputs.last_hidden_state[:, 0, :]
+        minilm_embedding /= minilm_embedding.norm(dim=-1, keepdim=True)
+        return minilm_embedding.cpu().numpy()[0]
+
 def generate_image_caption(image):
     """Generate caption for image using BLIP"""
     processor, model = get_blip_model()
@@ -95,6 +124,23 @@ def generate_embedding(query_text=None, query_image=None):
     Returns:
         numpy.ndarray: The embedding vector
     """
-    if query_text is not None:
-        return get_text_embedding(query_text)
-    return get_image_embedding(query_image)
+
+    if query_text is not None and query_image is not None:
+        clip_embedding = get_text_embedding(query_image)
+        minilm_embedding = get_minilm_embeddings(query_text)
+    elif query_text is not None:
+        clip_embedding = get_text_embedding(query_text)
+        minilm_embedding = get_minilm_embeddings(query_text)
+    else:
+        clip_embedding = get_image_embedding(query_image)
+
+        # Skip concatenation step and return CLIP embedding
+        return clip_embedding
+    
+    # Concatenate the embeddings
+    fusion_embedding = np.concatenate([clip_embedding, minilm_embedding])
+    
+    # Normalize the concatenated embedding
+    fusion_embedding = fusion_embedding / np.linalg.norm(fusion_embedding)
+    
+    return fusion_embedding
