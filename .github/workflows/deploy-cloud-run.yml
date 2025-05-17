@@ -1,0 +1,50 @@
+name: Push Containers to Cloud Run
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          region: us-west1
+          export_default_credentials: true
+
+      - name: Deploy Cloud Run backend
+        run: |
+          gcloud run deploy finly-backend \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:latest \
+            --platform=managed \
+            --region=us-west1 \
+            --allow-unauthenticated \
+            --port=5001
+
+      - name: Retrieve backend URL
+        id: get-backend-url
+        run: |
+          echo "BACKEND_URL=$(gcloud run services describe finly-backend \
+            --platform=managed \
+            --region=us-west1 \
+            --format='value(status.url)')" >> $GITHUB_ENV
+
+      - name: Deploy Cloud Run frontend
+        run: |
+          gcloud run deploy finly-frontend \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:latest \
+            --platform=managed \
+            --region=us-west1 \
+            --allow-unauthenticated \
+            --port=8501 \
+            --set-env-vars=API_BASE_URL=$BACKEND_URL
