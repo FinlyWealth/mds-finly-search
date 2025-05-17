@@ -41,6 +41,7 @@ proxy:
 		./.cloud_sql_proxy/cloud_sql_proxy -instances="regal-campus-456918-d2:us-west1:finly-mds"=tcp:5433; \
 	fi
 
+
 # Start both frontend and backend applications
 run:
 	$(MAKE) proxy & \
@@ -49,8 +50,11 @@ run:
 	streamlit run src/frontend/app.py & \
 	wait
 
-# Clean up temporary files
+# Clean up temporary files and shutdown applications
 clean:
+	@echo "Cleaning up..."
+	@-pkill -f "streamlit run src/frontend/app.py" || true
+	@-pkill -f "python src/backend/api.py" || true
+	@-pkill -f "cloud_sql_proxy" || true
 	rm -f report/capstone_proposal_report.pdf
 	rm -rf report/capstone_proposal_report_files
-	rm -rf .cloud_sql_proxy

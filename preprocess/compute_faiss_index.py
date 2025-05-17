@@ -7,7 +7,7 @@ import json
 from psycopg2.extras import execute_values
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.db import DB_CONFIG
+from config.db import DB_CONFIG, TABLE_NAME
 from config.embeddings import get_enabled_embedding_types
 
 # FAISS configuration
@@ -24,7 +24,7 @@ def load_embeddings_from_db():
     # Load embeddings for each enabled type
     for embedding_type in get_enabled_embedding_types():
         column_name = f"{embedding_type}_embedding"
-        cur.execute(f"SELECT Pid, {column_name} FROM products WHERE {column_name} IS NOT NULL ORDER BY Pid")
+        cur.execute(f"SELECT Pid, {column_name} FROM {TABLE_NAME} WHERE {column_name} IS NOT NULL ORDER BY Pid")
         data = cur.fetchall()
         pids = [row[0] for row in data]
         embeddings = np.array([row[1] for row in data], dtype=np.float32)

@@ -10,6 +10,8 @@ from tqdm.auto import tqdm
 import pyarrow.parquet as pq
 import os
 import sys
+import multiprocessing
+from functools import partial
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.path import METADATA_PATH
 from config.embeddings import EMBEDDINGS_PATH, EMBEDDING_TYPES, get_enabled_embedding_types
@@ -200,9 +202,18 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
     
     return sentence_embeddings, product_ids
 
-def concatenate_embeddings():
-    """Concatenate image_clip_embedding and minilm_embedding for the given DataFrame"""
-
+def concatenate_embeddings(image_embeddings, text_embeddings):
+    """
+    Concatenate image CLIP embeddings and MiniLM embeddings.
+    
+    Args:
+        image_embeddings (np.ndarray): Array of image CLIP embeddings
+        text_embeddings (np.ndarray): Array of MiniLM embeddings
+        
+    Returns:
+        np.ndarray: Concatenated embeddings
+    """
+    return np.concatenate([image_embeddings, text_embeddings], axis=1)
 
 def filter_valid_products(df):
     """
@@ -367,89 +378,58 @@ def main():
     filtered_df = filter_valid_products(df)
     print(f"Valid products after filtering: {len(filtered_df)}")
 
-    # Process each enabled embedding type
-    for embedding_type in get_enabled_embedding_types():
-        config = EMBEDDING_TYPES[embedding_type]
-        if not config['enabled']:
-            print(f"\nSkipping {embedding_type} embeddings as it is disabled")
-            continue
-            
-        print(f"\nProcessing {embedding_type} embeddings...")
+    # Load CLIP model for images
+    clip_model = AutoModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    clip_model.eval()
+
+    # Load MiniLM model for text
+    minilm_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2").to(device)
+    minilm_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    minilm_model.eval()
+
+    # Calculate number of chunks needed
+    num_chunks = (len(filtered_df) + CHUNK_SIZE - 1) // CHUNK_SIZE
+
+    for chunk_num in range(num_chunks):
+        start_idx = chunk_num * CHUNK_SIZE
+        end_idx = min((chunk_num + 1) * CHUNK_SIZE, len(filtered_df))
+        chunk_df = filtered_df.iloc[start_idx:end_idx]
         
-        # Calculate number of chunks needed
-        num_chunks = (len(filtered_df) + CHUNK_SIZE - 1) // CHUNK_SIZE
+        print(f"\nProcessing chunk {chunk_num + 1}/{num_chunks} (rows {start_idx}-{end_idx})")
         
-        if embedding_type in ['text_clip', 'image_clip']:
-            # Load CLIP model
-            model = AutoModel.from_pretrained(config['model']).to(device)
-            processor = AutoProcessor.from_pretrained(config['model'])
-            model.eval()
-            
-            for chunk_num in range(num_chunks):
-                start_idx = chunk_num * CHUNK_SIZE
-                end_idx = min((chunk_num + 1) * CHUNK_SIZE, len(filtered_df))
-                chunk_df = filtered_df.iloc[start_idx:end_idx]
-                
-                print(f"\nProcessing chunk {chunk_num + 1}/{num_chunks} (rows {start_idx}-{end_idx})")
-                
-                if embedding_type == 'image_clip':
-                    # Calculate image embeddings for chunk
-                    embeddings, valid_indices = calculate_image_clip_embeddings(
-                        chunk_df,
-                        model=model,
-                        processor=processor,
-                        device=device
-                    )
-                    product_ids = chunk_df['Pid'].iloc[valid_indices].tolist()
-                else:  # text_clip
-                    # Calculate text embeddings for chunk
-                    embeddings, product_ids = calculate_text_clip_embeddings(
-                        chunk_df,
-                        model=model,
-                        processor=processor,
-                        device=device
-                    )
-                
-                # Save chunk embeddings
-                save_path = os.path.join(EMBEDDINGS_PATH, config['filename'])
-                save_embeddings(
-                    embeddings=embeddings,
-                    product_ids=product_ids,
-                    embedding_type=embedding_type,
-                    save_path=save_path,
-                    chunk_num=chunk_num
-                )
-                
-        elif embedding_type == 'minilm':
-            # Load MiniLM model
-            model = AutoModel.from_pretrained(config['model']).to(device)
-            tokenizer = AutoTokenizer.from_pretrained(config['model'])
-            model.eval()
-            
-            for chunk_num in range(num_chunks):
-                start_idx = chunk_num * CHUNK_SIZE
-                end_idx = min((chunk_num + 1) * CHUNK_SIZE, len(filtered_df))
-                chunk_df = filtered_df.iloc[start_idx:end_idx]
-                
-                print(f"\nProcessing chunk {chunk_num + 1}/{num_chunks} (rows {start_idx}-{end_idx})")
-                
-                # Calculate MiniLM embeddings for chunk
-                embeddings, product_ids = calculate_minilm_embeddings(
-                    chunk_df,
-                    model=model,
-                    tokenizer=tokenizer,
-                    device=device
-                )
-                
-                # Save chunk embeddings
-                save_path = os.path.join(EMBEDDINGS_PATH, config['filename'])
-                save_embeddings(
-                    embeddings=embeddings,
-                    product_ids=product_ids,
-                    embedding_type=embedding_type,
-                    save_path=save_path,
-                    chunk_num=chunk_num
-                )
+        # Calculate image CLIP embeddings
+        print("Generating image CLIP embeddings...")
+        image_embeddings, valid_indices = calculate_image_clip_embeddings(
+            chunk_df,
+            model=clip_model,
+            processor=clip_processor,
+            device=device
+        )
+        
+        # Calculate MiniLM embeddings for the same valid indices
+        print("Generating MiniLM embeddings...")
+        text_embeddings, product_ids = calculate_minilm_embeddings(
+            chunk_df,
+            model=minilm_model,
+            tokenizer=minilm_tokenizer,
+            device=device,
+            valid_indices=valid_indices
+        )
+        
+        # Concatenate embeddings
+        print("Concatenating embeddings...")
+        fusion_embeddings = concatenate_embeddings(image_embeddings, text_embeddings)
+        
+        # Save chunk embeddings
+        save_path = os.path.join(EMBEDDINGS_PATH, "fusion_embeddings.npz")
+        save_embeddings(
+            embeddings=fusion_embeddings,
+            product_ids=product_ids,
+            embedding_type="fusion_clip_minilm",
+            save_path=save_path,
+            chunk_num=chunk_num
+        )
 
     # Uncomment this if you want to zip a subset of product images from the full dataset
     # zip_product_images(filtered_df)

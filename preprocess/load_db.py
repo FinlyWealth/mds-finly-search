@@ -8,7 +8,7 @@ from typing import List, Tuple
 import sys
 from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.db import DB_CONFIG
+from config.db import DB_CONFIG, TABLE_NAME
 from config.path import METADATA_PATH
 from config.embeddings import get_embedding_paths, get_enabled_embedding_types
 
@@ -28,7 +28,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
     
     # Drop the table if drop is True
     if drop:
-        cur.execute("DROP TABLE IF EXISTS products;")
+        cur.execute(f"DROP TABLE IF EXISTS {TABLE_NAME};")
     
     # Create embedding columns based on enabled types and their dimensions
     embedding_columns = []
@@ -38,7 +38,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
     
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
             id SERIAL PRIMARY KEY,
             Pid TEXT UNIQUE,
             {', '.join(embedding_columns)},
@@ -103,56 +103,50 @@ def store_embeddings(embeddings_dict, pids, df):
         batch_data = []
         
         for pid in batch_pids:
-            if pid not in seen_ids:
-                seen_ids.add(pid)
-                # Get metadata for this product
-                product_data = df[df['Pid'] == pid].iloc[0]
-                
-                # Prepare embedding values
-                embedding_values = []
-                for embedding_type in get_enabled_embedding_types():
-                    try:
-                        # Get the index for this product ID in the current embedding type
-                        idx = embedding_indices[embedding_type].get(pid)
-                        if idx is not None:
-                            embedding_values.append([float(x) for x in embeddings_dict[embedding_type][idx]])
-                        else:
-                            # If no embedding exists for this product, use zeros
-                            dim = embeddings_dict[embedding_type].shape[1]
-                            embedding_values.append([0.0] * dim)
-                    except IndexError as e:
-                        raise IndexError(f"Failed to access embedding at index {idx} for type {embedding_type}. "
-                                       f"Embedding length: {len(embeddings_dict[embedding_type])}, "
-                                       f"PIDs length: {len(pids)}") from e
-                
-                # Prepare metadata values
-                metadata_values = [
-                    pid,
-                    *embedding_values,  # Unpack embedding values
-                    None,  # Document will be updated separately
-                    product_data['Name'],
-                    product_data['Description'],
-                    product_data['Category'],
-                    float(product_data['Price']) if pd.notna(product_data['Price']) else None,
-                    product_data['PriceCurrency'],
-                    float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
-                    float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
-                    bool(product_data['isOnSale']), 
-                    bool(product_data['IsInStock']),
-                    product_data['MergedBrand'],
-                    product_data['Color'],
-                    product_data['Gender'],
-                    product_data['Size'],
-                    product_data['Condition']
-                ]
-                
-                batch_data.append(tuple(metadata_values))
+            if pid in seen_ids:
+                continue
+            seen_ids.add(pid)
+            
+            # Get product data from DataFrame
+            product_data = df[df['Pid'] == pid].iloc[0]
+            
+            # Get embeddings for this product
+            embedding_values = []
+            for embedding_type in get_enabled_embedding_types():
+                if pid in embedding_indices[embedding_type]:
+                    idx = embedding_indices[embedding_type][pid]
+                    embedding_values.append(embeddings_dict[embedding_type][idx])
+                else:
+                    embedding_values.append(None)
+            
+            # Prepare metadata values
+            metadata_values = [
+                pid,
+                *embedding_values,  # Unpack embedding values
+                None,  # Document will be updated separately
+                product_data['Name'],
+                product_data['Description'],
+                product_data['Category'],
+                float(product_data['Price']) if pd.notna(product_data['Price']) else None,
+                product_data['PriceCurrency'],
+                float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
+                float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
+                bool(product_data['isOnSale']), 
+                bool(product_data['IsInStock']),
+                product_data['MergedBrand'],
+                product_data['Color'],
+                product_data['Gender'],
+                product_data['Size'],
+                product_data['Condition']
+            ]
+            
+            batch_data.append(tuple(metadata_values))
         
         if batch_data:
             execute_values(
                 cur,
                 f"""
-                INSERT INTO products (
+                INSERT INTO {TABLE_NAME} (
                     {', '.join(columns)}
                 ) 
                 VALUES %s 
@@ -190,8 +184,8 @@ def update_documents(product_texts, overwrite: bool = False):
             # Update all documents in the batch
             execute_batch(
                 cur,
-                """
-                UPDATE products 
+                f"""
+                UPDATE {TABLE_NAME} 
                 SET document = to_tsvector('english', %s)
                 WHERE Pid = %s
                 """,
@@ -202,8 +196,8 @@ def update_documents(product_texts, overwrite: bool = False):
             # Only update documents that are None
             execute_batch(
                 cur,
-                """
-                UPDATE products 
+                f"""
+                UPDATE {TABLE_NAME} 
                 SET document = to_tsvector('english', %s)
                 WHERE Pid = %s AND document IS NULL
                 """,
