@@ -2,7 +2,7 @@ import psycopg2
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from config.db import DB_CONFIG
+from config.db import DB_CONFIG, TABLE_NAME
 
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
@@ -10,9 +10,9 @@ def get_db_connection():
 def fetch_product_by_pid(pid):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(f"""
         SELECT Name, Description, Brand, Category, Color, Gender, Size
-        FROM products WHERE Pid = %s
+        FROM {TABLE_NAME} WHERE Pid = %s
     """, (pid,))
     row = cur.fetchone()
     cur.close()

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # File paths configuration
-EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings.npz')
+EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings')
 METADATA_PATH = os.getenv('METADATA_PATH', 'data/sample.csv')
 
 # MLflow configuration

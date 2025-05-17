@@ -5,6 +5,9 @@ import numpy as np
 from typing import Dict, Union, Optional
 import faiss
 import json
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +43,7 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
                 SELECT 
                     Pid,
                     1 - ({self.column_name} <=> %s::vector) AS raw_score
-                FROM products
+                FROM {TABLE_NAME}
                 ORDER BY {self.column_name} <=> %s::vector
                 LIMIT %s
             )
@@ -120,7 +123,7 @@ class TextSearchRetrieval(SimilarityRetrieval):
                 SELECT 
                     Pid,
                     {self.method}(document, plainto_tsquery('english', %s)) AS raw_score
-                FROM products
+                FROM {TABLE_NAME}
                 WHERE document @@ plainto_tsquery('english', %s)
                 ORDER BY {self.method}(document, plainto_tsquery('english', %s)) DESC
                 LIMIT %s
