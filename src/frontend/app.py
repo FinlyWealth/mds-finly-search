@@ -78,7 +78,7 @@ def display_product_card(product, score):
 # Main app
 def main():
     # Create two columns for search inputs and results
-    left_col, right_col = st.columns([1, 2])
+    left_col, right_col = st.columns([1, 3])
     
     with left_col:
         st.header("🔍 Product Search")
