@@ -14,4 +14,4 @@ DB_CONFIG = {
 }
 
 # Table name configuration
-TABLE_NAME = os.getenv('PGTABLE', 'products')
+TABLE_NAME = os.getenv('PGTABLE', 'products_100k')
