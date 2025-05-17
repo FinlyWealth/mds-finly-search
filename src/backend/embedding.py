@@ -126,14 +126,13 @@ def generate_embedding(query_text=None, query_image=None):
     """
 
     if query_text is not None and query_image is not None:
-        clip_embedding = get_text_embedding(query_image)
+        clip_embedding = get_image_embedding(query_image)
         minilm_embedding = get_minilm_embeddings(query_text)
     elif query_text is not None:
         clip_embedding = get_text_embedding(query_text)
         minilm_embedding = get_minilm_embeddings(query_text)
     else:
         clip_embedding = get_image_embedding(query_image)
-
         # Skip concatenation step and return CLIP embedding
         return clip_embedding
     

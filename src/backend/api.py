@@ -24,7 +24,7 @@ components_config = [
     {
         "type": "PostgresVectorRetrieval",
         "params": {
-            "column_name": "text_clip_embedding"
+            "column_name": "fusion_embedding"
         }
     },
     {
@@ -36,7 +36,7 @@ components_config = [
     {
         "type": "TextSearchRetrieval",
         "params": {
-            "rank_method": "ts_rank_cd"
+            "rank_method": "ts_rank"
         }
     }
 ]
@@ -82,34 +82,67 @@ def index():
     return "Backend API is running!"
 
 
-@app.route('/api/search/text', methods=['POST'])
-def search_by_text():
+@app.route('/api/search', methods=['POST'])
+def search():
     try:
-        print("Received text search request")
-        data = request.get_json()
-        print(f"Request data: {data}")
-        query_text = data.get('query')
-        print(f"Query text: {query_text}")
-        
-        if not query_text:
-            return jsonify({'error': 'Query text is required'}), 400
-            
+        print("Received search request")
+        query_text = None
+        query_image = None
+        query_embedding = None
+
+        # Handle text query
+        if request.is_json:
+            data = request.get_json()
+            query_text = data.get('query')
+            print(f"Query text: {query_text}")
+
+        # Handle image query
+        if 'file' in request.files:
+            # uploaded image
+            file = request.files['file']
+            query_image = Image.open(file.stream)
+        elif request.form.get('image_path'):
+            # image from url
+            image_path = request.form.get('image_path')
+            query_image = load_image(image_path)
+
+        if not query_text and not query_image:
+            return jsonify({'error': 'Either query text or image is required'}), 400
+
         print("Generating embedding...")
-        # Generate embedding and get results from database
-        query_embedding = generate_embedding(query_text=query_text)
+        # Generate embedding based on available inputs
+        if query_text and query_image:
+            query_embedding = generate_embedding(query_text=query_text, query_image=query_image)
+        elif query_text:
+            query_embedding = generate_embedding(query_text=query_text)
+        else:  # query_image only
+            query_embedding = generate_embedding(query_image=query_image)
+
         print(f"Generated embedding shape: {query_embedding.shape}")
         
-        print("Performing hybrid search...")
-        # Get hybrid search results
-        weights = [0.5, 0.3, 0.2]
+        print("Performing retrieval...")
+        # Adjust weights based on input type
+        # Weights: [fusion_embedding, image_clip_embedding, text_search]
+        if query_text and query_image:
+            # Text+Image search: Use fusion_embedding (CLIP image + MiniLM text) and text search
+            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+        elif query_text:
+            # Text-only search: Use fusion_embedding (CLIP text + MiniLM text) and text search
+            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+        else:
+            # Image-only search: Use only image_clip_embedding
+            weights = [0, 1, 0]  # 100% image CLIP embedding
+
         components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
+        search_query = query_text if query_text else ""
         pids, scores = hybrid_retrieval(
-            query=query_text,
+            query=search_query,
             query_embedding=query_embedding,
             components=components, 
             weights=weights,
             top_k=top_k
         )
+        
         response = {
             'results': format_results(pids, scores)
         }
@@ -117,68 +150,7 @@ def search_by_text():
         return jsonify(response)
         
     except Exception as e:
-        print(f"Error in search_by_text: {str(e)}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/search/image', methods=['POST'])
-def search_by_image():
-    try:
-        if 'file' in request.files:
-            # uploaded image
-            file = request.files['file']
-            image = Image.open(file.stream)
-        else:
-            # image from url
-            image_path = request.form.get('image_path')
-            if not image_path:
-                return jsonify({'error': 'Image path or file required'}), 400
-            image = load_image(image_path)
-
-        if not image:
-            return jsonify({'error': 'Failed to load image'}), 400
-
-        print("Generating image caption...")
-        # Generate caption using BLIP
-        caption = generate_image_caption(image)
-        if not caption:
-            return jsonify({'error': 'Failed to generate image caption'}), 500
-        print(f"Generated caption: {caption}")
-        
-        # Extract brand names using spaCy
-        doc = nlp(caption)
-        brand_names = [ent.text for ent in doc.ents if ent.label_ in ['ORG', 'PRODUCT']]
-        brand_names = ' '.join(brand_names)
-        print(f"Extracted brand names: {brand_names}")
-            
-        print("Generating embedding...")
-        # Generate embedding and get results from database
-        query_embedding = generate_embedding(query_image=image)
-        print(f"Generated embedding shape: {query_embedding.shape}")
-        
-        print("Performing hybrid search...")
-        # Get hybrid search results
-        weights = [0.3, 0.5, 0.2]
-        components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
-        pids, scores = hybrid_retrieval(
-            query=brand_names,
-            query_embedding=query_embedding,
-            components=components, 
-            weights=weights,
-            top_k=top_k
-        )
-        
-        response = {
-            'results': format_results(pids, scores),
-            'caption': caption
-        }
-        print(f"Response: {response}")
-        return jsonify(response)
-        
-    except Exception as e:
-        print(f"Error in search_by_image: {str(e)}")
+        print(f"Error in search: {str(e)}")
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
