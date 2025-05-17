@@ -237,29 +237,121 @@ def filter_valid_products(df):
     
     return filtered_df
 
-def zip_product_images(df, output_zip_path="product_images.zip"):
+def process_batch(batch_df, batch_num, output_zip_path, total_batches, image_dir="data/images"):
     """
-    Creates a zip file containing all product images from the filtered DataFrame.
+    Process a single batch of images and create a zip file.
+    
+    Args:
+        batch_df (pd.DataFrame): DataFrame containing the batch of images to process
+        batch_num (int): Current batch number
+        output_zip_path (str): Base path where the zip files should be saved
+        total_batches (int): Total number of batches being processed
+        image_dir (str): Directory containing the product images
+    
+    Returns:
+        tuple: (successful_copies, failed_copies, batch_zip_path)
+    """
+    try:
+        batch_zip_path = output_zip_path.replace('.zip', f'_batch_{batch_num + 1}.zip')
+        print(f"Starting batch {batch_num + 1}/{total_batches}")
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            successful_copies = 0
+            failed_copies = 0
+            
+            # Copy existing images to temp directory
+            for idx, pid in enumerate(batch_df['Pid']):
+                if idx % 1000 == 0:  # Print progress every 1000 images
+                    print(f"Batch {batch_num + 1}: Processing image {idx}/{len(batch_df)}")
+                
+                src_path = os.path.join(image_dir, f"{pid}.jpeg")
+                dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
+                try:
+                    if os.path.exists(src_path):
+                        shutil.copy2(src_path, dst_path)
+                        successful_copies += 1
+                    else:
+                        failed_copies += 1
+                except Exception as e:
+                    print(f"Error copying {src_path}: {str(e)}")
+                    failed_copies += 1
+            
+            if successful_copies > 0:
+                # Create zip file only if we have some successful copies
+                print(f"Batch {batch_num + 1}: Creating zip file with {successful_copies} images")
+                shutil.make_archive(
+                    batch_zip_path.replace('.zip', ''),  # Remove .zip as make_archive adds it
+                    'zip',
+                    temp_dir
+                )
+                print(f"Completed batch {batch_num + 1}/{total_batches}")
+            else:
+                print(f"Batch {batch_num + 1}: No valid images found")
+                
+            return successful_copies, failed_copies, batch_zip_path
+    except Exception as e:
+        print(f"Error in batch {batch_num + 1}: {str(e)}")
+        return 0, len(batch_df), None
+
+def zip_product_images(df, output_zip_path="product_images.zip", batch_size=100000, image_dir="data/images"):
+    """
+    Creates multiple zip files containing product images from the filtered DataFrame,
+    with each zip file containing up to batch_size images. Processes batches in parallel.
     
     Args:
         df (pd.DataFrame): Filtered DataFrame containing valid 'Pid' values
-        output_zip_path (str): Path where the zip file should be saved
+        output_zip_path (str): Base path where the zip files should be saved
+        batch_size (int): Number of images per zip file (default: 100,000)
+        image_dir (str): Directory containing the product images
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Copy existing images to temp directory
-        for pid in df['Pid']:
-            src_path = f"data/images/{pid}.jpeg"
-            dst_path = os.path.join(temp_dir, f"{pid}.jpeg")
-            shutil.copy2(src_path, dst_path)
-        
-        # Create zip file
-        shutil.make_archive(
-            output_zip_path.replace('.zip', ''),  # Remove .zip as make_archive adds it
-            'zip',
-            temp_dir
-        )
-        
-        print(f"Created zip file: {output_zip_path}")
+    # Verify image directory exists
+    if not os.path.exists(image_dir):
+        raise ValueError(f"Image directory not found: {image_dir}")
+    
+    # Calculate number of batches needed
+    total_images = len(df)
+    num_batches = (total_images + batch_size - 1) // batch_size
+    
+    print(f"Processing {total_images} images in {num_batches} batches...")
+    print(f"Looking for images in: {os.path.abspath(image_dir)}")
+    
+    # Create batches
+    batches = []
+    for batch_num in range(num_batches):
+        start_idx = batch_num * batch_size
+        end_idx = min((batch_num + 1) * batch_size, total_images)
+        batch_df = df.iloc[start_idx:end_idx]
+        batches.append((batch_df, batch_num))
+    
+    # Determine number of processes (use 75% of available CPU cores)
+    num_processes = max(1, int(multiprocessing.cpu_count() * 0.75))
+    print(f"Using {num_processes} processes")
+    
+    # Create a partial function with fixed arguments
+    process_func = partial(
+        process_batch,
+        output_zip_path=output_zip_path,
+        total_batches=num_batches,
+        image_dir=image_dir
+    )
+    
+    # Process batches in parallel with timeout
+    try:
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            # Set a timeout of 30 minutes per batch
+            results = pool.starmap(process_func, batches)
+    except Exception as e:
+        print(f"Error during parallel processing: {str(e)}")
+        pool.terminate()
+        raise
+    
+    # Print summary
+    total_successful = sum(r[0] for r in results)
+    total_failed = sum(r[1] for r in results)
+    print(f"\nProcessing complete!")
+    print(f"Total images processed: {total_images}")
+    print(f"Successfully copied: {total_successful}")
+    print(f"Missing images: {total_failed}")
 
 def main():
     # Set device
@@ -359,8 +451,8 @@ def main():
                     chunk_num=chunk_num
                 )
 
-    # Zip product images
-    zip_product_images(filtered_df)
+    # Uncomment this if you want to zip a subset of product images from the full dataset
+    # zip_product_images(filtered_df)
 
 if __name__ == "__main__":
     main() 
