@@ -8,29 +8,39 @@ from psycopg2.extras import execute_values
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG, TABLE_NAME
-from config.embeddings import get_enabled_embedding_types
 
 # FAISS configuration
 N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
 
 def load_embeddings_from_db():
-    """Load embeddings from the database for all enabled embedding types"""
+    """Load embeddings from the database for all columns containing 'embedding' in their name"""
     conn = psycopg2.connect(**DB_CONFIG)
     pgvector.psycopg2.register_vector(conn)
     cur = conn.cursor()
     
     embeddings_data = {}
     
-    # Load embeddings for each enabled type
-    for embedding_type in get_enabled_embedding_types():
-        column_name = f"{embedding_type}_embedding"
+    # Get all columns from the table
+    cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{TABLE_NAME}'")
+    columns = [row[0] for row in cur.fetchall()]
+    
+    # Find all embedding columns
+    embedding_columns = [col for col in columns if 'embedding' in col.lower()]
+    
+    if not embedding_columns:
+        raise ValueError("No embedding columns found in the database table")
+    
+    # Load embeddings for each embedding column
+    for column_name in embedding_columns:
+        embedding_type = column_name.replace('_embedding', '')
         cur.execute(f"SELECT Pid, {column_name} FROM {TABLE_NAME} WHERE {column_name} IS NOT NULL ORDER BY Pid")
         data = cur.fetchall()
         pids = [row[0] for row in data]
         embeddings = np.array([row[1] for row in data], dtype=np.float32)
         
         if len(embeddings) == 0:
-            raise ValueError(f"No {embedding_type} embeddings found in the database")
+            print(f"Warning: No {embedding_type} embeddings found in the database")
+            continue
         
         embeddings_data[embedding_type] = {
             'pids': pids,
@@ -40,6 +50,9 @@ def load_embeddings_from_db():
     
     cur.close()
     conn.close()
+    
+    if not embeddings_data:
+        raise ValueError("No valid embeddings found in any embedding column")
     
     return embeddings_data
 

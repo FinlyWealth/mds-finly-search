@@ -3,9 +3,6 @@
 # Default target
 all: proxy-setup run
 
-# Combined preprocessing target
-preprocess-all: embed db faiss
-
 # Individual preprocessing targets
 embed:
 	python preprocess/generate_embed.py
