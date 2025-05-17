@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 from PIL import Image
 from io import BytesIO
+import base64
 
 # Set page config
 st.set_page_config(
@@ -87,28 +88,26 @@ def main():
         query_text = st.text_input(
             "Enter your search query", 
             placeholder="e.g., comfortable running shoes",
-            key="query_text"
+            key="query_text",
+            on_change=lambda: st.session_state.update({"trigger_search": True}) if st.session_state.query_text else None
         )
         
-        # File uploader
-        uploaded_file = st.file_uploader(
-            "Or upload an image", 
-            type=["jpg", "jpeg", "png"],
-            key="uploaded_file"
-        )
-        
-        # Image path input
-        image_path = st.text_input(
-            "Or enter image path or URL", 
+        # Combined image input
+        image_input = st.text_input(
+            "Enter image path or URL", 
             placeholder="e.g., /path/to/image.jpg or https://example.com/image.jpg",
-            key="image_path"
+            key="image_input",
+            on_change=lambda: st.session_state.update({"trigger_search": True}) if st.session_state.image_input else None
         )
         
         # Add search button
         search_button = st.button("🔍 Search", type="primary", use_container_width=True)
         
-        # Handle search only when button is clicked
-        if search_button and (query_text or uploaded_file is not None or image_path):
+        # Handle search when button is clicked or enter is pressed
+        if (search_button or st.session_state.get("trigger_search", False)) and (query_text or image_input):
+            # Reset the trigger
+            if "trigger_search" in st.session_state:
+                del st.session_state.trigger_search
             with st.spinner("Searching for similar products..."):
                 try:
                     # Prepare the request data
@@ -118,19 +117,10 @@ def main():
                     if query_text:
                         request_data["query"] = query_text
                     
-                    if uploaded_file is not None:
-                        # Convert image to bytes for upload
-                        image = Image.open(uploaded_file)
-                        img_byte_arr = BytesIO()
-                        image.save(img_byte_arr, format=image.format)
-                        img_byte_arr = img_byte_arr.getvalue()
-                        files = {"file": ("image.jpg", img_byte_arr, "image/jpeg")}
-                        # Display the uploaded image
-                        st.image(image, caption="Input Image", use_container_width=True)
-                    elif image_path:
-                        image = load_image(image_path)
+                    if image_input:
+                        image = load_image(image_input)
                         if image:
-                            request_data["image_path"] = image_path
+                            request_data["image_path"] = image_input
                             # Display the input image
                             st.image(image, caption="Input Image", use_container_width=True)
                     
@@ -138,7 +128,8 @@ def main():
                     response = requests.post(
                         f"{API_BASE_URL}/api/search",
                         files=files if files else None,
-                        data=request_data
+                        data=request_data,
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'}
                     )
                     
                     if response.status_code == 200:

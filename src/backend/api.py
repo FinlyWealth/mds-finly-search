@@ -86,15 +86,15 @@ def index():
 def search():
     try:
         print("Received search request")
+        print(f"Form data: {request.form}")
+        print(f"Files: {request.files}")
         query_text = None
         query_image = None
         query_embedding = None
 
-        # Handle text query
-        if request.is_json:
-            data = request.get_json()
-            query_text = data.get('query')
-            print(f"Query text: {query_text}")
+        # Handle text query from form data
+        query_text = request.form.get('query')
+        print(f"Query text: {query_text}")
 
         # Handle image query
         if 'file' in request.files:
