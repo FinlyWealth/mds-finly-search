@@ -13,11 +13,12 @@ from config.path import METADATA_PATH
 from config.embeddings import get_embedding_paths, get_enabled_embedding_types
 
 
-def init_db(embedding_dims: dict):
+def init_db(embedding_dims: dict, drop: bool = False):
     """Initialize the database and create necessary tables
     
     Args:
         embedding_dims (dict): Dictionary mapping embedding types to their dimensions
+        drop (bool): Whether to drop the existing table before creating a new one. Defaults to False.
     """
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
@@ -25,8 +26,9 @@ def init_db(embedding_dims: dict):
     # Enable pgvector extension
     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
-    # Drop the table if it exists
-    cur.execute("DROP TABLE IF EXISTS products;")
+    # Drop the table if drop is True
+    if drop:
+        cur.execute("DROP TABLE IF EXISTS products;")
     
     # Create embedding columns based on enabled types and their dimensions
     embedding_columns = []
@@ -36,7 +38,7 @@ def init_db(embedding_dims: dict):
     
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
-        CREATE TABLE products (
+        CREATE TABLE IF NOT EXISTS products (
             id SERIAL PRIMARY KEY,
             Pid TEXT UNIQUE,
             {', '.join(embedding_columns)},
@@ -165,8 +167,13 @@ def store_embeddings(embeddings_dict, pids, df):
     cur.close()
     conn.close()
 
-def update_documents(product_texts):
-    """Update the document field with the actual text content for full-text search"""
+def update_documents(product_texts, overwrite: bool = False):
+    """Update the document field with the actual text content for full-text search
+    
+    Args:
+        product_texts (list): List of tuples containing (pid, text) pairs
+        overwrite (bool): If True, updates all documents. If False, only updates documents that are None.
+    """
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
     
@@ -179,16 +186,30 @@ def update_documents(product_texts):
         batch = product_texts[i:i + batch_size]
         data = [(text, pid) for pid, text in batch]
         
-        execute_batch(
-            cur,
-            """
-            UPDATE products 
-            SET document = to_tsvector('english', %s)
-            WHERE Pid = %s
-            """,
-            data,
-            page_size=batch_size
-        )
+        if overwrite:
+            # Update all documents in the batch
+            execute_batch(
+                cur,
+                """
+                UPDATE products 
+                SET document = to_tsvector('english', %s)
+                WHERE Pid = %s
+                """,
+                data,
+                page_size=batch_size
+            )
+        else:
+            # Only update documents that are None
+            execute_batch(
+                cur,
+                """
+                UPDATE products 
+                SET document = to_tsvector('english', %s)
+                WHERE Pid = %s AND document IS NULL
+                """,
+                data,
+                page_size=batch_size
+            )
         conn.commit()
     
     cur.close()
@@ -238,11 +259,11 @@ def main():
     print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     # Text fields to combine for TF-IDF search
-    text_fields = ['Name', 'Description', 'Category', 'MergedBrand', 
+    text_fields = ['Name', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
     print("\nInitializing database...")
-    init_db(embedding_dims)
+    init_db(embedding_dims, drop=False)  # Default to not dropping the table
     
     print("\nStoring embeddings in database...")
     store_embeddings(embeddings_dict, common_pids, df)
@@ -253,7 +274,7 @@ def main():
     
     # Update ts_vector in database
     print("\nUpdating ts_vector in database...")
-    update_documents(product_texts)
+    update_documents(product_texts, overwrite=False)  # Default to not overwriting existing documents
     
     print("\nDone!")
 
