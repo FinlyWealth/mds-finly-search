@@ -30,7 +30,8 @@ jobs:
             --region=us-west1 \
             --allow-unauthenticated \
             --port=5001 \
-            --timeout=900
+            --timeout=900 \
+            --memory=1Gi
 
       - name: Retrieve backend URL
         id: get-backend-url
