@@ -26,10 +26,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: 
-            - beta
-            - run
-            - sql
+          install_components: beta,run,sql
 
       - name: Deploy Cloud Run backend
         run: |
