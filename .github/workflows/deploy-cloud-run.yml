@@ -31,7 +31,7 @@ jobs:
             --allow-unauthenticated \
             --port=5001 \
             --timeout=900 \
-            --memory=1Gi
+            --memory=2Gi
 
       - name: Retrieve backend URL
         id: get-backend-url
