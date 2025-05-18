@@ -38,7 +38,7 @@ jobs:
             --timeout=900s \
             --memory=4Gi \
             --add-cloudsql-instances=$CLOUDSQL_INSTANCE \
-            --set-env-vars="PGHOST=/cloudsql/$CLOUDSQL_INSTANCE,PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }}"
+            --set-env-vars="PGHOST=/cloudsql/$CLOUDSQL_INSTANCE,PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }},PGTABLE=${{ secrets.PGTABLE }}"
 
       - name: Retrieve backend URL
         id: get-backend-url
