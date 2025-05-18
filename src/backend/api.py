@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from src.backend.embedding import generate_embedding, generate_image_caption
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
-from config.db import DB_CONFIG
+from config.db import DB_CONFIG, TABLE_NAME
 
 
 app = Flask(__name__)
@@ -158,6 +158,10 @@ def search():
 
 # Set port to 5001
 if __name__ == "__main__":
+    # Print database connection details
+    print(f"Connecting to database: {DB_CONFIG['dbname']}")
+    print(f"Table: {TABLE_NAME}")
+    
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
