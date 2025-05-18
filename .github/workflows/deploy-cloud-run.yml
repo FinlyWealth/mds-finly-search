@@ -1,11 +1,18 @@
 name: Deploy Containers to Cloud Run
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    # set your GCP project & default Cloud Run region
+    env:
+      CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+      CLOUDSDK_RUN_REGION: us-west1
+      CLOUDSQL_INSTANCE: ${{ secrets.CLOUDSQL_INSTANCE }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -15,32 +22,39 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set up gcloud CLI
+      - name: Install gcloud & components
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          region: us-west1
-          export_default_credentials: true
+          install_components: 
+            - beta
+            - run
+            - sql
 
       - name: Deploy Cloud Run backend
         run: |
           gcloud run deploy finly-backend \
             --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:latest \
             --platform=managed \
-            --region=us-west1 \
+            --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
             --port=5001 \
-            --timeout=900 \
+            --timeout=900s \
             --memory=4Gi \
-            --set-env-vars="PGHOST=/cloudsql/${{ secrets.CLOUDSQL_INSTANCE }},PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }},PGTABLE=${{ secrets.PGTABLE }}" \
-            --add-cloudsql-instances=${{ secrets.CLOUDSQL_INSTANCE }}
+            --add-cloudsql-instances=$CLOUDSQL_INSTANCE \
+            --set-env-vars=\
+PGHOST=/cloudsql/$CLOUDSQL_INSTANCE,\
+PGPORT=${{ secrets.PGPORT }},\
+PGDATABASE=${{ secrets.PGDATABASE }},\
+PGUSER=${{ secrets.PGUSER }},\
+PGPASSWORD=${{ secrets.PGPASSWORD }}
 
       - name: Retrieve backend URL
         id: get-backend-url
         run: |
-          echo "BACKEND_URL=$(gcloud run services describe finly-backend \
+          echo "API_BASE_URL=$(gcloud run services describe finly-backend \
             --platform=managed \
-            --region=us-west1 \
+            --region=$CLOUDSDK_RUN_REGION \
             --format='value(status.url)')" >> $GITHUB_ENV
 
       - name: Deploy Cloud Run frontend
@@ -48,7 +62,7 @@ jobs:
           gcloud run deploy finly-frontend \
             --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:latest \
             --platform=managed \
-            --region=us-west1 \
+            --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
             --port=8501 \
-            --set-env-vars=API_BASE_URL=$BACKEND_URL
+            --set-env-vars=API_BASE_URL=$API_BASE_URL
