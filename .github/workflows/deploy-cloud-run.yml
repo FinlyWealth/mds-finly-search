@@ -31,7 +31,9 @@ jobs:
             --allow-unauthenticated \
             --port=5001 \
             --timeout=900 \
-            --memory=4Gi
+            --memory=4Gi \
+            --set-env-vars="PGHOST=${{ secrets.PGHOST }},PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }},PGTABLE=${{ secrets.PGTABLE }}" \
+            --add-cloudsql-instances=${{ secrets.CLOUDSQL_INSTANCE }}
 
       - name: Retrieve backend URL
         id: get-backend-url
