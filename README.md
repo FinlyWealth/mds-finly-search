@@ -2,15 +2,22 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
+## Version 0.1.0
+- 100k products
+- Multimodel search: text, image, text+image
+- Uses [clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) for multimodal understanding between text and product images and [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) for natural language understanding
+- User intereface built using Streamlit
+- API built using Flask
+- Uses Postgres database with pgvector and built-in cosine similarity for retrieval
+- Database hosted on Google Cloud SQL
+- App container hosted on Google Cloud Run
+
+### Note
+- The web application is hosted on-demand on Google Cloud Run. Therefore the 1st query may be take 1-2 minutes. Subsequent queries should be less than 1 second.
+
 ## Setup Instructions - User
 
-Follow the instructions below to set up the database, then run the command to start the frontend and backend applications in Docker containers:
-
-```{bash}
-docker-compose up --build
-```
-
-The frontend Streamlit application is at `http://0.0.0.0:8501`.
+The application can be accessed via the link in the Github repo description. 
 
 ## Setup Instructions - Developer
 
