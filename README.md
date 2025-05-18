@@ -38,7 +38,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     ```         
     # User, password and location of the Postgres database
     PGUSER=postgres
-    PGPASSWORD=u&P{l{hq1r`^.u76
+    PGPASSWORD=ZK3RjyBv6twoA9
     PGHOST=localhost
     PGPORT=5433
     PGDATABASE=postgres
