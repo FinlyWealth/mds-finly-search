@@ -36,7 +36,7 @@ def create_retrieval_component(component_config, db_config=None):
     elif component_type == 'TextSearchRetrieval':
         return TextSearchRetrieval(params['rank_method'], db_config)
     elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'])
+        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1))
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 
@@ -50,13 +50,21 @@ def run_experiment(config, db_config=None):
         
         # Log parameters
         component_weights = {}
-        for c, w in zip(components, config['weights']):
+        component_params = {}
+        for i, (c, w) in enumerate(zip(components, config['weights'])):
             if isinstance(c, PostgresVectorRetrieval):
                 component_name = f"postgres_vector_{c.column_name}"
+                component_params[f"{i}_type"] = "PostgresVectorRetrieval"
+                component_params[f"{i}_column_name"] = c.column_name
             elif isinstance(c, FaissVectorRetrieval):
                 component_name = f"faiss_vector_{c.column_name}"
+                component_params[f"{i}_type"] = "FaissVectorRetrieval"
+                component_params[f"{i}_column_name"] = c.column_name
+                component_params[f"{i}_nprobe"] = c.index.nprobe if hasattr(c.index, 'nprobe') else 1
             else:
                 component_name = type(c).__name__.lower()
+                component_params[f"{i}_type"] = "TextSearchRetrieval"
+                component_params[f"{i}_rank_method"] = c.method
             component_weights[component_name] = w
         
         # Get benchmark file name without extension
@@ -66,7 +74,9 @@ def run_experiment(config, db_config=None):
             "benchmark": benchmark_file,
             "table": TABLE_NAME,
             "top_k": TOP_K,
-            **component_weights
+            "faiss_nlist": next((c.index.nlist for c in components if isinstance(c, FaissVectorRetrieval)), None),
+            **component_weights,
+            **component_params
         })
         
         # Initialize counters

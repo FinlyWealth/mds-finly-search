@@ -13,7 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS configuration
-N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
+N_LIST_VALUES = [int(x) for x in os.getenv('FAISS_NLIST', '100').split(',')]  # Accept comma-separated list of nlist values
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '10000'))  # Default batch size for database loading
 
 def get_memory_usage():
@@ -95,12 +95,12 @@ def load_embeddings_from_db():
     
     return embeddings_data
 
-def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
+def create_faiss_index(embeddings, pids, embedding_dim, nlist):
     """
     Create a FAISS index with cosine similarity and explicit PID mapping
-    nlist: number of clusters for the IVF index (configurable via FAISS_NLIST env var)
+    nlist: number of clusters for the IVF index
     """
-    print(f"Creating index with {len(embeddings)} vectors...")
+    print(f"Creating index with {len(embeddings)} vectors and nlist={nlist}...")
     
     # Create PID to index mapping
     pid_to_idx = {pid: i for i, pid in enumerate(pids)}
@@ -118,7 +118,7 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
         if len(embeddings) < nlist * 10:
             raise ValueError(f"Not enough vectors to train the index. Got {len(embeddings)}, need at least {nlist * 10}.")
         
-        print("Training index...")
+        print(f"Training index with nlist={nlist}...")
         # Use 30*nlist vectors for training
         train_size = min(30 * nlist, len(embeddings))
         print(f"Using {train_size} vectors for training (30*{nlist})")
@@ -192,42 +192,48 @@ def main():
     print("Loading embeddings from database...")
     embeddings_data = load_embeddings_from_db()
     
-    # Create and save indexes for each embedding type
+    # Create and save indexes for each embedding type and nlist value
     for embedding_type, data in embeddings_data.items():
         print(f"\nProcessing {embedding_type} embeddings...")
-        print(f"Creating {embedding_type} index (dimension: {data['dim']})...")
         
-        index, pid_map = create_faiss_index(
-            data['embeddings'], 
-            data['pids'], 
-            data['dim']
-        )
+        for nlist in N_LIST_VALUES:
+            print(f"\nCreating {embedding_type} index with nlist={nlist} (dimension: {data['dim']})...")
+            
+            index, pid_map = create_faiss_index(
+                data['embeddings'], 
+                data['pids'], 
+                data['dim'],
+                nlist
+            )
+            
+            # Save the index
+            index_path = os.path.join(output_dir, f'{embedding_type}_index_nlist{nlist}.faiss')
+            print(f"Saving index to {index_path}...")
+            save_index(index, index_path)
+            
+            # Save the mapping
+            mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping_nlist{nlist}.json')
+            print(f"Saving index mapping to {mapping_path}...")
+            save_mapping(pid_map, mapping_path)
+            
+            # Save the product IDs (keeping this for backward compatibility)
+            pids_path = os.path.join(output_dir, f'{embedding_type}_pids_nlist{nlist}.npy')
+            print(f"Saving product IDs to {pids_path}...")
+            np.save(pids_path, data['pids'])
+            
+            # Verify the index with a subset of vectors
+            print(f"Verifying {embedding_type} index with nlist={nlist}...")
+            verify_size = min(1000, len(data['embeddings']))
+            verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
+            
+            # Clear memory
+            del index
+            gc.collect()
+            print(f"Memory usage after processing {embedding_type} with nlist={nlist}: {get_memory_usage():.2f} GB")
         
-        # Save the index
-        index_path = os.path.join(output_dir, f'{embedding_type}_index.faiss')
-        print(f"Saving index to {index_path}...")
-        save_index(index, index_path)
-        
-        # Save the mapping
-        mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping.json')
-        print(f"Saving index mapping to {mapping_path}...")
-        save_mapping(pid_map, mapping_path)
-        
-        # Save the product IDs (keeping this for backward compatibility)
-        pids_path = os.path.join(output_dir, f'{embedding_type}_pids.npy')
-        print(f"Saving product IDs to {pids_path}...")
-        np.save(pids_path, data['pids'])
-        
-        # Verify the index with a subset of vectors
-        print(f"Verifying {embedding_type} index...")
-        verify_size = min(1000, len(data['embeddings']))
-        verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
-        
-        # Clear memory
-        del index
+        # Clear embeddings data after processing all nlist values
         del data['embeddings']
         gc.collect()
-        print(f"Memory usage after processing {embedding_type}: {get_memory_usage():.2f} GB")
     
     print("\nDone!")
 

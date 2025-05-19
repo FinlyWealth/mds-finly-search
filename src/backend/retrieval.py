@@ -65,12 +65,13 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
 
 class FaissVectorRetrieval(SimilarityRetrieval):
     """FAISS vector search using saved indexes"""
-    def __init__(self, column_name: str):
+    def __init__(self, column_name: str, nprobe: int = 1):
         """
         Initialize FAISS retrieval with saved index.
         
         Args:
             column_name: Name of the embedding column (e.g., 'text_embedding', 'image_embedding', 'fusion_embedding')
+            nprobe: Number of clusters to visit during search (default: 1)
         """
         # Extract the base type from the column name (e.g., 'fusion' from 'fusion_embedding')
         index_type = column_name.replace('_embedding', '')
@@ -82,6 +83,10 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         if not os.path.exists(index_path):
             raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
         self.index = faiss.read_index(index_path)
+        
+        # Set nprobe parameter
+        if hasattr(self.index, 'nprobe'):
+            self.index.nprobe = nprobe
         
         # Load the PID mapping
         mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
@@ -157,7 +162,7 @@ def create_retrieval_component(component_config, db_config=None):
     elif component_type == 'TextSearchRetrieval':
         return TextSearchRetrieval(params['rank_method'], db_config)
     elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'])
+        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1))
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 

@@ -19,7 +19,7 @@ _minilm_tokenizer = None
 def initialize_clip_model(model_id="openai/clip-vit-base-patch32"):
     """Initialize CLIP model and processor"""
     global _clip_processor, _clip_model
-    _clip_processor = AutoProcessor.from_pretrained(model_id, use_fast=True)
+    _clip_processor = AutoProcessor.from_pretrained(model_id)
     _clip_model = AutoModel.from_pretrained(model_id).to(device)
     return _clip_processor, _clip_model
 
