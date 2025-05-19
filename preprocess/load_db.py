@@ -10,12 +10,17 @@ from tqdm import tqdm
 import re
 import glob
 from dotenv import load_dotenv
+import time
+import pickle
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG, TABLE_NAME
 from config.path import METADATA_PATH, EMBEDDINGS_PATH
 
 # Load environment variables
 load_dotenv()
+
+# Add checkpoint file path
+CHECKPOINT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'insert_checkpoint.pkl')
 
 def get_base_embedding_type(filename: str) -> str:
     """Extract the base embedding type from a filename
@@ -269,6 +274,38 @@ def validate_and_clean_dataframe(df):
     
     return df_cleaned
 
+def save_checkpoint(batch_number, total_batches):
+    """Save the current batch number to checkpoint file
+    
+    Args:
+        batch_number (int): Current batch number
+        total_batches (int): Total number of batches
+    """
+    checkpoint_data = {
+        'batch_number': batch_number,
+        'total_batches': total_batches,
+        'timestamp': time.time()
+    }
+    with open(CHECKPOINT_FILE, 'wb') as f:
+        pickle.dump(checkpoint_data, f)
+    print(f"Checkpoint saved: Batch {batch_number}/{total_batches}")
+
+def load_checkpoint():
+    """Load the last checkpoint if it exists
+    
+    Returns:
+        tuple: (batch_number, total_batches) or (0, None) if no checkpoint exists
+    """
+    if os.path.exists(CHECKPOINT_FILE):
+        try:
+            with open(CHECKPOINT_FILE, 'rb') as f:
+                checkpoint_data = pickle.load(f)
+            print(f"Loaded checkpoint: Batch {checkpoint_data['batch_number']}/{checkpoint_data['total_batches']}")
+            return checkpoint_data['batch_number'], checkpoint_data['total_batches']
+        except Exception as e:
+            print(f"Error loading checkpoint: {e}")
+    return 0, None
+
 def insert_data(embeddings_dict, pids, df):
     """Store embeddings and metadata in the database
     
@@ -279,9 +316,6 @@ def insert_data(embeddings_dict, pids, df):
     """
     # Validate and clean the DataFrame first
     df = validate_and_clean_dataframe(df)
-    
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
     
     # Create a set to track seen Pids
     seen_ids = set()
@@ -305,12 +339,19 @@ def insert_data(embeddings_dict, pids, df):
     text_fields = ['Name', 'Category', 'MergedBrand', 
                    'Color', 'Gender', 'Size', 'Condition']
     
-    # Process in batches
-    batch_size = 5000
+    batch_size = 3000
     total_products = len(pids)
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
+    # Load checkpoint if exists
+    start_batch, checkpoint_total = load_checkpoint()
+    if checkpoint_total is not None and checkpoint_total != (total_products + batch_size - 1) // batch_size:
+        print("Warning: Checkpoint total batches doesn't match current total. Starting from beginning.")
+        start_batch = 0
     
     print("\nInserting data into database...")
-    for i in range(0, total_products, batch_size):
+    for i in range(start_batch * batch_size, total_products, batch_size):
         batch_pids = pids[i:i + batch_size]
         batch_data = []
         
@@ -362,60 +403,95 @@ def insert_data(embeddings_dict, pids, df):
             batch_data.append(tuple(metadata_values))
         
         if batch_data:
-            # Use execute_values for bulk insert with VALUES clause
-            execute_values(
-                cur,
-                f"""
-                INSERT INTO {TABLE_NAME} (
-                    {', '.join(columns)}
-                ) 
-                SELECT 
-                    x.Pid,
-                    {', '.join(f'x.{col}_embedding' for col in get_enabled_embedding_types())},
-                    to_tsvector('english', x.document),
-                    x.Name,
-                    x.Description,
-                    x.Category,
-                    x.Price,
-                    x.PriceCurrency,
-                    x.FinalPrice,
-                    x.Discount,
-                    x.isOnSale,
-                    x.IsInStock,
-                    x.Brand,
-                    x.Color,
-                    x.Gender,
-                    x.Size,
-                    x.Condition
-                FROM (VALUES %s) AS x (
-                    Pid,
-                    {', '.join(f'{col}_embedding' for col in get_enabled_embedding_types())},
-                    document,
-                    Name,
-                    Description,
-                    Category,
-                    Price,
-                    PriceCurrency,
-                    FinalPrice,
-                    Discount,
-                    isOnSale,
-                    IsInStock,
-                    Brand,
-                    Color,
-                    Gender,
-                    Size,
-                    Condition
-                )
-                ON CONFLICT (Pid) DO NOTHING
-                """,
-                batch_data
-            )
-            conn.commit()
-        
-        print(f"Processed batch {i//batch_size + 1}/{(total_products + batch_size - 1)//batch_size}")
+            # Retry logic for database operations
+            for retry in range(max_retries):
+                try:
+                    conn = psycopg2.connect(**DB_CONFIG)
+                    cur = conn.cursor()
+                    
+                    # Use execute_values for bulk insert with VALUES clause
+                    execute_values(
+                        cur,
+                        f"""
+                        INSERT INTO {TABLE_NAME} (
+                            {', '.join(columns)}
+                        ) 
+                        SELECT 
+                            x.Pid,
+                            {', '.join(f'x.{col}_embedding' for col in get_enabled_embedding_types())},
+                            to_tsvector('english', x.document),
+                            x.Name,
+                            x.Description,
+                            x.Category,
+                            x.Price,
+                            x.PriceCurrency,
+                            x.FinalPrice,
+                            x.Discount,
+                            x.isOnSale,
+                            x.IsInStock,
+                            x.Brand,
+                            x.Color,
+                            x.Gender,
+                            x.Size,
+                            x.Condition
+                        FROM (VALUES %s) AS x (
+                            Pid,
+                            {', '.join(f'{col}_embedding' for col in get_enabled_embedding_types())},
+                            document,
+                            Name,
+                            Description,
+                            Category,
+                            Price,
+                            PriceCurrency,
+                            FinalPrice,
+                            Discount,
+                            isOnSale,
+                            IsInStock,
+                            Brand,
+                            Color,
+                            Gender,
+                            Size,
+                            Condition
+                        )
+                        ON CONFLICT (Pid) DO NOTHING
+                        """,
+                        batch_data
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    
+                    # Save checkpoint after successful batch
+                    current_batch = i // batch_size + 1
+                    total_batches = (total_products + batch_size - 1) // batch_size
+                    save_checkpoint(current_batch, total_batches)
+                    
+                    print(f"Processed batch {current_batch}/{total_batches}")
+                    break  # Success, exit retry loop
+                    
+                except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                    print(f"Database error on batch {i//batch_size + 1} (retry {retry + 1}/{max_retries}): {str(e)}")
+                    if retry < max_retries - 1:
+                        print(f"Waiting {retry_delay} seconds before retrying...")
+                        time.sleep(retry_delay)
+                    else:
+                        print("Max retries reached. Moving to next batch.")
+                    # Ensure connection is closed before retrying
+                    try:
+                        if 'cur' in locals():
+                            cur.close()
+                        if 'conn' in locals():
+                            conn.close()
+                    except:
+                        pass
+                except Exception as e:
+                    print(f"Unexpected error on batch {i//batch_size + 1}: {str(e)}")
+                    raise  # Re-raise unexpected errors
     
-    cur.close()
-    conn.close()
+    # Remove checkpoint file after successful completion
+    if os.path.exists(CHECKPOINT_FILE):
+        os.remove(CHECKPOINT_FILE)
+        print("Checkpoint file removed after successful completion")
 
 # This script is used to load the embeddings and update documents in the database
 def main():

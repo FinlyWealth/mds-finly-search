@@ -6,14 +6,23 @@ import pgvector.psycopg2
 import json
 from psycopg2.extras import execute_values
 import sys
+import psutil
+import gc
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS configuration
 N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', '10000'))  # Default batch size for database loading
+
+def get_memory_usage():
+    """Get current memory usage in GB"""
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1024 / 1024 / 1024
 
 def load_embeddings_from_db():
-    """Load embeddings from the database for all columns containing 'embedding' in their name"""
+    """Load embeddings from the database in batches"""
     conn = psycopg2.connect(**DB_CONFIG)
     pgvector.psycopg2.register_vector(conn)
     cur = conn.cursor()
@@ -24,35 +33,65 @@ def load_embeddings_from_db():
     cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{TABLE_NAME}'")
     columns = [row[0] for row in cur.fetchall()]
     
-    # Find all embedding columns
-    embedding_columns = [col for col in columns if 'embedding' in col.lower()]
+    # Look specifically for fusion_embedding column
+    if 'fusion_embedding' not in columns:
+        raise ValueError("fusion_embedding column not found in the database table")
     
-    if not embedding_columns:
-        raise ValueError("No embedding columns found in the database table")
+    # Get total count for progress bar
+    cur.execute(f"SELECT COUNT(*) FROM {TABLE_NAME} WHERE fusion_embedding IS NOT NULL")
+    total_rows = cur.fetchone()[0]
     
-    # Load embeddings for each embedding column
-    for column_name in embedding_columns:
-        embedding_type = column_name.replace('_embedding', '')
-        cur.execute(f"SELECT Pid, {column_name} FROM {TABLE_NAME} WHERE {column_name} IS NOT NULL ORDER BY Pid")
-        data = cur.fetchall()
-        pids = [row[0] for row in data]
-        embeddings = np.array([row[1] for row in data], dtype=np.float32)
-        
-        if len(embeddings) == 0:
-            print(f"Warning: No {embedding_type} embeddings found in the database")
-            continue
-        
-        embeddings_data[embedding_type] = {
-            'pids': pids,
-            'embeddings': embeddings,
-            'dim': len(embeddings[0])
-        }
+    # Load embeddings for fusion_embedding in batches
+    column_name = 'fusion_embedding'
+    embedding_type = 'fusion'
+    
+    pids = []
+    embeddings = []
+    offset = 0
+    
+    print(f"Loading {total_rows} embeddings in batches of {BATCH_SIZE}...")
+    with tqdm(total=total_rows) as pbar:
+        while True:
+            cur.execute(f"""
+                SELECT Pid, {column_name} 
+                FROM {TABLE_NAME} 
+                WHERE {column_name} IS NOT NULL 
+                ORDER BY Pid 
+                LIMIT {BATCH_SIZE} 
+                OFFSET {offset}
+            """)
+            batch = cur.fetchall()
+            
+            if not batch:
+                break
+                
+            batch_pids = [row[0] for row in batch]
+            batch_embeddings = np.array([row[1] for row in batch], dtype=np.float32)
+            
+            pids.extend(batch_pids)
+            embeddings.append(batch_embeddings)
+            
+            offset += BATCH_SIZE
+            pbar.update(len(batch))
+            
+            # Print memory usage every 100k rows
+            if offset % 100000 == 0:
+                print(f"\nCurrent memory usage: {get_memory_usage():.2f} GB")
+    
+    # Concatenate all embeddings
+    embeddings = np.vstack(embeddings)
+    
+    if len(embeddings) == 0:
+        raise ValueError("No fusion embeddings found in the database")
+    
+    embeddings_data[embedding_type] = {
+        'pids': pids,
+        'embeddings': embeddings,
+        'dim': len(embeddings[0])
+    }
     
     cur.close()
     conn.close()
-    
-    if not embeddings_data:
-        raise ValueError("No valid embeddings found in any embedding column")
     
     return embeddings_data
 
@@ -61,6 +100,8 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
     Create a FAISS index with cosine similarity and explicit PID mapping
     nlist: number of clusters for the IVF index (configurable via FAISS_NLIST env var)
     """
+    print(f"Creating index with {len(embeddings)} vectors...")
+    
     # Create PID to index mapping
     pid_to_idx = {pid: i for i, pid in enumerate(pids)}
     idx_to_pid = {i: pid for pid, i in pid_to_idx.items()}
@@ -72,17 +113,33 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
     quantizer = faiss.IndexFlatIP(embedding_dim)  # Inner product for cosine similarity
     index = faiss.IndexIVFFlat(quantizer, embedding_dim, nlist, faiss.METRIC_INNER_PRODUCT)
     
-    # Train the index
+    # Train the index with memory-efficient approach
     if not index.is_trained:
         if len(embeddings) < nlist * 10:
             raise ValueError(f"Not enough vectors to train the index. Got {len(embeddings)}, need at least {nlist * 10}.")
-        index.train(embeddings)
+        
+        print("Training index...")
+        # Use 30*nlist vectors for training
+        train_size = min(30 * nlist, len(embeddings))
+        print(f"Using {train_size} vectors for training (30*{nlist})")
+        train_vectors = embeddings[:train_size]
+        index.train(train_vectors)
+        del train_vectors
+        gc.collect()
     
-    # Create ID-mapped index and add vectors with IDs
-    id_index = faiss.IndexIDMap(index)
-    id_index.add_with_ids(embeddings, ids)
+    # Add vectors in batches to save memory
+    print("Adding vectors to index...")
+    batch_size = 100000
+    for i in tqdm(range(0, len(embeddings), batch_size)):
+        end_idx = min(i + batch_size, len(embeddings))
+        batch_embeddings = embeddings[i:end_idx]
+        batch_ids = ids[i:end_idx]
+        index.add_with_ids(batch_embeddings, batch_ids)
+        
+        if i % 500000 == 0:
+            print(f"\nCurrent memory usage: {get_memory_usage():.2f} GB")
     
-    return id_index, idx_to_pid
+    return index, idx_to_pid
 
 def verify_index(index, embeddings, pids):
     """Verify that all embeddings are present in the index and mapped to correct PIDs."""
@@ -131,6 +188,7 @@ def main():
     output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indexes')
     os.makedirs(output_dir, exist_ok=True)
     
+    print(f"Initial memory usage: {get_memory_usage():.2f} GB")
     print("Loading embeddings from database...")
     embeddings_data = load_embeddings_from_db()
     
@@ -160,9 +218,16 @@ def main():
         print(f"Saving product IDs to {pids_path}...")
         np.save(pids_path, data['pids'])
         
-        # Verify the index
+        # Verify the index with a subset of vectors
         print(f"Verifying {embedding_type} index...")
-        verify_index(index, data['embeddings'], data['pids'])
+        verify_size = min(1000, len(data['embeddings']))
+        verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
+        
+        # Clear memory
+        del index
+        del data['embeddings']
+        gc.collect()
+        print(f"Memory usage after processing {embedding_type}: {get_memory_usage():.2f} GB")
     
     print("\nDone!")
 
