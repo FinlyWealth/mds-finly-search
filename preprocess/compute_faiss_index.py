@@ -185,7 +185,7 @@ def save_mapping(mapping, filename):
 
 def main():
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indexes')
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indices')
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"Initial memory usage: {get_memory_usage():.2f} GB")

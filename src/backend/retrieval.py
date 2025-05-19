@@ -10,8 +10,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS index configuration
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FAISS_INDEX_DIR = os.path.join(REPO_ROOT, os.getenv('FAISS_INDEX_DIR', 'data/faiss_indexes'))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FAISS_INDEX_DIR = os.path.join(REPO_ROOT, 'data', 'faiss_indices')
 
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
@@ -65,15 +65,17 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
 
 class FaissVectorRetrieval(SimilarityRetrieval):
     """FAISS vector search using saved indexes"""
-    def __init__(self, index_type: str = 'text'):
+    def __init__(self, column_name: str):
         """
         Initialize FAISS retrieval with saved index.
         
         Args:
-            index_type: Either 'text' or 'image' to specify which index to use
+            column_name: Name of the embedding column (e.g., 'text_embedding', 'image_embedding', 'fusion_embedding')
         """
-        if index_type not in ['text', 'image']:
-            raise ValueError("index_type must be either 'text' or 'image'")
+        # Extract the base type from the column name (e.g., 'fusion' from 'fusion_embedding')
+        index_type = column_name.replace('_embedding', '')
+        if index_type not in ['text', 'image', 'fusion']:
+            raise ValueError("column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'")
             
         # Load the index
         index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
@@ -88,7 +90,7 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         with open(mapping_path, 'r') as f:
             self.idx_to_pid = json.load(f)
             
-        self.column_name = f'{index_type}_embedding'
+        self.column_name = column_name
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
         # Search using FAISS (dot product = cosine similarity since vectors are normalized)
