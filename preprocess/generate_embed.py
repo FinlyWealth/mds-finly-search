@@ -379,7 +379,7 @@ def main():
 
     # Load CLIP model for images
     clip_model = AutoModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-    clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
     clip_model.eval()
 
     # Load MiniLM model for text

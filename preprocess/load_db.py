@@ -159,6 +159,10 @@ def init_db(embedding_dims: dict, drop: bool = False):
         );
     """)
     
+    # Create GIST index on the document tsvector column
+    print("Creating GIST index on document column...")
+    cur.execute(f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_document ON {TABLE_NAME} USING GIST (document);")
+    
     conn.commit()
     cur.close()
     conn.close()

@@ -1,6 +1,18 @@
 {
     "1M_speed_experiments": [
         {
+            "name": "fusion_faiss",
+            "components": [
+                {
+                    "type": "FaissVectorRetrieval",
+                    "params": {
+                        "column_name": "fusion_embedding"
+                    }
+                }
+            ],
+            "weights": [1]
+        },
+        {
             "name": "fusion_ts_faiss",
             "components": [
                 {
@@ -17,6 +29,18 @@
                 }
             ],
             "weights": [0.5, 0.5]
+        },
+        {
+            "name": "fusion_postgres",
+            "components": [
+                {
+                    "type": "PostgresVectorRetrieval",
+                    "params": {
+                        "column_name": "fusion_embedding"
+                    }
+                }
+            ],
+            "weights": [1]
         },
         {
             "name": "fusion_ts_postgres",
