@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # FAISS configuration
 N_LIST_VALUES = [int(x) for x in os.getenv('FAISS_NLIST', '100').split(',')]  # Accept comma-separated list of nlist values
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '10000'))  # Default batch size for database loading
+COMPRESSED = os.getenv('COMPRESSED', 'false').lower() == 'true'  # Whether to use scalar quantization
 
 def get_memory_usage():
     """Get current memory usage in GB"""
@@ -64,12 +65,13 @@ def load_embeddings_from_files():
     
     return embeddings_data
 
-def create_faiss_index(embeddings, pids, embedding_dim, nlist):
+def create_faiss_index(embeddings, pids, embedding_dim, nlist, compressed=False):
     """
     Create a FAISS index with cosine similarity and explicit PID mapping
     nlist: number of clusters for the IVF index
+    compressed: whether to use scalar quantization for compression
     """
-    print(f"Creating index with {len(embeddings)} vectors and nlist={nlist}...")
+    print(f"Creating {'compressed' if compressed else 'uncompressed'} index with {len(embeddings)} vectors and nlist={nlist}...")
     
     # Create PID to index mapping
     pid_to_idx = {pid: i for i, pid in enumerate(pids)}
@@ -80,7 +82,20 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist):
     
     # Create the base index
     quantizer = faiss.IndexFlatIP(embedding_dim)  # Inner product for cosine similarity
-    index = faiss.IndexIVFFlat(quantizer, embedding_dim, nlist, faiss.METRIC_INNER_PRODUCT)
+    
+    if compressed:
+        # Create a scalar quantized IVF index
+        # Using 8 bits per dimension for quantization
+        index = faiss.IndexIVFScalarQuantizer(
+            quantizer, 
+            embedding_dim, 
+            nlist, 
+            faiss.ScalarQuantizer.QT_8bit,
+            faiss.METRIC_INNER_PRODUCT
+        )
+    else:
+        # Create the standard IVF index
+        index = faiss.IndexIVFFlat(quantizer, embedding_dim, nlist, faiss.METRIC_INNER_PRODUCT)
     
     # Train the index with memory-efficient approach
     if not index.is_trained:
@@ -172,21 +187,23 @@ def main():
                 data['embeddings'], 
                 data['pids'], 
                 data['dim'],
-                nlist
+                nlist,
+                compressed=COMPRESSED
             )
             
             # Save the index
-            index_path = os.path.join(output_dir, f'{embedding_type}_index_nlist{nlist}.faiss')
+            index_type = 'compressed' if COMPRESSED else 'uncompressed'
+            index_path = os.path.join(output_dir, f'{embedding_type}_index_{index_type}_nlist{nlist}.faiss')
             print(f"Saving index to {index_path}...")
             save_index(index, index_path)
             
             # Save the mapping
-            mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping_nlist{nlist}.json')
+            mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping_{index_type}_nlist{nlist}.json')
             print(f"Saving index mapping to {mapping_path}...")
             save_mapping(pid_map, mapping_path)
             
             # Save the product IDs (keeping this for backward compatibility)
-            pids_path = os.path.join(output_dir, f'{embedding_type}_pids_nlist{nlist}.npy')
+            pids_path = os.path.join(output_dir, f'{embedding_type}_pids_{index_type}_nlist{nlist}.npy')
             print(f"Saving product IDs to {pids_path}...")
             np.save(pids_path, data['pids'])
             
