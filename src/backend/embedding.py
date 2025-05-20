@@ -9,8 +9,8 @@ from transformers import AutoModel, AutoProcessor, BlipProcessor, BlipForConditi
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
 
 # Global variables for model instances
-_siglip_processor = None
-_siglip_model = None
+_clip_processor = None
+_clip_model = None
 _blip_processor = None
 _blip_model = None
 _minilm_model = None
@@ -18,31 +18,34 @@ _minilm_tokenizer = None
 
 def initialize_clip_model(model_id="openai/clip-vit-base-patch32"):
     """Initialize CLIP model and processor"""
-    global _siglip_processor, _siglip_model
-    _siglip_processor = AutoProcessor.from_pretrained(model_id)
-    _siglip_model = AutoModel.from_pretrained(model_id).to(device)
-    return _siglip_processor, _siglip_model
+    global _clip_processor, _clip_model
+    _clip_processor = AutoProcessor.from_pretrained(model_id)
+    _clip_model = AutoModel.from_pretrained(model_id)
+    _clip_model = _clip_model.to(device)
+    return _clip_processor, _clip_model
 
 def initialize_blip_model(model_id="Salesforce/blip-image-captioning-base"):
     """Initialize BLIP model and processor"""
     global _blip_processor, _blip_model
     _blip_processor = BlipProcessor.from_pretrained(model_id)
-    _blip_model = BlipForConditionalGeneration.from_pretrained(model_id).to(device)
+    _blip_model = BlipForConditionalGeneration.from_pretrained(model_id)
+    _blip_model = _blip_model.to(device)
     return _blip_processor, _blip_model
 
 def initialize_minilm_model(model_id="sentence-transformers/all-MiniLM-L6-v2"):
     """Initialize MiniLM model and tokenizer"""
     global _minilm_model, _minilm_tokenizer
-    _minilm_model = AutoModel.from_pretrained(model_id).to(device)
+    _minilm_model = AutoModel.from_pretrained(model_id)
+    _minilm_model = _minilm_model.to(device)
     _minilm_tokenizer = AutoTokenizer.from_pretrained(model_id)
     return _minilm_model, _minilm_tokenizer
 
 def get_clip_model():
     """Get or initialize CLIP model and processor"""
-    global _siglip_processor, _siglip_model
-    if _siglip_processor is None or _siglip_model is None:
+    global _clip_processor, _clip_model
+    if _clip_processor is None or _clip_model is None:
         return initialize_clip_model()
-    return _siglip_processor, _siglip_model
+    return _clip_processor, _clip_model
 
 def get_blip_model():
     """Get or initialize BLIP model and processor"""
