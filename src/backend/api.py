@@ -25,7 +25,7 @@ components_config = [
         "type": "FaissVectorRetrieval",
         "params": {
             "column_name": "fusion_embedding",
-            "nprobe": 5
+            "nprobe": 32
         }
     },
     {
@@ -41,6 +41,9 @@ components_config = [
         }
     }
 ]
+
+# Create retrieval components with database config
+components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
 
 def load_image(image_path):
     try:
@@ -134,8 +137,6 @@ def search():
             # Image-only search: Use only image_clip_embedding
             weights = [0, 1, 0]  # 100% image CLIP embedding
 
-        components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
-        
         # Print active components with non-zero weights
         print("\nActive retrieval components:")
         for comp, weight in zip(components_config, weights):

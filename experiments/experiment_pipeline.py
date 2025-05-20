@@ -36,7 +36,7 @@ def create_retrieval_component(component_config, db_config=None):
     elif component_type == 'TextSearchRetrieval':
         return TextSearchRetrieval(params['rank_method'], db_config)
     elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1))
+        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1), db_config)
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 
