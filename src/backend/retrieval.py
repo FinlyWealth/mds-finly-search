@@ -13,6 +13,10 @@ from config.db import DB_CONFIG, TABLE_NAME
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FAISS_INDEX_DIR = os.path.join(REPO_ROOT, 'data', 'faiss_indices')
 
+# Cache for FAISS indices and mappings
+_faiss_index_cache = {}
+_faiss_mapping_cache = {}
+
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
     def score(self, query: Union[str, np.ndarray], k: int = 10) -> Dict[int, float]:
@@ -78,22 +82,26 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         if index_type not in ['text', 'image', 'fusion']:
             raise ValueError("column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'")
             
-        # Load the index
+        # Load the index from cache or file
         index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
-        if not os.path.exists(index_path):
-            raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
-        self.index = faiss.read_index(index_path)
+        if index_type not in _faiss_index_cache:
+            if not os.path.exists(index_path):
+                raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
+            _faiss_index_cache[index_type] = faiss.read_index(index_path)
+        self.index = _faiss_index_cache[index_type]
         
         # Set nprobe parameter
         if hasattr(self.index, 'nprobe'):
             self.index.nprobe = nprobe
         
-        # Load the PID mapping
+        # Load the PID mapping from cache or file
         mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
-        if not os.path.exists(mapping_path):
-            raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
-        with open(mapping_path, 'r') as f:
-            self.idx_to_pid = json.load(f)
+        if index_type not in _faiss_mapping_cache:
+            if not os.path.exists(mapping_path):
+                raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
+            with open(mapping_path, 'r') as f:
+                _faiss_mapping_cache[index_type] = json.load(f)
+        self.idx_to_pid = _faiss_mapping_cache[index_type]
             
         self.column_name = column_name
 

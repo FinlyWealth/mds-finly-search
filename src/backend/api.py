@@ -22,9 +22,10 @@ top_k = 10
 
 components_config = [
     {
-        "type": "PostgresVectorRetrieval",
+        "type": "FaissVectorRetrieval",
         "params": {
-            "column_name": "fusion_embedding"
+            "column_name": "fusion_embedding",
+            "nprobe": 5
         }
     },
     {
@@ -125,15 +126,25 @@ def search():
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
         if query_text and query_image:
             # Text+Image search: Use fusion_embedding (CLIP image + MiniLM text) and text search
-            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+            weights = [0.5, 0, 0.5]
         elif query_text:
             # Text-only search: Use fusion_embedding (CLIP text + MiniLM text) and text search
-            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+            weights = [0.5, 0, 0.5]
         else:
             # Image-only search: Use only image_clip_embedding
             weights = [0, 1, 0]  # 100% image CLIP embedding
 
         components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
+        
+        # Print active components with non-zero weights
+        print("\nActive retrieval components:")
+        for comp, weight in zip(components_config, weights):
+            if weight > 0:
+                print(f"  {comp['type']}:")
+                print(f"    Params: {comp['params']}")
+                print(f"    Weight: {weight}")
+        print()
+
         search_query = query_text if query_text else ""
         pids, scores = hybrid_retrieval(
             query=search_query,
@@ -161,6 +172,14 @@ if __name__ == "__main__":
     # Print database connection details
     print(f"Connecting to database: {DB_CONFIG['dbname']}")
     print(f"Table: {TABLE_NAME}")
+    
+    # Print components configuration
+    print("\nInitialized retrieval components:")
+    for i, comp in enumerate(components_config):
+        print(f"Component {i+1}:")
+        print(f"  Type: {comp['type']}")
+        print(f"  Params: {comp['params']}")
+    print()
     
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
