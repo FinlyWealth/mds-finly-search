@@ -6,16 +6,33 @@ from typing import Dict, Union, Optional
 import faiss
 import json
 import sys
+import requests
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FAISS_INDEX_DIR = os.path.join(REPO_ROOT, 'data', 'faiss_indices')
+GCS_BUCKET_URL = 'https://storage.googleapis.com/finly-mds'
+GCS_INDEX_PREFIX = 'faiss_indices'
 
 # Cache for FAISS indices and mappings
 _faiss_index_cache = {}
 _faiss_mapping_cache = {}
+
+def download_from_gcs(source_path: str, destination_file_name: str):
+    """Downloads a file from public GCS bucket."""
+    url = f"{GCS_BUCKET_URL}/{source_path}"
+    
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
+    
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an exception for bad status codes
+    
+    with open(destination_file_name, 'wb') as f:
+        f.write(response.content)
+    print(f"Downloaded {source_path} to {destination_file_name}")
 
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
@@ -87,7 +104,14 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
         if index_type not in _faiss_index_cache:
             if not os.path.exists(index_path):
-                raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
+                print(f"FAISS index not found locally at {index_path}, downloading from GCS...")
+                try:
+                    download_from_gcs(
+                        f"{GCS_INDEX_PREFIX}/{index_type}_index.faiss",
+                        index_path
+                    )
+                except Exception as e:
+                    raise FileNotFoundError(f"Failed to download FAISS index from GCS: {str(e)}")
             _faiss_index_cache[index_type] = faiss.read_index(index_path)
         self.index = _faiss_index_cache[index_type]
         
@@ -99,7 +123,14 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
         if index_type not in _faiss_mapping_cache:
             if not os.path.exists(mapping_path):
-                raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
+                print(f"Index mapping not found locally at {mapping_path}, downloading from GCS...")
+                try:
+                    download_from_gcs(
+                        f"{GCS_INDEX_PREFIX}/{index_type}_index_mapping.json",
+                        mapping_path
+                    )
+                except Exception as e:
+                    raise FileNotFoundError(f"Failed to download index mapping from GCS: {str(e)}")
             with open(mapping_path, 'r') as f:
                 _faiss_mapping_cache[index_type] = json.load(f)
         self.idx_to_pid = _faiss_mapping_cache[index_type]
