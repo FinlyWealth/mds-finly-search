@@ -2,7 +2,7 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Version 0.1.0
+## Version 0.1.1
 - 100k products
 - Multimodel search: text, image, text+image
 - Uses [clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) for multimodal understanding between text and product images and [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) for natural language understanding

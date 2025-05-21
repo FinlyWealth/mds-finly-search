@@ -24,12 +24,15 @@ def initialize_clip_model(model_id="openai/clip-vit-base-patch32"):
 def initialize_minilm_model(model_id="sentence-transformers/all-MiniLM-L6-v2"):
     """Initialize MiniLM model and tokenizer"""
     global _minilm_model, _minilm_tokenizer
-    _minilm_model = AutoModel.from_pretrained(model_id).to(device)
+    _minilm_model = AutoModel.from_pretrained(model_id)
+    _minilm_model = _minilm_model.to(device)
     _minilm_tokenizer = AutoTokenizer.from_pretrained(model_id)
     return _minilm_model, _minilm_tokenizer
 
 def get_clip_model():
     """Get or initialize CLIP model and processor"""
+    global _clip_processor, _clip_model
+    if _clip_processor is None or _clip_model is None:
     global _clip_processor, _clip_model
     if _clip_processor is None or _clip_model is None:
         return initialize_clip_model()
