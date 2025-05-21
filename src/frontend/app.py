@@ -108,6 +108,9 @@ def main():
             # Reset the trigger
             if "trigger_search" in st.session_state:
                 del st.session_state.trigger_search
+
+            st.session_state.num_results_to_show = 20 # reset display count on new search
+            
             with st.spinner("Searching for similar products..."):
                 try:
                     # Prepare the request data
@@ -123,6 +126,8 @@ def main():
                             request_data["image_path"] = image_input
                             # Display the input image
                             st.image(image, caption="Input Image", use_container_width=True)
+
+                    request_data["top_k"] = 100  # backend will return 100 results
                     
                     # Call API endpoint
                     response = requests.post(
@@ -164,12 +169,20 @@ def main():
         # Display search results if available
         if hasattr(st.session_state, 'search_results'):
             results = st.session_state.search_results
+            num_total = len(results['results'])  # get total result count
+            num_show = st.session_state.get('num_results_to_show', 20)  # dynamic result count
+
+            st.caption(f"Showing {min(num_show, num_total)} of {num_total} results")  #  progress indicator
+            
             # Create four rows of 5 columns each for the products
-            for row in range(4):
+            for row in range((num_show + 4) // 5):  # dynamic rows
                 cols = st.columns(5)  # Create 5 columns for each row
                 for col, product in zip(cols, results['results'][row*5:(row+1)*5]):
                     with col:
                         display_product_card(product, product['similarity'])
+
+            if num_show < num_total and st.button("Show more results"):
+                st.session_state.num_results_to_show += 20
 
 if __name__ == "__main__":
     main() 

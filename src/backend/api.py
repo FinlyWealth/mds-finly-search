@@ -19,7 +19,7 @@ app = Flask(__name__)
 # Initialize spaCy
 nlp = spacy.load("en_core_web_sm")
 
-top_k = 10
+top_k = 100
 
 components_config = [
     {
