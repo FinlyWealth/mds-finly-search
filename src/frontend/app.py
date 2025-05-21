@@ -4,6 +4,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 import base64
+import time
 
 # Set page config
 st.set_page_config(
@@ -29,6 +30,34 @@ st.markdown("""
 
 # API configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5001")
+
+def check_api_ready():
+    """Check if the API is ready to accept requests"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/ready")
+        if response.status_code == 200:
+            status = response.json()
+            return status["ready"], status["components"]
+        return False, None
+    except Exception as e:
+        return False, None
+
+def wait_for_api_ready():
+    """Wait for the API to be ready"""
+    with st.spinner("Waiting for API to initialize..."):
+        while True:
+            is_ready, components = check_api_ready()
+            if is_ready:
+                return True
+            
+            # Show initialization status
+            if components:
+                status_text = "Initializing components:\n"
+                for component, status in components.items():
+                    status_text += f"- {component}: {'✅' if status else '⏳'}\n"
+                st.info(status_text)
+            
+            time.sleep(1)
 
 # Function to load image from URL or local path
 def load_image(image_path):
@@ -77,6 +106,10 @@ def display_product_card(product, score):
 
 # Main app
 def main():
+    # Check if API is ready
+    if not check_api_ready()[0]:
+        wait_for_api_ready()
+    
     # Create two columns for search inputs and results
     left_col, right_col = st.columns([1, 3])
     
@@ -143,6 +176,10 @@ def main():
                         except ValueError as e:
                             st.error(f"Invalid JSON response from API: {str(e)}")
                             st.error(f"Response content: {response.text[:200]}...")  # Show first 200 chars of response
+                    elif response.status_code == 503:
+                        st.error("API is not ready yet. Please wait for initialization to complete.")
+                        # Wait for API to be ready
+                        wait_for_api_ready()
                     else:
                         try:
                             error_msg = response.json().get('error', 'Unknown error')
