@@ -11,6 +11,7 @@ from src.backend.embedding import generate_embedding, generate_image_caption
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
 from config.db import DB_CONFIG
+import time
 
 
 app = Flask(__name__)
@@ -85,6 +86,7 @@ def index():
 @app.route('/api/search', methods=['POST'])
 def search():
     try:
+        start_time = time.time()  # start the timer
         print("Received search request")
         print(f"Form data: {request.form}")
         print(f"Files: {request.files}")
@@ -142,9 +144,11 @@ def search():
             weights=weights,
             top_k=top_k
         )
-        
+
+        elapsed_time = time.time() - start_time  # calculate the time
         response = {
             'results': format_results(pids, scores)
+            'elapsed_time_sec': round(elapsed_time, 3)
         }
         print(f"Response: {response}")
         return jsonify(response)

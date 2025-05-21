@@ -137,6 +137,11 @@ def main():
                             results = response.json()
                             # Store results for display in right column
                             st.session_state.search_results = results
+                            
+                            # Display the search time
+                            if 'elapsed_time_sec' in results:
+                                st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
+                                
                             # Display the generated caption if available
                             if 'caption' in results:
                                 st.write(f"**Generated Caption:** {results['caption']}")
