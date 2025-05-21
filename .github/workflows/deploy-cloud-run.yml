@@ -30,7 +30,7 @@ jobs:
       - name: Deploy Cloud Run backend
         run: |
           gcloud run deploy finly-backend-1m \
-            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:latest \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:1m-sample \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
@@ -52,7 +52,7 @@ jobs:
       - name: Deploy Cloud Run frontend
         run: |
           gcloud run deploy finly-frontend-1m \
-            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:latest \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:1m-sample \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
