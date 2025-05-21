@@ -25,11 +25,81 @@ st.markdown("""
             padding-left: 2rem;
             padding-right: 2rem;
         }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-color: #f0f2f6;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+        .component-status {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .status-icon {
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        .status-text {
+            flex-grow: 1;
+        }
+        .status-label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .status-description {
+            font-size: 0.8rem;
+            color: #666;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # API configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5001")
+
+def get_component_description(component):
+    """Get description for each component"""
+    descriptions = {
+        "minilm_model": "Text embedding model for semantic search",
+        "clip_model": "Vision-language model for image and text understanding",
+        "faiss_indices": "Vector search indices for fast similarity search",
+        "database": "Product database connection and tables"
+    }
+    return descriptions.get(component, "")
+
+def display_loading_screen(components):
+    """Display a detailed loading screen with component status"""
+    st.markdown("""
+        <div class="loading-container">
+            <h2>🚀 Initializing Search Engine</h2>
+            <p>Please wait while we load all required components...</p>
+    """, unsafe_allow_html=True)
+    
+    for component, status in components.items():
+        icon = "✅" if status else "⏳"
+        status_class = "success" if status else "pending"
+        description = get_component_description(component)
+        
+        st.markdown(f"""
+            <div class="component-status">
+                <span class="status-icon">{icon}</span>
+                <div class="status-text">
+                    <div class="status-label">{component.replace('_', ' ').title()}</div>
+                    <div class="status-description">{description}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def check_api_ready():
     """Check if the API is ready to accept requests"""
@@ -44,20 +114,19 @@ def check_api_ready():
 
 def wait_for_api_ready():
     """Wait for the API to be ready"""
-    with st.spinner("Waiting for API to initialize..."):
-        while True:
-            is_ready, components = check_api_ready()
-            if is_ready:
-                return True
-            
-            # Show initialization status
-            if components:
-                status_text = "Initializing components:\n"
-                for component, status in components.items():
-                    status_text += f"- {component}: {'✅' if status else '⏳'}\n"
-                st.info(status_text)
-            
-            time.sleep(1)
+    while True:
+        is_ready, components = check_api_ready()
+        if is_ready:
+            st.success("✨ All components initialized successfully!")
+            time.sleep(1)  # Show success message briefly
+            st.rerun()  # Refresh the page
+            return True
+        
+        # Show initialization status
+        if components:
+            display_loading_screen(components)
+        
+        time.sleep(1)
 
 # Function to load image from URL or local path
 def load_image(image_path):
