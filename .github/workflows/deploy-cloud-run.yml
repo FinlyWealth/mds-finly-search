@@ -29,8 +29,8 @@ jobs:
 
       - name: Deploy Cloud Run backend
         run: |
-          gcloud run deploy finly-backend-1m \
-            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:1m-sample \
+          gcloud run deploy finly-backend \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/backend:latest \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
@@ -45,15 +45,15 @@ jobs:
       - name: Retrieve backend URL
         id: get-backend-url
         run: |
-          echo "API_BASE_URL=$(gcloud run services describe finly-backend-1m \
+          echo "API_BASE_URL=$(gcloud run services describe finly-backend \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --format='value(status.url)')" >> $GITHUB_ENV
 
       - name: Deploy Cloud Run frontend
         run: |
-          gcloud run deploy finly-frontend-1m \
-            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:1m-sample \
+          gcloud run deploy finly-frontend \
+            --image=us-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/capstone/frontend:latest \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
