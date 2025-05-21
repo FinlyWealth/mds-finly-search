@@ -36,8 +36,8 @@ jobs:
             --allow-unauthenticated \
             --port=5001 \
             --timeout=900s \
-            --memory=8Gi \
-            --cpu=2 \
+            --memory=12Gi \
+            --cpu=4 \
             --min-instances=1 \
             --add-cloudsql-instances=$CLOUDSQL_INSTANCE \
             --set-env-vars="PGHOST=/cloudsql/$CLOUDSQL_INSTANCE,PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }},PGTABLE=${{ secrets.PGTABLE }}"
