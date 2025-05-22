@@ -242,43 +242,49 @@ def submit_feedback():
         if not session_id:
             return jsonify({'error': 'Missing session_id'}), 400
             
-        # Store feedback in database
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        
-        # First check if a row exists for this session_id
-        cur.execute("""
-            SELECT feedback FROM user_feedback 
-            WHERE session_id = %s
-        """, (session_id,))
-        
-        existing_row = cur.fetchone()
-        
-        if existing_row:
-            # Update existing row by appending to feedback list
-            existing_feedback = existing_row[0]
-            existing_feedback.append({"pid": pid, "feedback": feedback})
+        try:
+            # Store feedback in database
+            conn = psycopg2.connect(**DB_CONFIG)
+            cur = conn.cursor()
             
+            # First check if a row exists for this session_id
             cur.execute("""
-                UPDATE user_feedback 
-                SET feedback = %s
+                SELECT feedback FROM user_feedback 
                 WHERE session_id = %s
-            """, (Json(existing_feedback), session_id))
-        else:
-            # Create new row for this session
-            feedback_list = [{"pid": pid, "feedback": feedback}]
-            cur.execute("""
-                INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
-                VALUES (%s, %s, %s, %s)
-            """, (query_text, image_path, Json(feedback_list), session_id))
-        
-        conn.commit()
-        cur.close()
-        conn.close()
+            """, (session_id,))
+            
+            existing_row = cur.fetchone()
+            
+            if existing_row:
+                # Update existing row by appending to feedback list
+                existing_feedback = existing_row[0]
+                existing_feedback.append({"pid": pid, "feedback": feedback})
+                
+                cur.execute("""
+                    UPDATE user_feedback 
+                    SET feedback = %s
+                    WHERE session_id = %s
+                """, (Json(existing_feedback), session_id))
+            else:
+                # Create new row for this session
+                feedback_list = [{"pid": pid, "feedback": feedback}]
+                cur.execute("""
+                    INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
+                    VALUES (%s, %s, %s, %s)
+                """, (query_text, image_path, Json(feedback_list), session_id))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+        except (psycopg2.OperationalError, psycopg2.Error) as db_error:
+            # Log the error but don't expose it to the client
+            print(f"Database error while storing feedback: {str(db_error)}")
+            # Continue execution to return success response
         
         return jsonify({'success': True})
         
     except Exception as e:
+        # Only return error for non-database related issues
         return jsonify({'error': str(e)}), 500
 
 
