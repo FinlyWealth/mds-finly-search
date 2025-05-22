@@ -33,8 +33,6 @@ def get_clip_model():
     """Get or initialize CLIP model and processor"""
     global _clip_processor, _clip_model
     if _clip_processor is None or _clip_model is None:
-    global _clip_processor, _clip_model
-    if _clip_processor is None or _clip_model is None:
         return initialize_clip_model()
     return _clip_processor, _clip_model
 
