@@ -146,6 +146,20 @@ def main():
                             # Display the search time
                             if 'elapsed_time_sec' in results:
                                 st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
+                            
+                            # Dispplay the statistics
+                            if 'category_distribution' in results:
+                                st.subheader("📊 Category Distribution")
+                                cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
+                                                                orient='index', columns=['%'])
+                                cat_df.index.name = "Category"
+                                st.dataframe(cat_df)
+
+                            if 'brand_distribution' in results:
+                                st.subheader("🏷️ Brand Distribution")
+                                brand_df = pd.DataFrame.from_dict(results['brand_distribution'], orient='index', columns=['%'])
+                                brand_df.index.name = "Brand"
+                                st.dataframe(brand_df)
                                 
                             # Display the generated caption if available
                             if 'caption' in results:

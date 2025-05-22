@@ -12,6 +12,7 @@ from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
 from config.db import DB_CONFIG
 import time
+from collections import Counter
 
 
 app = Flask(__name__)
@@ -146,9 +147,24 @@ def search():
         )
 
         elapsed_time = time.time() - start_time  # calculate the time
+
+        # transfer the results into data frame for statistics purpose
+        results = format_results(pids, scores)
+        df = pd.DataFrame(results)
+
+        # Transfer NaN to None
+        df['Brand'] = df['Brand'].fillna('None')
+        df['Category'] = df['Category'].fillna('None')
+
+        # Calculate the distribution
+        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(2).to_dict()
+        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(2).to_dict()
+        
         response = {
-            'results': format_results(pids, scores)
-            'elapsed_time_sec': round(elapsed_time, 3)
+            'results': format_results(pids, scores),
+            'elapsed_time_sec': round(elapsed_time, 3),
+            'category_distribution': category_dist,   
+            'brand_distribution': brand_dist 
         }
         print(f"Response: {response}")
         return jsonify(response)
