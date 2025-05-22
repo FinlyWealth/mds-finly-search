@@ -6,12 +6,33 @@ from typing import Dict, Union, Optional
 import faiss
 import json
 import sys
+import requests
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS index configuration
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FAISS_INDEX_DIR = os.path.join(REPO_ROOT, os.getenv('FAISS_INDEX_DIR', 'data/faiss_indexes'))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FAISS_INDEX_DIR = os.path.join(REPO_ROOT, 'data', 'faiss_indices')
+GCS_BUCKET_URL = 'https://storage.googleapis.com/finly-mds'
+GCS_INDEX_PREFIX = 'faiss_indices'
+
+# Cache for FAISS indices and mappings
+_faiss_index_cache = {}
+_faiss_mapping_cache = {}
+
+def download_from_gcs(source_path: str, destination_file_name: str):
+    """Downloads a file from public GCS bucket."""
+    url = f"{GCS_BUCKET_URL}/{source_path}"
+    
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
+    
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an exception for bad status codes
+    
+    with open(destination_file_name, 'wb') as f:
+        f.write(response.content)
+    print(f"Downloaded {source_path} to {destination_file_name}")
 
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
@@ -65,47 +86,108 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
 
 class FaissVectorRetrieval(SimilarityRetrieval):
     """FAISS vector search using saved indexes"""
-    def __init__(self, index_type: str = 'text'):
+    def __init__(self, column_name: str, nprobe: int = 1, db_config: Dict[str, str] = None):
         """
         Initialize FAISS retrieval with saved index.
         
         Args:
-            index_type: Either 'text' or 'image' to specify which index to use
+            column_name: Name of the embedding column (e.g., 'text_embedding', 'image_embedding', 'fusion_embedding')
+            nprobe: Number of clusters to visit during search (default: 1)
+            db_config: Database configuration dictionary
         """
-        if index_type not in ['text', 'image']:
-            raise ValueError("index_type must be either 'text' or 'image'")
+        # Extract the base type from the column name (e.g., 'fusion' from 'fusion_embedding')
+        index_type = column_name.replace('_embedding', '')
+        if index_type not in ['text', 'image', 'fusion']:
+            raise ValueError("column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'")
             
-        # Load the index
+        # Load the index from cache or file
         index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
-        if not os.path.exists(index_path):
-            raise FileNotFoundError(f"FAISS index not found at {index_path}. Please ensure the index has been created and FAISS_INDEX_DIR is set correctly in .env")
-        self.index = faiss.read_index(index_path)
+        if index_type not in _faiss_index_cache:
+            if not os.path.exists(index_path):
+                print(f"FAISS index not found locally at {index_path}, downloading from GCS...")
+                try:
+                    download_from_gcs(
+                        f"{GCS_INDEX_PREFIX}/{index_type}_index.faiss",
+                        index_path
+                    )
+                except Exception as e:
+                    raise FileNotFoundError(f"Failed to download FAISS index from GCS: {str(e)}")
+            _faiss_index_cache[index_type] = faiss.read_index(index_path)
+        self.index = _faiss_index_cache[index_type]
         
-        # Load the PID mapping
+        # Set nprobe parameter
+        if hasattr(self.index, 'nprobe'):
+            self.index.nprobe = nprobe
+        
+        # Load the PID mapping from cache or file
         mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
-        if not os.path.exists(mapping_path):
-            raise FileNotFoundError(f"Index mapping not found at {mapping_path}. Please ensure the mapping has been created and FAISS_INDEX_DIR is set correctly in .env")
-        with open(mapping_path, 'r') as f:
-            self.idx_to_pid = json.load(f)
+        if index_type not in _faiss_mapping_cache:
+            if not os.path.exists(mapping_path):
+                print(f"Index mapping not found locally at {mapping_path}, downloading from GCS...")
+                try:
+                    download_from_gcs(
+                        f"{GCS_INDEX_PREFIX}/{index_type}_index_mapping.json",
+                        mapping_path
+                    )
+                except Exception as e:
+                    raise FileNotFoundError(f"Failed to download index mapping from GCS: {str(e)}")
+            with open(mapping_path, 'r') as f:
+                _faiss_mapping_cache[index_type] = json.load(f)
+        self.idx_to_pid = _faiss_mapping_cache[index_type]
             
-        self.column_name = f'{index_type}_embedding'
+        self.column_name = column_name
+        self.db_config = db_config or DB_CONFIG
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
-        # Search using FAISS (dot product = cosine similarity since vectors are normalized)
+        # First get the top k indices from FAISS
         distances, indices = self.index.search(query.reshape(1, -1), k)
-
-        # Raw cosine similarity scores
         raw_scores = distances[0]
         top_indices = indices[0]
 
-        # Normalize scores to [0, 1] based on highest score (assumes higher = more similar)
-        max_score = max(raw_scores) if len(raw_scores) > 0 else 1.0
-        normalized_scores = {
-            self.idx_to_pid[str(idx)]: float(score / max_score) if max_score > 0 else 0.0
-            for idx, score in zip(top_indices, raw_scores)
-            if str(idx) in self.idx_to_pid  # Only include valid indices
-        }
+        # Get the corresponding PIDs
+        pids = [self.idx_to_pid[str(idx)] for idx in top_indices if str(idx) in self.idx_to_pid]
+        
+        if not pids:
+            return {}
 
+        # Query the database to get the actual embeddings for these PIDs
+        conn = psycopg2.connect(**self.db_config)
+        cur = conn.cursor()
+        
+        # Convert list of PIDs to a comma-separated string for SQL
+        pid_list = ','.join([f"'{pid}'" for pid in pids])
+        
+        sql = f"""
+            SELECT Pid, {self.column_name} as embedding
+            FROM {TABLE_NAME}
+            WHERE Pid IN ({pid_list})
+        """
+        
+        cur.execute(sql)
+        results = cur.fetchall()
+        
+        # Calculate actual cosine similarity scores
+        normalized_scores = {}
+        for pid, embedding in results:
+            if embedding is not None:
+                # Parse the vector string into a numpy array
+                # The format is like '[1,2,3]' or '{1,2,3}'
+                vector_str = embedding.strip('[]{}')
+                db_embedding = np.array([float(x) for x in vector_str.split(',')], dtype=np.float32)
+                db_embedding = db_embedding / np.linalg.norm(db_embedding)
+                
+                # Calculate cosine similarity
+                similarity = float(np.dot(query, db_embedding))
+                normalized_scores[pid] = similarity
+        
+        cur.close()
+        conn.close()
+        
+        # Normalize scores to [0, 1] based on highest score
+        max_score = max(normalized_scores.values()) if normalized_scores else 1.0
+        if max_score > 0:
+            normalized_scores = {pid: score / max_score for pid, score in normalized_scores.items()}
+        
         return normalized_scores
 
 class TextSearchRetrieval(SimilarityRetrieval):
@@ -155,7 +237,7 @@ def create_retrieval_component(component_config, db_config=None):
     elif component_type == 'TextSearchRetrieval':
         return TextSearchRetrieval(params['rank_method'], db_config)
     elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'])
+        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1), db_config)
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 

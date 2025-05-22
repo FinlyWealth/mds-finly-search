@@ -1,66 +1,78 @@
 import os
 import numpy as np
 import faiss
-import psycopg2
-import pgvector.psycopg2
 import json
-from psycopg2.extras import execute_values
 import sys
+import psutil
+import gc
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.db import DB_CONFIG, TABLE_NAME
 
 # FAISS configuration
-N_LIST = int(os.getenv('FAISS_NLIST', '100'))  # Default to 100 if not set
+N_LIST_VALUES = [int(x) for x in os.getenv('FAISS_NLIST', '100').split(',')]  # Accept comma-separated list of nlist values
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', '10000'))  # Default batch size for database loading
+COMPRESSED = os.getenv('COMPRESSED', 'false').lower() == 'true'  # Whether to use scalar quantization
 
-def load_embeddings_from_db():
-    """Load embeddings from the database for all columns containing 'embedding' in their name"""
-    conn = psycopg2.connect(**DB_CONFIG)
-    pgvector.psycopg2.register_vector(conn)
-    cur = conn.cursor()
+def get_memory_usage():
+    """Get current memory usage in GB"""
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1024 / 1024 / 1024
+
+def load_embeddings_from_files():
+    """Load embeddings from NPZ files in the data/embeddings folder"""
+    embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'embeddings')
     
     embeddings_data = {}
+    embedding_type = 'fusion'
     
-    # Get all columns from the table
-    cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{TABLE_NAME}'")
-    columns = [row[0] for row in cur.fetchall()]
+    # Find all NPZ files for fusion embeddings
+    npz_files = sorted([f for f in os.listdir(embeddings_dir) if f.startswith('fusion_embeddings_chunk_') and f.endswith('.npz')])
     
-    # Find all embedding columns
-    embedding_columns = [col for col in columns if 'embedding' in col.lower()]
+    if not npz_files:
+        raise ValueError("No fusion embedding NPZ files found in the data/embeddings folder")
     
-    if not embedding_columns:
-        raise ValueError("No embedding columns found in the database table")
+    print(f"Found {len(npz_files)} NPZ files to process...")
     
-    # Load embeddings for each embedding column
-    for column_name in embedding_columns:
-        embedding_type = column_name.replace('_embedding', '')
-        cur.execute(f"SELECT Pid, {column_name} FROM {TABLE_NAME} WHERE {column_name} IS NOT NULL ORDER BY Pid")
-        data = cur.fetchall()
-        pids = [row[0] for row in data]
-        embeddings = np.array([row[1] for row in data], dtype=np.float32)
+    all_pids = []
+    all_embeddings = []
+    
+    # Load each NPZ file
+    for npz_file in tqdm(npz_files, desc="Loading NPZ files"):
+        file_path = os.path.join(embeddings_dir, npz_file)
+        data = np.load(file_path)
         
-        if len(embeddings) == 0:
-            print(f"Warning: No {embedding_type} embeddings found in the database")
-            continue
+        # Load data using correct key names
+        pids = data['product_ids']
+        embeddings = data['embeddings']
         
-        embeddings_data[embedding_type] = {
-            'pids': pids,
-            'embeddings': embeddings,
-            'dim': len(embeddings[0])
-        }
+        all_pids.extend(pids)
+        all_embeddings.append(embeddings)
+        
+        # Print memory usage after each file
+        print(f"\nCurrent memory usage after loading {npz_file}: {get_memory_usage():.2f} GB")
     
-    cur.close()
-    conn.close()
+    # Concatenate all embeddings
+    all_embeddings = np.vstack(all_embeddings)
     
-    if not embeddings_data:
-        raise ValueError("No valid embeddings found in any embedding column")
+    if len(all_embeddings) == 0:
+        raise ValueError("No fusion embeddings found in the NPZ files")
+    
+    embeddings_data[embedding_type] = {
+        'pids': all_pids,
+        'embeddings': all_embeddings,
+        'dim': len(all_embeddings[0])
+    }
     
     return embeddings_data
 
-def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
+def create_faiss_index(embeddings, pids, embedding_dim, nlist, compressed=False):
     """
     Create a FAISS index with cosine similarity and explicit PID mapping
-    nlist: number of clusters for the IVF index (configurable via FAISS_NLIST env var)
+    nlist: number of clusters for the IVF index
+    compressed: whether to use scalar quantization for compression
     """
+    print(f"Creating {'compressed' if compressed else 'uncompressed'} index with {len(embeddings)} vectors and nlist={nlist}...")
+    
     # Create PID to index mapping
     pid_to_idx = {pid: i for i, pid in enumerate(pids)}
     idx_to_pid = {i: pid for pid, i in pid_to_idx.items()}
@@ -70,19 +82,48 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist=N_LIST):
     
     # Create the base index
     quantizer = faiss.IndexFlatIP(embedding_dim)  # Inner product for cosine similarity
-    index = faiss.IndexIVFFlat(quantizer, embedding_dim, nlist, faiss.METRIC_INNER_PRODUCT)
     
-    # Train the index
+    if compressed:
+        # Create a scalar quantized IVF index
+        # Using 8 bits per dimension for quantization
+        index = faiss.IndexIVFScalarQuantizer(
+            quantizer, 
+            embedding_dim, 
+            nlist, 
+            faiss.ScalarQuantizer.QT_8bit,
+            faiss.METRIC_INNER_PRODUCT
+        )
+    else:
+        # Create the standard IVF index
+        index = faiss.IndexIVFFlat(quantizer, embedding_dim, nlist, faiss.METRIC_INNER_PRODUCT)
+    
+    # Train the index with memory-efficient approach
     if not index.is_trained:
         if len(embeddings) < nlist * 10:
             raise ValueError(f"Not enough vectors to train the index. Got {len(embeddings)}, need at least {nlist * 10}.")
-        index.train(embeddings)
+        
+        print(f"Training index with nlist={nlist}...")
+        # Use 30*nlist vectors for training
+        train_size = min(40 * nlist, len(embeddings))
+        print(f"Using {train_size} vectors for training (40*{nlist})")
+        train_vectors = embeddings[:train_size]
+        index.train(train_vectors)
+        del train_vectors
+        gc.collect()
     
-    # Create ID-mapped index and add vectors with IDs
-    id_index = faiss.IndexIDMap(index)
-    id_index.add_with_ids(embeddings, ids)
+    # Add vectors in batches to save memory
+    print("Adding vectors to index...")
+    batch_size = 100000
+    for i in tqdm(range(0, len(embeddings), batch_size)):
+        end_idx = min(i + batch_size, len(embeddings))
+        batch_embeddings = embeddings[i:end_idx]
+        batch_ids = ids[i:end_idx]
+        index.add_with_ids(batch_embeddings, batch_ids)
+        
+        if i % 500000 == 0:
+            print(f"\nCurrent memory usage: {get_memory_usage():.2f} GB")
     
-    return id_index, idx_to_pid
+    return index, idx_to_pid
 
 def verify_index(index, embeddings, pids):
     """Verify that all embeddings are present in the index and mapped to correct PIDs."""
@@ -128,41 +169,57 @@ def save_mapping(mapping, filename):
 
 def main():
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indexes')
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indices')
     os.makedirs(output_dir, exist_ok=True)
     
-    print("Loading embeddings from database...")
-    embeddings_data = load_embeddings_from_db()
+    print(f"Initial memory usage: {get_memory_usage():.2f} GB")
+    print("Loading embeddings from files...")
+    embeddings_data = load_embeddings_from_files()
     
-    # Create and save indexes for each embedding type
+    # Create and save indexes for each embedding type and nlist value
     for embedding_type, data in embeddings_data.items():
         print(f"\nProcessing {embedding_type} embeddings...")
-        print(f"Creating {embedding_type} index (dimension: {data['dim']})...")
         
-        index, pid_map = create_faiss_index(
-            data['embeddings'], 
-            data['pids'], 
-            data['dim']
-        )
+        for nlist in N_LIST_VALUES:
+            print(f"\nCreating {embedding_type} index with nlist={nlist} (dimension: {data['dim']})...")
+            
+            index, pid_map = create_faiss_index(
+                data['embeddings'], 
+                data['pids'], 
+                data['dim'],
+                nlist,
+                compressed=COMPRESSED
+            )
+            
+            # Save the index
+            index_type = 'compressed' if COMPRESSED else 'uncompressed'
+            index_path = os.path.join(output_dir, f'{embedding_type}_index_{index_type}_nlist{nlist}.faiss')
+            print(f"Saving index to {index_path}...")
+            save_index(index, index_path)
+            
+            # Save the mapping
+            mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping_{index_type}_nlist{nlist}.json')
+            print(f"Saving index mapping to {mapping_path}...")
+            save_mapping(pid_map, mapping_path)
+            
+            # Save the product IDs (keeping this for backward compatibility)
+            pids_path = os.path.join(output_dir, f'{embedding_type}_pids_{index_type}_nlist{nlist}.npy')
+            print(f"Saving product IDs to {pids_path}...")
+            np.save(pids_path, data['pids'])
+            
+            # Verify the index with a subset of vectors
+            print(f"Verifying {embedding_type} index with nlist={nlist}...")
+            verify_size = min(1000, len(data['embeddings']))
+            verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
+            
+            # Clear memory
+            del index
+            gc.collect()
+            print(f"Memory usage after processing {embedding_type} with nlist={nlist}: {get_memory_usage():.2f} GB")
         
-        # Save the index
-        index_path = os.path.join(output_dir, f'{embedding_type}_index.faiss')
-        print(f"Saving index to {index_path}...")
-        save_index(index, index_path)
-        
-        # Save the mapping
-        mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping.json')
-        print(f"Saving index mapping to {mapping_path}...")
-        save_mapping(pid_map, mapping_path)
-        
-        # Save the product IDs (keeping this for backward compatibility)
-        pids_path = os.path.join(output_dir, f'{embedding_type}_pids.npy')
-        print(f"Saving product IDs to {pids_path}...")
-        np.save(pids_path, data['pids'])
-        
-        # Verify the index
-        print(f"Verifying {embedding_type} index...")
-        verify_index(index, data['embeddings'], data['pids'])
+        # Clear embeddings data after processing all nlist values
+        del data['embeddings']
+        gc.collect()
     
     print("\nDone!")
 

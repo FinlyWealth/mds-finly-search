@@ -6,11 +6,12 @@ from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify
 import spacy
+import psycopg2
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.backend.embedding import generate_embedding, generate_image_caption
+from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
-from config.db import DB_CONFIG
+from config.db import DB_CONFIG, TABLE_NAME
 
 
 app = Flask(__name__)
@@ -18,13 +19,22 @@ app = Flask(__name__)
 # Initialize spaCy
 nlp = spacy.load("en_core_web_sm")
 
+# Track initialization status
+initialization_status = {
+    "minilm_model": False,
+    "clip_model": False,
+    "faiss_indices": False,
+    "database": False
+}
+
 top_k = 10
 
 components_config = [
     {
-        "type": "PostgresVectorRetrieval",
+        "type": "FaissVectorRetrieval",
         "params": {
-            "column_name": "fusion_embedding"
+            "column_name": "fusion_embedding",
+            "nprobe": 32
         }
     },
     {
@@ -40,6 +50,36 @@ components_config = [
         }
     }
 ]
+
+# Create retrieval components with database config
+components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
+
+def initialize_components():
+    """Initialize all required components and update status"""
+    try:
+        # Initialize MiniLM model
+        initialize_minilm_model()
+        initialization_status["minilm_model"] = True
+        
+        # Initialize CLIP model
+        initialize_clip_model()
+        initialization_status["clip_model"] = True
+        
+        # Initialize FAISS indices (this happens automatically when creating components)
+        initialization_status["faiss_indices"] = True
+        
+        # Test database connection
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute(f"SELECT 1 FROM {TABLE_NAME} LIMIT 1")
+        cur.close()
+        conn.close()
+        initialization_status["database"] = True
+        
+        return True
+    except Exception as e:
+        print(f"Error during initialization: {str(e)}")
+        return False
 
 def load_image(image_path):
     try:
@@ -82,8 +122,23 @@ def index():
     return "Backend API is running!"
 
 
+@app.route('/api/ready', methods=['GET'])
+def ready():
+    """Check if the API is ready to accept queries"""
+    is_ready = all(initialization_status.values())
+    status = {
+        "ready": is_ready,
+        "components": initialization_status
+    }
+    return jsonify(status)
+
+
 @app.route('/api/search', methods=['POST'])
 def search():
+    # Check if API is ready
+    if not all(initialization_status.values()):
+        return jsonify({'error': 'API is not ready yet. Please wait for initialization to complete.'}), 503
+        
     try:
         print("Received search request")
         print(f"Form data: {request.form}")
@@ -125,15 +180,23 @@ def search():
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
         if query_text and query_image:
             # Text+Image search: Use fusion_embedding (CLIP image + MiniLM text) and text search
-            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+            weights = [0.5, 0, 0.5]
         elif query_text:
             # Text-only search: Use fusion_embedding (CLIP text + MiniLM text) and text search
-            weights = [0.8, 0, 0.2]  # 80% fusion embedding, 20% text search
+            weights = [0.5, 0, 0.5]
         else:
             # Image-only search: Use only image_clip_embedding
             weights = [0, 1, 0]  # 100% image CLIP embedding
 
-        components = [create_retrieval_component(c, DB_CONFIG) for c in components_config]
+        # Print active components with non-zero weights
+        print("\nActive retrieval components:")
+        for comp, weight in zip(components_config, weights):
+            if weight > 0:
+                print(f"  {comp['type']}:")
+                print(f"    Params: {comp['params']}")
+                print(f"    Weight: {weight}")
+        print()
+
         search_query = query_text if query_text else ""
         pids, scores = hybrid_retrieval(
             query=search_query,
@@ -158,6 +221,25 @@ def search():
 
 # Set port to 5001
 if __name__ == "__main__":
+    # Print database connection details
+    print(f"Connecting to database: {DB_CONFIG['dbname']}")
+    print(f"Table: {TABLE_NAME}")
+    
+    # Print components configuration
+    print("\nInitialized retrieval components:")
+    for i, comp in enumerate(components_config):
+        print(f"Component {i+1}:")
+        print(f"  Type: {comp['type']}")
+        print(f"  Params: {comp['params']}")
+    print()
+    
+    # Initialize components
+    print("Initializing components...")
+    if initialize_components():
+        print("All components initialized successfully!")
+    else:
+        print("Warning: Some components failed to initialize")
+    
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)

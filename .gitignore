@@ -17,3 +17,7 @@ data/csv/sample_100k_v2.csv
 .env
 **/__pycache__/
 /.cloud_sql_proxy
+data/csv/sample_1M.csv
+data/faiss_indices/fusion_index.faiss
+data/faiss_indices/fusion_index_mapping.json
+data/faiss_indices/fusion_pids.npy
