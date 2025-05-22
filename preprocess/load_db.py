@@ -167,6 +167,26 @@ def init_db(embedding_dims: dict, drop: bool = False):
     cur.close()
     conn.close()
 
+def init_feedback_table():
+    """Initialize the feedback table to store user interactions"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    
+    # Create feedback table
+    cur.execute(f"""
+        CREATE TABLE IF NOT EXISTS user_feedback (
+            id SERIAL PRIMARY KEY,
+            query_text TEXT,
+            query_image TEXT,
+            feedback JSONB,  -- Array of {"pid": "product_id", "feedback": true/false}
+            timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def validate_numeric(value, field_name):
     """Validate and convert numeric values
     
@@ -509,6 +529,10 @@ def main():
     print(f"User: {DB_CONFIG['user']}")
     print(f"Port: {DB_CONFIG['port']}")
     print("\n" + "="*50 + "\n")
+    
+    # Initialize feedback table
+    print("Initializing feedback table...")
+    init_feedback_table()
     
     print("Loading metadata...")
     df = pd.read_csv(os.path.join(project_root, METADATA_PATH))

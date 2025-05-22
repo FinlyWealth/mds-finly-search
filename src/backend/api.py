@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import os
 import sys
+import uuid
 from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify
@@ -12,6 +13,7 @@ from src.backend.embedding import generate_embedding, initialize_minilm_model, i
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
 from config.db import DB_CONFIG, TABLE_NAME
+from psycopg2.extras import Json
 
 
 app = Flask(__name__)
@@ -147,6 +149,9 @@ def search():
         query_image = None
         query_embedding = None
 
+        # Generate a new session ID for this search
+        session_id = str(uuid.uuid4())
+
         # Handle text query from form data
         query_text = request.form.get('query')
         print(f"Query text: {query_text}")
@@ -207,6 +212,7 @@ def search():
         )
         
         response = {
+            'session_id': session_id,
             'results': format_results(pids, scores)
         }
         print(f"Response: {response}")
@@ -216,6 +222,63 @@ def search():
         print(f"Error in search: {str(e)}")
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    """Handle user feedback for search results"""
+    try:
+        data = request.get_json()
+        query_text = data.get('query_text')
+        image_path = data.get('image_path')
+        pid = data.get('pid')
+        feedback = data.get('feedback')  # True for thumbs up, False for thumbs down
+        session_id = data.get('session_id')  # Get session ID from request
+        
+        if not pid or feedback is None:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        if not session_id:
+            return jsonify({'error': 'Missing session_id'}), 400
+            
+        # Store feedback in database
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        
+        # First check if a row exists for this session_id
+        cur.execute("""
+            SELECT feedback FROM user_feedback 
+            WHERE session_id = %s
+        """, (session_id,))
+        
+        existing_row = cur.fetchone()
+        
+        if existing_row:
+            # Update existing row by appending to feedback list
+            existing_feedback = existing_row[0]
+            existing_feedback.append({"pid": pid, "feedback": feedback})
+            
+            cur.execute("""
+                UPDATE user_feedback 
+                SET feedback = %s
+                WHERE session_id = %s
+            """, (Json(existing_feedback), session_id))
+        else:
+            # Create new row for this session
+            feedback_list = [{"pid": pid, "feedback": feedback}]
+            cur.execute("""
+                INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
+                VALUES (%s, %s, %s, %s)
+            """, (query_text, image_path, Json(feedback_list), session_id))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 

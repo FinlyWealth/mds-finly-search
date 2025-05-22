@@ -162,8 +162,48 @@ def display_product_card(product, score):
             except:
                 st.write("No image available")
         
-        # Product details
-        st.write(f"**Similarity:** {score*100:.1f}%")
+        # Product details with similarity score and feedback buttons in one line
+        st.write(
+            f'<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">'
+            f'<div style="flex-grow: 1;"><strong>Similarity:</strong> {score*100:.1f}%</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+        
+        # Feedback buttons in a single row
+        st.write('<div style="display: flex; gap: 5px;">', unsafe_allow_html=True)
+        
+        # Initialize feedback state for this product if not exists
+        feedback_key = f"feedback_{product['Pid']}"
+        if feedback_key not in st.session_state:
+            st.session_state[feedback_key] = None
+        
+        # Up button
+        up_button = st.button(
+            "👍", 
+            key=f"up_{product['Pid']}", 
+            use_container_width=True,
+            type="primary" if st.session_state[feedback_key] == True else "secondary"
+        )
+        if up_button:
+            submit_feedback(product['Pid'], True)
+            st.session_state[feedback_key] = True
+            st.rerun()
+        
+        # Down button
+        down_button = st.button(
+            "👎", 
+            key=f"down_{product['Pid']}", 
+            use_container_width=True,
+            type="primary" if st.session_state[feedback_key] == False else "secondary"
+        )
+        if down_button:
+            submit_feedback(product['Pid'], False)
+            st.session_state[feedback_key] = False
+            st.rerun()
+            
+        st.write('</div>', unsafe_allow_html=True)
+        
         st.write(f"**{product['Name']}**")
         st.write(f"**ID:** {product['Pid']}")
         st.write(f"Description: {product['Description']}")
@@ -172,6 +212,42 @@ def display_product_card(product, score):
         st.write(f"Color: {product['Color']}")
         st.write(f"Gender: {product['Gender']}")
         st.write(f"Size: {product['Size']}")
+
+def submit_feedback(pid, feedback):
+    """Submit user feedback to the API"""
+    try:
+        # Get current search query and image path from session state
+        query_text = st.session_state.get('query_text', '')
+        image_input = st.session_state.get('image_input', '')
+        
+        # Get session_id from search results
+        search_results = st.session_state.get('search_results', {})
+        session_id = search_results.get('session_id')
+        
+        if not session_id:
+            st.error("No active search session found. Please perform a search first.")
+            return
+        
+        # Prepare request data
+        data = {
+            'pid': pid,
+            'feedback': feedback,
+            'query_text': query_text,
+            'image_path': image_input,
+            'session_id': session_id
+        }
+        
+        # Send feedback to API
+        response = requests.post(
+            f"{API_BASE_URL}/api/feedback",
+            json=data
+        )
+        
+        if response.status_code != 200:
+            st.error(f"Error submitting feedback: {response.json().get('error', 'Unknown error')}")
+            
+    except Exception as e:
+        st.error(f"Error submitting feedback: {str(e)}")
 
 # Main app
 def main():
