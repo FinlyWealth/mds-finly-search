@@ -5,6 +5,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 import pandas as pd
+import time
 
 # Set page config
 st.set_page_config(
@@ -111,7 +112,8 @@ def main():
                 del st.session_state.trigger_search
 
             st.session_state.num_results_to_show = 20 # reset display count on new search
-            
+
+            search_start_time = time.time() # set the start time
             with st.spinner("Searching for similar products..."):
                 try:
                     # Prepare the request data
@@ -143,25 +145,6 @@ def main():
                             results = response.json()
                             # Store results for display in right column
                             st.session_state.search_results = results
-                            
-                            # Display the search time
-                            if 'elapsed_time_sec' in results:
-                                st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
-                            
-                            # Dispplay the statistics
-                            if 'results' in results and isinstance(results['results'], list):
-                                if 'category_distribution' in results:
-                                    st.subheader("📊 Category Distribution")
-                                    cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
-                                                                orient='index', columns=['%'])
-                                    cat_df.index.name = "Category"
-                                    st.table(cat_df)
-
-                                if 'brand_distribution' in results:
-                                    st.subheader("🏷️ Brand Distribution")
-                                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], orient='index', columns=['%'])
-                                    brand_df.index.name = "Brand"
-                                    st.table(brand_df)
                                 
                             # Display the generated caption if available
                             if 'caption' in results:
@@ -177,6 +160,33 @@ def main():
                         st.error(f"Error from API: {error_msg}")
                 except Exception as e:
                     st.error(f"Error during search: {str(e)}")
+                    
+        # Display the time and statistics 
+        if 'search_results' in st.session_state:
+            results = st.session_state.search_results
+
+            if 'elapsed_time_sec' in results:
+                st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
+
+            stats_render_end = time.time()  # get the end time
+            total_elapsed = round(stats_render_end - search_start_time, 3)
+            st.markdown(f"🕒 **Total Time (click → display):** {total_elapsed} seconds") 
+
+            if 'results' in results and isinstance(results['results'], list):
+                if 'category_distribution' in results:
+                    st.subheader("📊 Category Distribution")
+                    cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
+                                                orient='index', columns=['%'])
+                    cat_df.index.name = "Category"
+                    st.table(cat_df.style.format({'%': '{:.2f}'}))
+
+                if 'brand_distribution' in results:
+                    st.subheader("🏷️ Brand Distribution")
+                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
+                                                  orient='index', columns=['%'])
+                    brand_df.index.name = "Brand"
+                    st.table(brand_df.style.format({'%': '{:.2f}'}))
+
     
     # Display results in the right column
     with right_col:
