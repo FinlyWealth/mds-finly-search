@@ -4,6 +4,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 import base64
+import pandas as pd
 
 # Set page config
 st.set_page_config(
@@ -148,18 +149,19 @@ def main():
                                 st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
                             
                             # Dispplay the statistics
-                            if 'category_distribution' in results:
-                                st.subheader("📊 Category Distribution")
-                                cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
+                            if 'results' in results and isinstance(results['results'], list):
+                                if 'category_distribution' in results:
+                                    st.subheader("📊 Category Distribution")
+                                    cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
                                                                 orient='index', columns=['%'])
-                                cat_df.index.name = "Category"
-                                st.dataframe(cat_df)
+                                    cat_df.index.name = "Category"
+                                    st.table(cat_df)
 
-                            if 'brand_distribution' in results:
-                                st.subheader("🏷️ Brand Distribution")
-                                brand_df = pd.DataFrame.from_dict(results['brand_distribution'], orient='index', columns=['%'])
-                                brand_df.index.name = "Brand"
-                                st.dataframe(brand_df)
+                                if 'brand_distribution' in results:
+                                    st.subheader("🏷️ Brand Distribution")
+                                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], orient='index', columns=['%'])
+                                    brand_df.index.name = "Brand"
+                                    st.table(brand_df)
                                 
                             # Display the generated caption if available
                             if 'caption' in results:
