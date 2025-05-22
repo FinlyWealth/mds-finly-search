@@ -26,11 +26,108 @@ st.markdown("""
             padding-left: 2rem;
             padding-right: 2rem;
         }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-color: #f0f2f6;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+        .component-status {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .status-icon {
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        .status-text {
+            flex-grow: 1;
+        }
+        .status-label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .status-description {
+            font-size: 0.8rem;
+            color: #666;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # API configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5001")
+
+def get_component_description(component):
+    """Get description for each component"""
+    descriptions = {
+        "minilm_model": "Text embedding model for semantic search",
+        "clip_model": "Vision-language model for image and text understanding",
+        "faiss_indices": "Vector search indices for fast similarity search",
+        "database": "Product database connection and tables"
+    }
+    return descriptions.get(component, "")
+
+def display_loading_screen(components):
+    """Display a detailed loading screen with component status"""
+    st.markdown("""
+        <div class="loading-container">
+            <h2>🚀 Initializing Search Engine</h2>
+            <p>Please wait while we load all required components...</p>
+    """, unsafe_allow_html=True)
+    
+    for component, status in components.items():
+        icon = "✅" if status else "⏳"
+        status_class = "success" if status else "pending"
+        description = get_component_description(component)
+        
+        st.markdown(f"""
+            <div class="component-status">
+                <span class="status-icon">{icon}</span>
+                <div class="status-text">
+                    <div class="status-label">{component.replace('_', ' ').title()}</div>
+                    <div class="status-description">{description}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
+def check_api_ready():
+    """Check if the API is ready to accept requests"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/ready")
+        if response.status_code == 200:
+            status = response.json()
+            return status["ready"], status["components"]
+        return False, None
+    except Exception as e:
+        return False, None
+
+def wait_for_api_ready():
+    """Wait for the API to be ready"""
+    while True:
+        is_ready, components = check_api_ready()
+        if is_ready:
+            st.success("✨ All components initialized successfully!")
+            time.sleep(1)  # Show success message briefly
+            st.rerun()  # Refresh the page
+            return True
+        
+        # Show initialization status
+        if components:
+            display_loading_screen(components)
+        
+        time.sleep(1)
 
 # Function to load image from URL or local path
 def load_image(image_path):
@@ -55,19 +152,59 @@ def display_product_card(product, score):
     with st.container():
         # Product image
         try:
-            # Try GCS first
-            image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
-            st.image(image_url, use_container_width=True)
+            # Try local path first
+            local_path = f"data/images/{product['Pid']}.jpeg"
+            st.image(local_path, use_container_width=True)
         except:
             try:
-                # Fall back to local path
-                local_path = f"data/images/{product['Pid']}.jpeg"
-                st.image(local_path, use_container_width=True)
+                # Fall back to GCS
+                image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
+                st.image(image_url, use_container_width=True)
             except:
                 st.write("No image available")
         
-        # Product details
-        st.write(f"**Similarity:** {score*100:.1f}%")
+        # Product details with similarity score and feedback buttons in one line
+        st.write(
+            f'<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">'
+            f'<div style="flex-grow: 1;"><strong>Similarity:</strong> {score*100:.1f}%</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+        
+        # Feedback buttons in a single row
+        st.write('<div style="display: flex; gap: 5px;">', unsafe_allow_html=True)
+        
+        # Initialize feedback state for this product if not exists
+        feedback_key = f"feedback_{product['Pid']}"
+        if feedback_key not in st.session_state:
+            st.session_state[feedback_key] = None
+        
+        # Up button
+        up_button = st.button(
+            "👍", 
+            key=f"up_{product['Pid']}", 
+            use_container_width=True,
+            type="primary" if st.session_state[feedback_key] == True else "secondary"
+        )
+        if up_button:
+            submit_feedback(product['Pid'], True)
+            st.session_state[feedback_key] = True
+            st.rerun()
+        
+        # Down button
+        down_button = st.button(
+            "👎", 
+            key=f"down_{product['Pid']}", 
+            use_container_width=True,
+            type="primary" if st.session_state[feedback_key] == False else "secondary"
+        )
+        if down_button:
+            submit_feedback(product['Pid'], False)
+            st.session_state[feedback_key] = False
+            st.rerun()
+            
+        st.write('</div>', unsafe_allow_html=True)
+        
         st.write(f"**{product['Name']}**")
         st.write(f"**ID:** {product['Pid']}")
         st.write(f"Description: {product['Description']}")
@@ -77,8 +214,48 @@ def display_product_card(product, score):
         st.write(f"Gender: {product['Gender']}")
         st.write(f"Size: {product['Size']}")
 
+def submit_feedback(pid, feedback):
+    """Submit user feedback to the API"""
+    try:
+        # Get current search query and image path from session state
+        query_text = st.session_state.get('query_text', '')
+        image_input = st.session_state.get('image_input', '')
+        
+        # Get session_id from search results
+        search_results = st.session_state.get('search_results', {})
+        session_id = search_results.get('session_id')
+        
+        if not session_id:
+            st.error("No active search session found. Please perform a search first.")
+            return
+        
+        # Prepare request data
+        data = {
+            'pid': pid,
+            'feedback': feedback,
+            'query_text': query_text,
+            'image_path': image_input,
+            'session_id': session_id
+        }
+        
+        # Send feedback to API
+        response = requests.post(
+            f"{API_BASE_URL}/api/feedback",
+            json=data
+        )
+        
+        if response.status_code != 200:
+            st.error(f"Error submitting feedback: {response.json().get('error', 'Unknown error')}")
+            
+    except Exception as e:
+        st.error(f"Error submitting feedback: {str(e)}")
+
 # Main app
 def main():
+    # Check if API is ready
+    if not check_api_ready()[0]:
+        wait_for_api_ready()
+    
     # Create two columns for search inputs and results
     left_col, right_col = st.columns([1, 3])
     
@@ -152,6 +329,10 @@ def main():
                         except ValueError as e:
                             st.error(f"Invalid JSON response from API: {str(e)}")
                             st.error(f"Response content: {response.text[:200]}...")  # Show first 200 chars of response
+                    elif response.status_code == 503:
+                        st.error("API is not ready yet. Please wait for initialization to complete.")
+                        # Wait for API to be ready
+                        wait_for_api_ready()
                     else:
                         try:
                             error_msg = response.json().get('error', 'Unknown error')

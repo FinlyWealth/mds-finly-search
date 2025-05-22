@@ -11,8 +11,6 @@ device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_availabl
 # Global variables for model instances
 _clip_processor = None
 _clip_model = None
-_blip_processor = None
-_blip_model = None
 _minilm_model = None
 _minilm_tokenizer = None
 
@@ -20,17 +18,8 @@ def initialize_clip_model(model_id="openai/clip-vit-base-patch32"):
     """Initialize CLIP model and processor"""
     global _clip_processor, _clip_model
     _clip_processor = AutoProcessor.from_pretrained(model_id)
-    _clip_model = AutoModel.from_pretrained(model_id)
-    _clip_model = _clip_model.to(device)
+    _clip_model = AutoModel.from_pretrained(model_id).to(device)
     return _clip_processor, _clip_model
-
-def initialize_blip_model(model_id="Salesforce/blip-image-captioning-base"):
-    """Initialize BLIP model and processor"""
-    global _blip_processor, _blip_model
-    _blip_processor = BlipProcessor.from_pretrained(model_id)
-    _blip_model = BlipForConditionalGeneration.from_pretrained(model_id)
-    _blip_model = _blip_model.to(device)
-    return _blip_processor, _blip_model
 
 def initialize_minilm_model(model_id="sentence-transformers/all-MiniLM-L6-v2"):
     """Initialize MiniLM model and tokenizer"""
@@ -46,13 +35,6 @@ def get_clip_model():
     if _clip_processor is None or _clip_model is None:
         return initialize_clip_model()
     return _clip_processor, _clip_model
-
-def get_blip_model():
-    """Get or initialize BLIP model and processor"""
-    global _blip_processor, _blip_model
-    if _blip_processor is None or _blip_model is None:
-        return initialize_blip_model()
-    return _blip_processor, _blip_model
 
 def get_minilm_model():
     """Get or initialize MiniLM model and tokenizer"""

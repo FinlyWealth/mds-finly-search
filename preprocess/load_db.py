@@ -10,12 +10,17 @@ from tqdm import tqdm
 import re
 import glob
 from dotenv import load_dotenv
+import time
+import pickle
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config.db import DB_CONFIG, TABLE_NAME
 from config.path import METADATA_PATH, EMBEDDINGS_PATH
 
 # Load environment variables
 load_dotenv()
+
+# Add checkpoint file path
+CHECKPOINT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'insert_checkpoint.pkl')
 
 def get_base_embedding_type(filename: str) -> str:
     """Extract the base embedding type from a filename
@@ -154,11 +159,158 @@ def init_db(embedding_dims: dict, drop: bool = False):
         );
     """)
     
+    # Create GIST index on the document tsvector column
+    print("Creating GIST index on document column...")
+    cur.execute(f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_document ON {TABLE_NAME} USING GIST (document);")
+    
     conn.commit()
     cur.close()
     conn.close()
 
-def store_embeddings(embeddings_dict, pids, df):
+def validate_numeric(value, field_name):
+    """Validate and convert numeric values
+    
+    Args:
+        value: The value to validate
+        field_name: Name of the field for error reporting
+        
+    Returns:
+        float or None: Validated numeric value
+    """
+    if pd.isna(value) or value == '':
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        print(f"Warning: Invalid numeric value for {field_name}: {value}")
+        return None
+
+def validate_boolean(value, field_name):
+    """Validate and convert boolean values
+    
+    Args:
+        value: The value to validate
+        field_name: Name of the field for error reporting
+        
+    Returns:
+        bool or None: Validated boolean value
+    """
+    if pd.isna(value) or value == '':
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        value = value.lower()
+        if value in ('true', 't', 'yes', 'y', '1'):
+            return True
+        if value in ('false', 'f', 'no', 'n', '0'):
+            return False
+    print(f"Warning: Invalid boolean value for {field_name}: {value}")
+    return None
+
+def validate_text(value, field_name):
+    """Validate and convert text values
+    
+    Args:
+        value: The value to validate
+        field_name: Name of the field for error reporting
+        
+    Returns:
+        str or None: Validated text value
+    """
+    if pd.isna(value) or value == '':
+        return None
+    try:
+        return str(value).strip()
+    except (ValueError, TypeError):
+        print(f"Warning: Invalid text value for {field_name}: {value}")
+        return None
+
+def validate_and_clean_dataframe(df):
+    """Validate and clean the DataFrame, dropping invalid rows
+    
+    Args:
+        df (pd.DataFrame): Input DataFrame to validate and clean
+        
+    Returns:
+        pd.DataFrame: Cleaned DataFrame with valid rows only
+    """
+    print("\nValidating and cleaning data...")
+    original_rows = len(df)
+    
+    # Create a mask for valid rows
+    valid_mask = pd.Series(True, index=df.index)
+    
+    # Validate Pid (required field)
+    valid_mask &= df['Pid'].notna() & (df['Pid'] != '')
+    
+    # Validate numeric fields
+    numeric_fields = ['Price', 'FinalPrice', 'Discount']
+    for field in numeric_fields:
+        if field in df.columns:
+            # Convert to numeric, invalid values become NaN
+            df[field] = pd.to_numeric(df[field], errors='coerce')
+            # Keep rows where the field is either valid numeric or NaN
+            valid_mask &= (df[field].notna() | df[field].isna())
+    
+    # Validate boolean fields
+    boolean_fields = ['isOnSale', 'IsInStock']
+    for field in boolean_fields:
+        if field in df.columns:
+            # Convert to boolean, invalid values become NaN
+            df[field] = df[field].map({
+                True: True, 'true': True, 't': True, 'yes': True, 'y': True, '1': True, 1: True,
+                False: False, 'false': False, 'f': False, 'no': False, 'n': False, '0': False, 0: False
+            })
+            # Keep rows where the field is either valid boolean or NaN
+            valid_mask &= (df[field].notna() | df[field].isna())
+    
+    # Apply the mask to keep only valid rows
+    df_cleaned = df[valid_mask].copy()
+    
+    # Report statistics
+    dropped_rows = original_rows - len(df_cleaned)
+    print(f"Original rows: {original_rows}")
+    print(f"Valid rows: {len(df_cleaned)}")
+    print(f"Dropped rows: {dropped_rows} ({dropped_rows/original_rows*100:.2f}%)")
+    
+    return df_cleaned
+
+def save_checkpoint(batch_number, total_batches):
+    """Save the current batch number to checkpoint file
+    
+    Args:
+        batch_number (int): Current batch number
+        total_batches (int): Total number of batches
+    """
+    checkpoint_data = {
+        'batch_number': batch_number,
+        'total_batches': total_batches,
+        'timestamp': time.time()
+    }
+    with open(CHECKPOINT_FILE, 'wb') as f:
+        pickle.dump(checkpoint_data, f)
+    print(f"Checkpoint saved: Batch {batch_number}/{total_batches}")
+
+def load_checkpoint():
+    """Load the last checkpoint if it exists
+    
+    Returns:
+        tuple: (batch_number, total_batches) or (0, None) if no checkpoint exists
+    """
+    if os.path.exists(CHECKPOINT_FILE):
+        try:
+            with open(CHECKPOINT_FILE, 'rb') as f:
+                checkpoint_data = pickle.load(f)
+            print(f"Loaded checkpoint: Batch {checkpoint_data['batch_number']}/{checkpoint_data['total_batches']}")
+            return checkpoint_data['batch_number'], checkpoint_data['total_batches']
+        except Exception as e:
+            print(f"Error loading checkpoint: {e}")
+    return 0, None
+
+def insert_data(embeddings_dict, pids, df):
     """Store embeddings and metadata in the database
     
     Args:
@@ -166,8 +318,8 @@ def store_embeddings(embeddings_dict, pids, df):
         pids (list): List of product IDs that have all required embeddings
         df (pd.DataFrame): DataFrame containing product metadata
     """
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
+    # Validate and clean the DataFrame first
+    df = validate_and_clean_dataframe(df)
     
     # Create a set to track seen Pids
     seen_ids = set()
@@ -187,14 +339,28 @@ def store_embeddings(embeddings_dict, pids, df):
         'Color', 'Gender', 'Size', 'Condition'
     ]
     
-    # Process in batches
-    batch_size = 1000
+    # Text fields to combine for TF-IDF search
+    text_fields = ['Name', 'Category', 'MergedBrand', 
+                   'Color', 'Gender', 'Size', 'Condition']
+    
+    batch_size = 3000
     total_products = len(pids)
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
+    # Load checkpoint if exists
+    start_batch, checkpoint_total = load_checkpoint()
+    if checkpoint_total is not None and checkpoint_total != (total_products + batch_size - 1) // batch_size:
+        print("Warning: Checkpoint total batches doesn't match current total. Starting from beginning.")
+        start_batch = 0
     
     print("\nInserting data into database...")
-    for i in range(0, total_products, batch_size):
+    for i in range(start_batch * batch_size, total_products, batch_size):
         batch_pids = pids[i:i + batch_size]
         batch_data = []
+        
+        # Pre-filter DataFrame for this batch to reduce memory usage
+        batch_df = df[df['Pid'].isin(batch_pids)]
         
         for pid in batch_pids:
             if pid in seen_ids:
@@ -202,7 +368,7 @@ def store_embeddings(embeddings_dict, pids, df):
             seen_ids.add(pid)
             
             # Get product data from DataFrame
-            product_data = df[df['Pid'] == pid].iloc[0]
+            product_data = batch_df[batch_df['Pid'] == pid].iloc[0]
             
             # Get embeddings for this product
             embedding_values = []
@@ -214,95 +380,122 @@ def store_embeddings(embeddings_dict, pids, df):
                 else:
                     embedding_values.append(None)
             
-            # Prepare metadata values
+            # Prepare text for ts_vector
+            combined_text = ' '.join(str(product_data[field]) for field in text_fields if pd.notna(product_data[field])).lower()
+            
+            # Prepare metadata values (no need for validation since DataFrame is already cleaned)
             metadata_values = [
-                pid,
+                str(pid),
                 *embedding_values,  # Unpack embedding values
-                None,  # Document will be updated separately
-                product_data['Name'],
-                product_data['Description'],
-                product_data['Category'],
+                combined_text,  # Document text for ts_vector
+                str(product_data['Name']) if pd.notna(product_data['Name']) else None,
+                str(product_data['Description']) if pd.notna(product_data['Description']) else None,
+                str(product_data['Category']) if pd.notna(product_data['Category']) else None,
                 float(product_data['Price']) if pd.notna(product_data['Price']) else None,
-                product_data['PriceCurrency'],
+                str(product_data['PriceCurrency']) if pd.notna(product_data['PriceCurrency']) else None,
                 float(product_data['FinalPrice']) if pd.notna(product_data['FinalPrice']) else None,
                 float(product_data['Discount']) if pd.notna(product_data['Discount']) else None,
-                bool(product_data['isOnSale']), 
-                bool(product_data['IsInStock']),
-                product_data['MergedBrand'],
-                product_data['Color'],
-                product_data['Gender'],
-                product_data['Size'],
-                product_data['Condition']
+                bool(product_data['isOnSale']) if pd.notna(product_data['isOnSale']) else None,
+                bool(product_data['IsInStock']) if pd.notna(product_data['IsInStock']) else None,
+                str(product_data['MergedBrand']) if pd.notna(product_data['MergedBrand']) else None,
+                str(product_data['Color']) if pd.notna(product_data['Color']) else None,
+                str(product_data['Gender']) if pd.notna(product_data['Gender']) else None,
+                str(product_data['Size']) if pd.notna(product_data['Size']) else None,
+                str(product_data['Condition']) if pd.notna(product_data['Condition']) else None
             ]
             
             batch_data.append(tuple(metadata_values))
         
         if batch_data:
-            execute_values(
-                cur,
-                f"""
-                INSERT INTO {TABLE_NAME} (
-                    {', '.join(columns)}
-                ) 
-                VALUES %s 
-                ON CONFLICT (Pid) DO NOTHING
-                """,
-                batch_data
-            )
-            conn.commit()
-        
-        print(f"Processed batch {i//batch_size + 1}/{(total_products + batch_size - 1)//batch_size}")
+            # Retry logic for database operations
+            for retry in range(max_retries):
+                try:
+                    conn = psycopg2.connect(**DB_CONFIG)
+                    cur = conn.cursor()
+                    
+                    # Use execute_values for bulk insert with VALUES clause
+                    execute_values(
+                        cur,
+                        f"""
+                        INSERT INTO {TABLE_NAME} (
+                            {', '.join(columns)}
+                        ) 
+                        SELECT 
+                            x.Pid,
+                            {', '.join(f'x.{col}_embedding' for col in get_enabled_embedding_types())},
+                            to_tsvector('english', x.document),
+                            x.Name,
+                            x.Description,
+                            x.Category,
+                            x.Price,
+                            x.PriceCurrency,
+                            x.FinalPrice,
+                            x.Discount,
+                            x.isOnSale,
+                            x.IsInStock,
+                            x.Brand,
+                            x.Color,
+                            x.Gender,
+                            x.Size,
+                            x.Condition
+                        FROM (VALUES %s) AS x (
+                            Pid,
+                            {', '.join(f'{col}_embedding' for col in get_enabled_embedding_types())},
+                            document,
+                            Name,
+                            Description,
+                            Category,
+                            Price,
+                            PriceCurrency,
+                            FinalPrice,
+                            Discount,
+                            isOnSale,
+                            IsInStock,
+                            Brand,
+                            Color,
+                            Gender,
+                            Size,
+                            Condition
+                        )
+                        ON CONFLICT (Pid) DO NOTHING
+                        """,
+                        batch_data
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    
+                    # Save checkpoint after successful batch
+                    current_batch = i // batch_size + 1
+                    total_batches = (total_products + batch_size - 1) // batch_size
+                    save_checkpoint(current_batch, total_batches)
+                    
+                    print(f"Processed batch {current_batch}/{total_batches}")
+                    break  # Success, exit retry loop
+                    
+                except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                    print(f"Database error on batch {i//batch_size + 1} (retry {retry + 1}/{max_retries}): {str(e)}")
+                    if retry < max_retries - 1:
+                        print(f"Waiting {retry_delay} seconds before retrying...")
+                        time.sleep(retry_delay)
+                    else:
+                        print("Max retries reached. Moving to next batch.")
+                    # Ensure connection is closed before retrying
+                    try:
+                        if 'cur' in locals():
+                            cur.close()
+                        if 'conn' in locals():
+                            conn.close()
+                    except:
+                        pass
+                except Exception as e:
+                    print(f"Unexpected error on batch {i//batch_size + 1}: {str(e)}")
+                    raise  # Re-raise unexpected errors
     
-    cur.close()
-    conn.close()
-
-def update_documents(product_texts, overwrite: bool = False):
-    """Update the document field with the actual text content for full-text search
-    
-    Args:
-        product_texts (list): List of tuples containing (pid, text) pairs
-        overwrite (bool): If True, updates all documents. If False, only updates documents that are None.
-    """
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    
-    # Update documents in batches using execute_batch
-    batch_size = 1000
-    total_batches = (len(product_texts) + batch_size - 1) // batch_size
-    
-    print("\nUpdating ts_vector in database...")
-    for i in tqdm(range(0, len(product_texts), batch_size), total=total_batches, desc="Processing batches"):
-        batch = product_texts[i:i + batch_size]
-        data = [(text, pid) for pid, text in batch]
-        
-        if overwrite:
-            # Update all documents in the batch
-            execute_batch(
-                cur,
-                f"""
-                UPDATE {TABLE_NAME} 
-                SET document = to_tsvector('english', %s)
-                WHERE Pid = %s
-                """,
-                data,
-                page_size=batch_size
-            )
-        else:
-            # Only update documents that are None
-            execute_batch(
-                cur,
-                f"""
-                UPDATE {TABLE_NAME} 
-                SET document = to_tsvector('english', %s)
-                WHERE Pid = %s AND document IS NULL
-                """,
-                data,
-                page_size=batch_size
-            )
-        conn.commit()
-    
-    cur.close()
-    conn.close()
+    # Remove checkpoint file after successful completion
+    if os.path.exists(CHECKPOINT_FILE):
+        os.remove(CHECKPOINT_FILE)
+        print("Checkpoint file removed after successful completion")
 
 # This script is used to load the embeddings and update documents in the database
 def main():
@@ -391,23 +584,11 @@ def main():
     common_pids = list(common_pids)
     print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
-    # Text fields to combine for TF-IDF search
-    text_fields = ['Name', 'Category', 'MergedBrand', 
-                   'Color', 'Gender', 'Size', 'Condition']
-    
     print("\nInitializing database...")
-    init_db(embedding_dims, drop=False)  # Default to not dropping the table
+    init_db(embedding_dims, drop=True)
     
-    print("\nStoring embeddings in database...")
-    store_embeddings(embeddings_dict, common_pids, df)
-    
-    # Prepare product texts for ts_vector
-    df['combined_text'] = df[text_fields].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
-    product_texts = list(zip(df['Pid'].tolist(), df['combined_text'].tolist()))
-    
-    # Update ts_vector in database
-    print("\nUpdating ts_vector in database...")
-    update_documents(product_texts, overwrite=False)  # Default to not overwriting existing documents
+    print("\nInserting embeddings and ts_vector in database...")
+    insert_data(embeddings_dict, common_pids, df)
     
     print("\nDone!")
 

@@ -1,12 +1,32 @@
 {
-    "fusion_vector_experiments_32": [
+    "1M_faiss_ts_optimization": [
         {
-            "name": "fusion_ts",
+            "name": "fusion_ts_faiss_nprobe_16",
             "components": [
                 {
-                    "type": "PostgresVectorRetrieval",
+                    "type": "FaissVectorRetrieval",
                     "params": {
-                        "column_name": "fusion_embedding"
+                        "column_name": "fusion_embedding",
+                        "nprobe": 16
+                    }
+                },
+                {
+                    "type": "TextSearchRetrieval",
+                    "params": {
+                        "rank_method": "ts_rank_cd"
+                    }
+                }
+            ],
+            "weights": [0.5, 0.5]
+        },
+        {
+            "name": "fusion_ts_faiss_nprobe_32",
+            "components": [
+                {
+                    "type": "FaissVectorRetrieval",
+                    "params": {
+                        "column_name": "fusion_embedding",
+                        "nprobe": 32
                     }
                 },
                 {

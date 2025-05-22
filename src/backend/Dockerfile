@@ -15,14 +15,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Download spacy model
 RUN python -m spacy download en_core_web_sm
 
-# Copy config folder from root level
+# Copy config folder and backend source code
 COPY config /app/config
-# Copy backend source code
 COPY src/backend /app/src/backend
-WORKDIR /app/src/backend
 
-# Expose backend port (assuming Flask default 5000)
+# Add the app directory to PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Expose backend port
 EXPOSE 5001
 
 # Run your backend app
-CMD ["python", "api.py"]
+CMD ["python", "/app/src/backend/api.py"]

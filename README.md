@@ -21,18 +21,12 @@ The application can be accessed via the link in the Github repo description.
 
 ## Setup Instructions - Developer
 
-### Step 1. Download product data and product images
-
-1. Download the `sample_100k_v2.csv` and `images_100k_v2.zip` from: <https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K>
-
-2. Extract `images_100k_v2.zip` into the `data/images` folder. Put `sample_100k_v2.csv` under `data/csv`.
-
-### Step 2. Setup Python environment and environment variables
+### Step 1. Setup Python environment and environment variables
 
 1. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
 2. Create environment variable `.env` file in the root folder
 
-### Step 3. Database Setup
+### Step 2. Database Setup
 
 Choose Option A or Option B based on your use case.
 
@@ -248,11 +242,12 @@ The search engine supports the following retrieval components that can be combin
 1. **PostgresVectorRetrieval**
     - Uses pgvector for vector similarity search
     - Parameters:
-        - `column_name`: Name of the vector column to search (e.g., "text_embedding" or "image_embedding")
+        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
 2. **FaissVectorRetrieval**
     - Uses FAISS for efficient vector similarity search
     - Parameters:
-        - `index_type`: Either "text" or "image" to specify which pre-computed index to use
+        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
+        - `nprobe`: Number of clusters to search in
 3. **TextSearchRetrieval**
     - Uses PostgreSQL full-text search capabilities
     - Parameters:
