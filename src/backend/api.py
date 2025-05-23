@@ -9,9 +9,17 @@ from flask import Flask, request, jsonify
 import spacy
 import psycopg2
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
-from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
-from src.backend.db import fetch_product_by_pid
+from src.backend.embedding import (
+    generate_embedding,
+    initialize_minilm_model,
+    initialize_clip_model,
+)
+from src.backend.retrieval import (
+    hybrid_retrieval,
+    create_retrieval_component,
+    reorder_search_results_by_relevancy,
+)
+from src.backend.db import fetch_product_by_pid, fetch_products_by_pids
 from config.db import DB_CONFIG, TABLE_NAME
 from psycopg2.extras import Json
 
@@ -210,11 +218,13 @@ def search():
             weights=weights,
             top_k=top_k
         )
-        
-        response = {
-            'session_id': session_id,
-            'results': format_results(pids, scores)
-        }
+
+        # formatted_result = format_results(pids, scores)
+        formatted_result = fetch_products_by_pids(pids, scores)
+        reordered_result = reorder_search_results_by_relevancy(
+            query_text, formatted_result
+        )
+        response = {"results": reordered_result}
         print(f"Response: {response}")
         return jsonify(response)
         
