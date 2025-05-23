@@ -8,6 +8,7 @@ from io import BytesIO
 from flask import Flask, request, jsonify
 import spacy
 import psycopg2
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.backend.embedding import (
     generate_embedding,
@@ -34,7 +35,7 @@ initialization_status = {
     "minilm_model": False,
     "clip_model": False,
     "faiss_indices": False,
-    "database": False
+    "database": False,
 }
 
 top_k = 10
@@ -42,27 +43,18 @@ top_k = 10
 components_config = [
     {
         "type": "FaissVectorRetrieval",
-        "params": {
-            "column_name": "fusion_embedding",
-            "nprobe": 32
-        }
+        "params": {"column_name": "fusion_embedding", "nprobe": 32},
     },
     {
         "type": "PostgresVectorRetrieval",
-        "params": {
-            "column_name": "image_clip_embedding"
-        }
+        "params": {"column_name": "image_clip_embedding"},
     },
-    {
-        "type": "TextSearchRetrieval",
-        "params": {
-            "rank_method": "ts_rank"
-        }
-    }
+    {"type": "TextSearchRetrieval", "params": {"rank_method": "ts_rank"}},
 ]
 
 # Create retrieval components with database config
 components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
+
 
 def initialize_components():
     """Initialize all required components and update status"""
@@ -70,14 +62,14 @@ def initialize_components():
         # Initialize MiniLM model
         initialize_minilm_model()
         initialization_status["minilm_model"] = True
-        
+
         # Initialize CLIP model
         initialize_clip_model()
         initialization_status["clip_model"] = True
-        
+
         # Initialize FAISS indices (this happens automatically when creating components)
         initialization_status["faiss_indices"] = True
-        
+
         # Test database connection
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
@@ -85,15 +77,16 @@ def initialize_components():
         cur.close()
         conn.close()
         initialization_status["database"] = True
-        
+
         return True
     except Exception as e:
         print(f"Error during initialization: {str(e)}")
         return False
 
+
 def load_image(image_path):
     try:
-        if image_path.startswith(('http://', 'https://')):
+        if image_path.startswith(("http://", "https://")):
             response = requests.get(image_path)
             image = Image.open(BytesIO(response.content))
         else:
@@ -102,6 +95,7 @@ def load_image(image_path):
     except Exception as e:
         raise Exception(f"Error loading image: {e}")
 
+
 def format_results(indices, scores):
     results = []
     for idx, score in zip(indices, scores):
@@ -109,17 +103,19 @@ def format_results(indices, scores):
             # Look up product by ID instead of using iloc
             product = fetch_product_by_pid(idx)
             if product:
-                results.append({
-                    'Pid': str(idx),
-                    'Name': str(product['Name']),
-                    'Description': str(product['Description']),
-                    'Brand': str(product['Brand']),
-                    'Category': str(product['Category']),
-                    'Color': str(product['Color']),
-                    'Gender': str(product['Gender']),
-                    'Size': str(product['Size']),
-                    'similarity': float(score)
-                })
+                results.append(
+                    {
+                        "Pid": str(idx),
+                        "Name": str(product["Name"]),
+                        "Description": str(product["Description"]),
+                        "Brand": str(product["Brand"]),
+                        "Category": str(product["Category"]),
+                        "Color": str(product["Color"]),
+                        "Gender": str(product["Gender"]),
+                        "Size": str(product["Size"]),
+                        "similarity": float(score),
+                    }
+                )
         except IndexError:
             # Skip products that aren't found in the Database
             print(f"Warning: Product ID {idx} not found in Database")
@@ -132,23 +128,27 @@ def index():
     return "Backend API is running!"
 
 
-@app.route('/api/ready', methods=['GET'])
+@app.route("/api/ready", methods=["GET"])
 def ready():
     """Check if the API is ready to accept queries"""
     is_ready = all(initialization_status.values())
-    status = {
-        "ready": is_ready,
-        "components": initialization_status
-    }
+    status = {"ready": is_ready, "components": initialization_status}
     return jsonify(status)
 
 
-@app.route('/api/search', methods=['POST'])
+@app.route("/api/search", methods=["POST"])
 def search():
     # Check if API is ready
     if not all(initialization_status.values()):
-        return jsonify({'error': 'API is not ready yet. Please wait for initialization to complete.'}), 503
-        
+        return (
+            jsonify(
+                {
+                    "error": "API is not ready yet. Please wait for initialization to complete."
+                }
+            ),
+            503,
+        )
+
     try:
         print("Received search request")
         print(f"Form data: {request.form}")
@@ -161,33 +161,35 @@ def search():
         session_id = str(uuid.uuid4())
 
         # Handle text query from form data
-        query_text = request.form.get('query')
+        query_text = request.form.get("query")
         print(f"Query text: {query_text}")
 
         # Handle image query
-        if 'file' in request.files:
+        if "file" in request.files:
             # uploaded image
-            file = request.files['file']
+            file = request.files["file"]
             query_image = Image.open(file.stream)
-        elif request.form.get('image_path'):
+        elif request.form.get("image_path"):
             # image from url
-            image_path = request.form.get('image_path')
+            image_path = request.form.get("image_path")
             query_image = load_image(image_path)
 
         if not query_text and not query_image:
-            return jsonify({'error': 'Either query text or image is required'}), 400
+            return jsonify({"error": "Either query text or image is required"}), 400
 
         print("Generating embedding...")
         # Generate embedding based on available inputs
         if query_text and query_image:
-            query_embedding = generate_embedding(query_text=query_text, query_image=query_image)
+            query_embedding = generate_embedding(
+                query_text=query_text, query_image=query_image
+            )
         elif query_text:
             query_embedding = generate_embedding(query_text=query_text)
         else:  # query_image only
             query_embedding = generate_embedding(query_image=query_image)
 
         print(f"Generated embedding shape: {query_embedding.shape}")
-        
+
         print("Performing retrieval...")
         # Adjust weights based on input type
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
@@ -214,9 +216,9 @@ def search():
         pids, scores = hybrid_retrieval(
             query=search_query,
             query_embedding=query_embedding,
-            components=components, 
+            components=components,
             weights=weights,
-            top_k=top_k
+            top_k=top_k,
         )
 
         # formatted_result = format_results(pids, scores)
@@ -224,65 +226,75 @@ def search():
         reordered_result = reorder_search_results_by_relevancy(
             query_text, formatted_result
         )
-        response = {"results": reordered_result}
+        response = {"session_id": session_id, "results": reordered_result}
         print(f"Response: {response}")
         return jsonify(response)
-        
+
     except Exception as e:
         print(f"Error in search: {str(e)}")
         import traceback
+
         print(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/feedback', methods=['POST'])
+@app.route("/api/feedback", methods=["POST"])
 def submit_feedback():
     """Handle user feedback for search results"""
     try:
         data = request.get_json()
-        query_text = data.get('query_text')
-        image_path = data.get('image_path')
-        pid = data.get('pid')
-        feedback = data.get('feedback')  # True for thumbs up, False for thumbs down
-        session_id = data.get('session_id')  # Get session ID from request
-        
+        query_text = data.get("query_text")
+        image_path = data.get("image_path")
+        pid = data.get("pid")
+        feedback = data.get("feedback")  # True for thumbs up, False for thumbs down
+        session_id = data.get("session_id")  # Get session ID from request
+
         if not pid or feedback is None:
-            return jsonify({'error': 'Missing required fields'}), 400
-            
+            return jsonify({"error": "Missing required fields"}), 400
+
         if not session_id:
-            return jsonify({'error': 'Missing session_id'}), 400
-            
+            return jsonify({"error": "Missing session_id"}), 400
+
         try:
             # Store feedback in database
             conn = psycopg2.connect(**DB_CONFIG)
             cur = conn.cursor()
-            
+
             # First check if a row exists for this session_id
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT feedback FROM user_feedback 
                 WHERE session_id = %s
-            """, (session_id,))
-            
+            """,
+                (session_id,),
+            )
+
             existing_row = cur.fetchone()
-            
+
             if existing_row:
                 # Update existing row by appending to feedback list
                 existing_feedback = existing_row[0]
                 existing_feedback.append({"pid": pid, "feedback": feedback})
-                
-                cur.execute("""
+
+                cur.execute(
+                    """
                     UPDATE user_feedback 
                     SET feedback = %s
                     WHERE session_id = %s
-                """, (Json(existing_feedback), session_id))
+                """,
+                    (Json(existing_feedback), session_id),
+                )
             else:
                 # Create new row for this session
                 feedback_list = [{"pid": pid, "feedback": feedback}]
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
                     VALUES (%s, %s, %s, %s)
-                """, (query_text, image_path, Json(feedback_list), session_id))
-            
+                """,
+                    (query_text, image_path, Json(feedback_list), session_id),
+                )
+
             conn.commit()
             cur.close()
             conn.close()
@@ -290,12 +302,12 @@ def submit_feedback():
             # Log the error but don't expose it to the client
             print(f"Database error while storing feedback: {str(db_error)}")
             # Continue execution to return success response
-        
-        return jsonify({'success': True})
-        
+
+        return jsonify({"success": True})
+
     except Exception as e:
         # Only return error for non-database related issues
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # Set port to 5001
@@ -303,7 +315,7 @@ if __name__ == "__main__":
     # Print database connection details
     print(f"Connecting to database: {DB_CONFIG['dbname']}")
     print(f"Table: {TABLE_NAME}")
-    
+
     # Print components configuration
     print("\nInitialized retrieval components:")
     for i, comp in enumerate(components_config):
@@ -311,14 +323,14 @@ if __name__ == "__main__":
         print(f"  Type: {comp['type']}")
         print(f"  Params: {comp['params']}")
     print()
-    
+
     # Initialize components
     print("Initializing components...")
     if initialize_components():
         print("All components initialized successfully!")
     else:
         print("Warning: Some components failed to initialize")
-    
+
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)

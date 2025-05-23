@@ -1,53 +1,65 @@
 import os
+import logging
 import psycopg2
 from psycopg2.extras import execute_values, Json
 import numpy as np
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, List
 import faiss
+import openai
 import json
 import sys
 import requests
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.db import DB_CONFIG, TABLE_NAME
 
+# logging setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-FAISS_INDEX_DIR = os.path.join(REPO_ROOT, 'data', 'faiss_indices')
-GCS_BUCKET_URL = 'https://storage.googleapis.com/finly-mds'
-GCS_INDEX_PREFIX = 'faiss_indices'
+FAISS_INDEX_DIR = os.path.join(REPO_ROOT, "data", "faiss_indices")
+GCS_BUCKET_URL = "https://storage.googleapis.com/finly-mds"
+GCS_INDEX_PREFIX = "faiss_indices"
 
 # Cache for FAISS indices and mappings
 _faiss_index_cache = {}
 _faiss_mapping_cache = {}
 
+
 def download_from_gcs(source_path: str, destination_file_name: str):
     """Downloads a file from public GCS bucket."""
     url = f"{GCS_BUCKET_URL}/{source_path}"
-    
+
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
-    
+
     response = requests.get(url)
     response.raise_for_status()  # Raise an exception for bad status codes
-    
-    with open(destination_file_name, 'wb') as f:
+
+    with open(destination_file_name, "wb") as f:
         f.write(response.content)
     print(f"Downloaded {source_path} to {destination_file_name}")
 
+
 class SimilarityRetrieval:
     """Base class for similarity retrieval"""
+
     def score(self, query: Union[str, np.ndarray], k: int = 10) -> Dict[int, float]:
         """
         Return a {pid: score} dict for the given query.
-        
+
         Args:
             query: Query (text or vector)
             k: Number of top results to return
         """
         raise NotImplementedError
 
+
 class PostgresVectorRetrieval(SimilarityRetrieval):
     """Postgres vector search using pgvector"""
+
     def __init__(self, column_name: str, db_config: Dict[str, str]):
         self.column_name = column_name
         self.db_config = db_config
@@ -55,10 +67,10 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
     def score(self, query: np.ndarray, k: int = 10) -> Dict[int, float]:
         conn = psycopg2.connect(**self.db_config)
         cur = conn.cursor()
-        
+
         # Convert numpy array to Python list of floats
         query_vector = query.tolist()
-        
+
         sql = f"""
             WITH scores AS (
                 SELECT 
@@ -76,65 +88,78 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
                 END AS normalized_score
             FROM scores
         """
-        
+
         cur.execute(sql, [query_vector, query_vector, k])
         results = {pid: score for pid, score in cur.fetchall()}
-        
+
         cur.close()
         conn.close()
         return results
 
+
 class FaissVectorRetrieval(SimilarityRetrieval):
     """FAISS vector search using saved indexes"""
-    def __init__(self, column_name: str, nprobe: int = 1, db_config: Dict[str, str] = None):
+
+    def __init__(
+        self, column_name: str, nprobe: int = 1, db_config: Dict[str, str] = None
+    ):
         """
         Initialize FAISS retrieval with saved index.
-        
+
         Args:
             column_name: Name of the embedding column (e.g., 'text_embedding', 'image_embedding', 'fusion_embedding')
             nprobe: Number of clusters to visit during search (default: 1)
             db_config: Database configuration dictionary
         """
         # Extract the base type from the column name (e.g., 'fusion' from 'fusion_embedding')
-        index_type = column_name.replace('_embedding', '')
-        if index_type not in ['text', 'image', 'fusion']:
-            raise ValueError("column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'")
-            
+        index_type = column_name.replace("_embedding", "")
+        if index_type not in ["text", "image", "fusion"]:
+            raise ValueError(
+                "column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'"
+            )
+
         # Load the index from cache or file
-        index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')
+        index_path = os.path.join(FAISS_INDEX_DIR, f"{index_type}_index.faiss")
         if index_type not in _faiss_index_cache:
             if not os.path.exists(index_path):
-                print(f"FAISS index not found locally at {index_path}, downloading from GCS...")
+                print(
+                    f"FAISS index not found locally at {index_path}, downloading from GCS..."
+                )
                 try:
                     download_from_gcs(
-                        f"{GCS_INDEX_PREFIX}/{index_type}_index.faiss",
-                        index_path
+                        f"{GCS_INDEX_PREFIX}/{index_type}_index.faiss", index_path
                     )
                 except Exception as e:
-                    raise FileNotFoundError(f"Failed to download FAISS index from GCS: {str(e)}")
+                    raise FileNotFoundError(
+                        f"Failed to download FAISS index from GCS: {str(e)}"
+                    )
             _faiss_index_cache[index_type] = faiss.read_index(index_path)
         self.index = _faiss_index_cache[index_type]
-        
+
         # Set nprobe parameter
-        if hasattr(self.index, 'nprobe'):
+        if hasattr(self.index, "nprobe"):
             self.index.nprobe = nprobe
-        
+
         # Load the PID mapping from cache or file
-        mapping_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index_mapping.json')
+        mapping_path = os.path.join(FAISS_INDEX_DIR, f"{index_type}_index_mapping.json")
         if index_type not in _faiss_mapping_cache:
             if not os.path.exists(mapping_path):
-                print(f"Index mapping not found locally at {mapping_path}, downloading from GCS...")
+                print(
+                    f"Index mapping not found locally at {mapping_path}, downloading from GCS..."
+                )
                 try:
                     download_from_gcs(
                         f"{GCS_INDEX_PREFIX}/{index_type}_index_mapping.json",
-                        mapping_path
+                        mapping_path,
                     )
                 except Exception as e:
-                    raise FileNotFoundError(f"Failed to download index mapping from GCS: {str(e)}")
-            with open(mapping_path, 'r') as f:
+                    raise FileNotFoundError(
+                        f"Failed to download index mapping from GCS: {str(e)}"
+                    )
+            with open(mapping_path, "r") as f:
                 _faiss_mapping_cache[index_type] = json.load(f)
         self.idx_to_pid = _faiss_mapping_cache[index_type]
-            
+
         self.column_name = column_name
         self.db_config = db_config or DB_CONFIG
 
@@ -145,53 +170,63 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         top_indices = indices[0]
 
         # Get the corresponding PIDs
-        pids = [self.idx_to_pid[str(idx)] for idx in top_indices if str(idx) in self.idx_to_pid]
-        
+        pids = [
+            self.idx_to_pid[str(idx)]
+            for idx in top_indices
+            if str(idx) in self.idx_to_pid
+        ]
+
         if not pids:
             return {}
 
         # Query the database to get the actual embeddings for these PIDs
         conn = psycopg2.connect(**self.db_config)
         cur = conn.cursor()
-        
+
         # Convert list of PIDs to a comma-separated string for SQL
-        pid_list = ','.join([f"'{pid}'" for pid in pids])
-        
+        pid_list = ",".join([f"'{pid}'" for pid in pids])
+
         sql = f"""
             SELECT Pid, {self.column_name} as embedding
             FROM {TABLE_NAME}
             WHERE Pid IN ({pid_list})
         """
-        
+
         cur.execute(sql)
         results = cur.fetchall()
-        
+
         # Calculate actual cosine similarity scores
         normalized_scores = {}
         for pid, embedding in results:
             if embedding is not None:
                 # Parse the vector string into a numpy array
                 # The format is like '[1,2,3]' or '{1,2,3}'
-                vector_str = embedding.strip('[]{}')
-                db_embedding = np.array([float(x) for x in vector_str.split(',')], dtype=np.float32)
+                vector_str = embedding.strip("[]{}")
+                db_embedding = np.array(
+                    [float(x) for x in vector_str.split(",")], dtype=np.float32
+                )
                 db_embedding = db_embedding / np.linalg.norm(db_embedding)
-                
+
                 # Calculate cosine similarity
                 similarity = float(np.dot(query, db_embedding))
                 normalized_scores[pid] = similarity
-        
+
         cur.close()
         conn.close()
-        
+
         # Normalize scores to [0, 1] based on highest score
         max_score = max(normalized_scores.values()) if normalized_scores else 1.0
         if max_score > 0:
-            normalized_scores = {pid: score / max_score for pid, score in normalized_scores.items()}
-        
+            normalized_scores = {
+                pid: score / max_score for pid, score in normalized_scores.items()
+            }
+
         return normalized_scores
+
 
 class TextSearchRetrieval(SimilarityRetrieval):
     """Text search using PostgreSQL full-text search"""
+
     def __init__(self, method: str, db_config: Dict[str, str]):
         self.method = method  # e.g., 'ts_rank', 'ts_rank_cd'
         self.db_config = db_config
@@ -199,7 +234,7 @@ class TextSearchRetrieval(SimilarityRetrieval):
     def score(self, query: str, k: int = 10) -> Dict[int, float]:
         conn = psycopg2.connect(**self.db_config)
         cur = conn.cursor()
-        
+
         sql = f"""
             WITH scores AS (
                 SELECT 
@@ -218,10 +253,10 @@ class TextSearchRetrieval(SimilarityRetrieval):
                 END AS normalized_score
             FROM scores
         """
-        
+
         cur.execute(sql, [query, query, query, k])
         results = {pid: score for pid, score in cur.fetchall()}
-        
+
         cur.close()
         conn.close()
         return results
@@ -229,42 +264,46 @@ class TextSearchRetrieval(SimilarityRetrieval):
 
 def create_retrieval_component(component_config, db_config=None):
     """Create a retrieval component from config."""
-    component_type = component_config['type']
-    params = component_config['params']
-    
-    if component_type == 'PostgresVectorRetrieval':
-        return PostgresVectorRetrieval(params['column_name'], db_config)
-    elif component_type == 'TextSearchRetrieval':
-        return TextSearchRetrieval(params['rank_method'], db_config)
-    elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1), db_config)
+    component_type = component_config["type"]
+    params = component_config["params"]
+
+    if component_type == "PostgresVectorRetrieval":
+        return PostgresVectorRetrieval(params["column_name"], db_config)
+    elif component_type == "TextSearchRetrieval":
+        return TextSearchRetrieval(params["rank_method"], db_config)
+    elif component_type == "FaissVectorRetrieval":
+        return FaissVectorRetrieval(
+            params["column_name"], params.get("nprobe", 1), db_config
+        )
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 
-        
+
 def hybrid_retrieval(
     query: str,
     query_embedding: np.ndarray,
     components: list[SimilarityRetrieval],
     weights: list[float],
-    top_k: int = 10
+    top_k: int = 10,
 ) -> tuple[list[str], list[float]]:
     """
     Find top-k most relevant products using hybrid search.
-    
+
     Args:
         query: Text query for text search components
         query_embedding: Vector query for vector search components
         components: List of SimilarityRetrieval instances
         weights: List of weights for each component (must sum to 1)
         top_k: Number of results to return
-    
+
     Returns:
         Tuple of (pids, scores) where pids are strings
     """
     # Filter out components with zero weights
-    active_components = [(comp, weight) for comp, weight in zip(components, weights) if weight > 0]
-    
+    active_components = [
+        (comp, weight) for comp, weight in zip(components, weights) if weight > 0
+    ]
+
     # Get scores from each active component
     all_scores = []
     for comp, _ in active_components:
@@ -284,3 +323,117 @@ def hybrid_retrieval(
     top = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
     pids, scores = zip(*top) if top else ([], [])
     return list(pids), list(scores)
+
+
+def reorder_search_results_by_relevancy(
+    query: str,
+    search_results: List[Dict],
+    api_key: Optional[str] = None,
+    model: str = "gpt-3.5-turbo",
+    max_results: int = 20,
+) -> List[Dict]:
+    """
+    Reorders search results based on relevancy to the query using an LLM.
+
+    Parameters:
+    - query (str): The search query.
+    - results (list): List of dicts, each with at least a 'title' and 'snippet' key.
+    - model (str): OpenAI model to use (e.g., "gpt-4").
+    - api_key (str): Your OpenAI API key. If not set here, it must be set in environment.
+
+    Returns:
+    - List of results reordered by relevance.
+    """
+
+    if api_key:
+        openai.api_key = api_key
+    elif not hasattr(openai, "api_key") or not openai.api_key:
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+    results_to_process = search_results[:max_results]  # Limiting results to extract
+
+    # Prepare results summary for the LLM
+    keys_to_keep = {"Name", "Brand", "Category", "Color", "Gender", "Size"}
+    results_summary = []
+    pid_tracker = {}  # tracks the location of the pids
+    for i, result in enumerate(results_to_process):
+        relevant_data = {k: v for k, v in result.items() if k in keys_to_keep}
+        results_summary.append(
+            {"index": i, **relevant_data}  # Limit content length to avoid token limits
+        )
+        pid_tracker[i] = result["Pid"]
+
+    # Create the prompt
+    prompt = f"""You are a search relevancy expert. Given a search query and a list of search results, please reorder the results based on their relevancy to the query.
+
+            Search Query: "{query}"
+
+            Search Results:
+            {json.dumps(results_summary, indent=2)}
+
+            Please analyze each result's relevancy to the search query and return a JSON array containing the indices of the results in order from MOST relevant to LEAST relevant.
+
+            Consider factors like:
+            1. Semantic similarity to the query intent
+            1. Direct keyword matches
+            2. Brand Name mentions
+            3. `Price comp`arison i.e if the query contains "under 100" products below that price should be weighted more etc
+
+            Return your response in this exact JSON format:
+            {{
+              "reordered_indices": [2, 0, 1, ...],
+              "reasoning": "Brief explanation of the reordering logic"
+            }}
+
+            Only return the JSON, nothing else."""
+
+    # Make API call with retries
+    try:
+        client = openai.OpenAI(api_key=openai.api_key)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a search relevancy expert that outputs JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+
+        # Parse the response
+        result_text = response.choices[0].message.content
+        llm_response = json.loads(result_text)
+
+        # Extract reordered indices
+        reordered_indices = llm_response.get("reordered_indices", [])
+        reasoning = llm_response.get("reasoning", "No reasoning provided")
+
+        logger.info(f"LLM Reasoning: {reasoning}")
+
+        # Validate all indices are valid
+        expected_indices = set(range(len(results_to_process)))
+        provided_indices = set(reordered_indices)
+
+        if expected_indices != provided_indices:
+            logger.warning("Invalid indices provided by LLM. Using original order.")
+            return search_results
+
+        reordered_results = []
+        for index in reordered_indices:
+            pid = pid_tracker[index]
+            reordered_results += [
+                result for result in search_results if result["Pid"] == pid
+            ]
+
+        # Add any remaining results that weren't processed
+        if len(search_results) > max_results:
+            reordered_results.extend(search_results[max_results:])
+
+        logger.info(f"Successfully reordered {len(results_to_process)} search results")
+        return reordered_results
+
+    except Exception as e:
+        raise ValueError(f"Failed to parse LLM response:") from e
