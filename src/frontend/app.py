@@ -290,7 +290,7 @@ def main():
 
             st.session_state.num_results_to_show = 20 # reset display count on new search
 
-            search_start_time = time.time() # set the start time
+            st.session_state['search_start_time'] = time.time() # set the start time
             with st.spinner("Searching for similar products..."):
                 try:
                     # Prepare the request data
@@ -349,9 +349,10 @@ def main():
             if 'elapsed_time_sec' in results:
                 st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
 
-            stats_render_end = time.time()  # get the end time
-            total_elapsed = round(stats_render_end - search_start_time, 3)
-            st.markdown(f"🕒 **Total Time (click → display):** {total_elapsed} seconds") 
+            if 'search_start_time' in st.session_state:
+                stats_render_end = time.time()   # get the end time
+                total_elapsed = round(stats_render_end - st.session_state['search_start_time'], 3)
+                st.markdown(f"🕒 **Total Time (click → display):** {total_elapsed} seconds")
 
             if 'results' in results and isinstance(results['results'], list):
                 if 'category_distribution' in results:
