@@ -4,6 +4,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 import base64
+import pandas as pd
 import time
 
 # Set page config
@@ -286,6 +287,10 @@ def main():
             # Reset the trigger
             if "trigger_search" in st.session_state:
                 del st.session_state.trigger_search
+
+            st.session_state.num_results_to_show = 20 # reset display count on new search
+
+            st.session_state['search_start_time'] = time.time() # set the start time
             with st.spinner("Searching for similar products..."):
                 try:
                     # Prepare the request data
@@ -301,6 +306,8 @@ def main():
                             request_data["image_path"] = image_input
                             # Display the input image
                             st.image(image, caption="Input Image", use_container_width=True)
+
+                    request_data["top_k"] = 100  # backend will return 100 results
                     
                     # Call API endpoint
                     response = requests.post(
@@ -315,6 +322,7 @@ def main():
                             results = response.json()
                             # Store results for display in right column
                             st.session_state.search_results = results
+                                
                             # Display the generated caption if available
                             if 'caption' in results:
                                 st.write(f"**Generated Caption:** {results['caption']}")
@@ -333,6 +341,34 @@ def main():
                         st.error(f"Error from API: {error_msg}")
                 except Exception as e:
                     st.error(f"Error during search: {str(e)}")
+                    
+        # Display the time and statistics 
+        if 'search_results' in st.session_state:
+            results = st.session_state.search_results
+
+            if 'elapsed_time_sec' in results:
+                st.markdown(f"🕒 **Search Time:** {results['elapsed_time_sec']} seconds")
+
+            if 'search_start_time' in st.session_state:
+                stats_render_end = time.time()   # get the end time
+                total_elapsed = round(stats_render_end - st.session_state['search_start_time'], 3)
+                st.markdown(f"🕒 **Total Time (click → display):** {total_elapsed} seconds")
+
+            if 'results' in results and isinstance(results['results'], list):
+                if 'category_distribution' in results:
+                    st.subheader("📊 Category Distribution")
+                    cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
+                                                orient='index', columns=['%'])
+                    cat_df.index.name = "Category"
+                    st.table(cat_df.style.format({'%': '{:.2f}'}))
+
+                if 'brand_distribution' in results:
+                    st.subheader("🏷️ Brand Distribution")
+                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
+                                                  orient='index', columns=['%'])
+                    brand_df.index.name = "Brand"
+                    st.table(brand_df.style.format({'%': '{:.2f}'}))
+
     
     # Display results in the right column
     with right_col:
@@ -341,12 +377,20 @@ def main():
         # Display search results if available
         if hasattr(st.session_state, 'search_results'):
             results = st.session_state.search_results
+            num_total = len(results['results'])  # get total result count
+            num_show = st.session_state.get('num_results_to_show', 20)  # dynamic result count
+
+            st.caption(f"Showing {min(num_show, num_total)} of {num_total} results")  #  progress indicator
+            
             # Create four rows of 5 columns each for the products
-            for row in range(4):
+            for row in range((num_show + 4) // 5):  # dynamic rows
                 cols = st.columns(5)  # Create 5 columns for each row
                 for col, product in zip(cols, results['results'][row*5:(row+1)*5]):
                     with col:
                         display_product_card(product, product['similarity'])
+
+            if num_show < num_total and st.button("Show more results"):
+                st.session_state.num_results_to_show += 20
 
 if __name__ == "__main__":
     main() 

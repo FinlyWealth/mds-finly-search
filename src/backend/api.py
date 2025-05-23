@@ -12,6 +12,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_product_by_pid
+import time
+from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
 from psycopg2.extras import Json
 
@@ -29,7 +31,7 @@ initialization_status = {
     "database": False
 }
 
-top_k = 10
+top_k = 100
 
 components_config = [
     {
@@ -142,6 +144,7 @@ def search():
         return jsonify({'error': 'API is not ready yet. Please wait for initialization to complete.'}), 503
         
     try:
+        start_time = time.time()  # start the timer
         print("Received search request")
         print(f"Form data: {request.form}")
         print(f"Files: {request.files}")
@@ -210,10 +213,27 @@ def search():
             weights=weights,
             top_k=top_k
         )
+
+        elapsed_time = time.time() - start_time  # calculate the time
+
+        # transfer the results into data frame for statistics purpose
+        results = format_results(pids, scores)
+        df = pd.DataFrame(results)
+
+        # Transfer NaN to None
+        df['Brand'] = df['Brand'].fillna('None')
+        df['Category'] = df['Category'].fillna('None')
+
+        # Calculate the distribution
+        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(2).to_dict()
+        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(2).to_dict()
         
         response = {
-            'session_id': session_id,
-            'results': format_results(pids, scores)
+            'results': format_results(pids, scores),
+            'elapsed_time_sec': round(elapsed_time, 3),
+            'category_distribution': category_dist,   
+            'brand_distribution': brand_dist, 
+            'session_id': session_id
         }
         print(f"Response: {response}")
         return jsonify(response)
