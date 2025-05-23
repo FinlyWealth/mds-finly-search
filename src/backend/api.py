@@ -68,6 +68,7 @@ def format_results(indices, scores):
                     'Color': str(product['Color']),
                     'Gender': str(product['Gender']),
                     'Size': str(product['Size']),
+                    'Price': str(product['Price']),
                     'similarity': float(score)
                 })
         except IndexError:

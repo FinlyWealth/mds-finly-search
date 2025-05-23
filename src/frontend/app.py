@@ -68,12 +68,14 @@ def display_product_card(product, score):
         st.write(f"**Similarity:** {score*100:.1f}%")
         st.write(f"**{product['Name']}**")
         st.write(f"**ID:** {product['Pid']}")
-        st.write(f"Description: {product['Description']}")
+        st.write(f"Price: {product['Price']}")
         st.write(f"Brand: {product['Brand']}")
         st.write(f"Category: {product['Category']}")
         st.write(f"Color: {product['Color']}")
         st.write(f"Gender: {product['Gender']}")
         st.write(f"Size: {product['Size']}")
+        st.write(f"Description: {product['Description']}")
+        
 
 # Main app
 def main():

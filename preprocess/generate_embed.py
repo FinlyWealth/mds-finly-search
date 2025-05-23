@@ -115,12 +115,13 @@ def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=N
     """
     text_embeddings = []
     product_ids = []
+    used_columns = "Name"
     
     if valid_indices is not None:
-        texts = df['Name'].iloc[valid_indices].tolist()
+        texts = df[used_columns].iloc[valid_indices].tolist()
         ids = df['Pid'].iloc[valid_indices].tolist()
     else:
-        texts = df['Name'].tolist()
+        texts = df[used_columns].tolist()
         ids = df['Pid'].tolist()
     
     # Filter out blank or NaN texts
