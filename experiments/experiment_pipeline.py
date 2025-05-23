@@ -16,10 +16,10 @@ sys.path.insert(0, str(root_dir))
 sys.path.insert(0, str(root_dir / "src" / "backend"))
 sys.path.insert(0, str(root_dir / "preprocess"))
 
-from embedding import initialize_clip_model, generate_embedding
+from embedding import generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
-from config.db import DB_CONFIG
-from config.path import MLFLOW_TRACKING_URI
+from config.db import DB_CONFIG, TABLE_NAME
+from config.path import MLFLOW_TRACKING_URI, BENCHMARK_QUERY_CSV
 
 def load_configs(config_path):
     """Load experiment configurations from JSON file."""
@@ -36,11 +36,11 @@ def create_retrieval_component(component_config, db_config=None):
     elif component_type == 'TextSearchRetrieval':
         return TextSearchRetrieval(params['rank_method'], db_config)
     elif component_type == 'FaissVectorRetrieval':
-        return FaissVectorRetrieval(params['column_name'])
+        return FaissVectorRetrieval(params['column_name'], params.get('nprobe', 1), db_config)
     else:
         raise ValueError(f"Unknown component type: {component_type}")
 
-def run_experiment(config, dataset_name=None, model_name=None, db_config=None):
+def run_experiment(config, db_config=None):
     """Run a single experiment and log results to MLflow."""
     print(f"\nRunning experiment: {config['name']}")
     
@@ -50,21 +50,33 @@ def run_experiment(config, dataset_name=None, model_name=None, db_config=None):
         
         # Log parameters
         component_weights = {}
-        for c, w in zip(components, config['weights']):
+        component_params = {}
+        for i, (c, w) in enumerate(zip(components, config['weights'])):
             if isinstance(c, PostgresVectorRetrieval):
                 component_name = f"postgres_vector_{c.column_name}"
+                component_params[f"{i}_type"] = "PostgresVectorRetrieval"
+                component_params[f"{i}_column_name"] = c.column_name
             elif isinstance(c, FaissVectorRetrieval):
                 component_name = f"faiss_vector_{c.column_name}"
+                component_params[f"{i}_type"] = "FaissVectorRetrieval"
+                component_params[f"{i}_column_name"] = c.column_name
+                component_params[f"{i}_nprobe"] = c.index.nprobe if hasattr(c.index, 'nprobe') else 1
             else:
                 component_name = type(c).__name__.lower()
+                component_params[f"{i}_type"] = "TextSearchRetrieval"
+                component_params[f"{i}_rank_method"] = c.method
             component_weights[component_name] = w
         
+        # Get benchmark file name without extension
+        benchmark_file = Path(BENCHMARK_QUERY_CSV).stem
+        
         mlflow.log_params({
-            "dataset": dataset_name,
-            "model": model_name,
-            "clip_model": clip_model,
+            "benchmark": benchmark_file,
+            "table": TABLE_NAME,
             "top_k": TOP_K,
-            **component_weights
+            "faiss_nlist": next((c.index.nlist for c in components if isinstance(c, FaissVectorRetrieval)), None),
+            **component_weights,
+            **component_params
         })
         
         # Initialize counters
@@ -137,12 +149,6 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
     print(f"\nUsing device: {device}")
 
-    # Initialize CLIP model
-    global clip_model
-    clip_model = "openai/clip-vit-base-patch32"
-    print(f"Initializing CLIP model: {clip_model}")
-    initialize_clip_model(clip_model)
-
     # Initialize MLflow
     mlflow.set_tracking_uri(uri=MLFLOW_TRACKING_URI)
     print(f"MLflow tracking URI: {MLFLOW_TRACKING_URI}")
@@ -153,13 +159,12 @@ def main():
     print(f"Loaded {len(configs)} experiment configurations")
 
     # Global settings
-    global TOP_K, df, dataset_name, model_name
+    global TOP_K, df
     TOP_K = 5
-    dataset_name = "benchmark_query"
-    model_name = clip_model
 
     # Load benchmark data
-    df = pd.read_csv(Path(__file__).parent.parent / "data" / "csv" / "benchmark_query.csv")
+    print(f"Loading benchmark dataset from: {BENCHMARK_QUERY_CSV}")
+    df = pd.read_csv(BENCHMARK_QUERY_CSV)
     print(f"Loaded benchmark dataset with {len(df)} queries")
 
     # Run all experiments
@@ -170,7 +175,7 @@ def main():
         mlflow.set_experiment(experiment_name)
         
         for config in experiment_configs:
-            run_experiment(config, dataset_name=dataset_name, model_name=model_name, db_config=DB_CONFIG)
+            run_experiment(config, db_config=DB_CONFIG)
 
 if __name__ == "__main__":
     main() 

@@ -36,7 +36,9 @@ jobs:
             --allow-unauthenticated \
             --port=5001 \
             --timeout=900s \
-            --memory=4Gi \
+            --memory=12Gi \
+            --cpu=4 \
+            --min-instances=1 \
             --add-cloudsql-instances=$CLOUDSQL_INSTANCE \
             --set-env-vars="PGHOST=/cloudsql/$CLOUDSQL_INSTANCE,PGPORT=${{ secrets.PGPORT }},PGDATABASE=${{ secrets.PGDATABASE }},PGUSER=${{ secrets.PGUSER }},PGPASSWORD=${{ secrets.PGPASSWORD }},PGTABLE=${{ secrets.PGTABLE }}"
 
@@ -56,4 +58,5 @@ jobs:
             --region=$CLOUDSDK_RUN_REGION \
             --allow-unauthenticated \
             --port=8501 \
+            --min-instances=1 \
             --set-env-vars=API_BASE_URL=$API_BASE_URL
