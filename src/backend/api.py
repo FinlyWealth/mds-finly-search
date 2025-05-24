@@ -26,6 +26,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+app = Flask(__name__)
+
 # Track initialization status
 initialization_status = {
     "minilm_model": False,
@@ -64,18 +66,17 @@ components_config = [
     }
 ]
 
-# Create retrieval components with database config
-components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
-
-# Initialize spaCy
-nlp = spacy.load("en_core_web_sm")
-
 def initialize_app():
     """Initialize all required components and update status"""
-    global initialization_state, initialization_start_time
+    global initialization_state, initialization_start_time, components, nlp
     initialization_start_time = datetime.now()
     
     try:
+        # Create retrieval components with database config
+        components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
+        # Initialize spaCy
+        nlp = spacy.load("en_core_web_sm")
+        
         # Print database connection details
         logger.info(f"Connecting to database: {DB_CONFIG['dbname']}")
         logger.info(f"Table: {TABLE_NAME}")
@@ -126,8 +127,6 @@ def initialize_app():
             initialization_status[key] = False
         initialization_state = "failed"
         return False
-
-app = Flask(__name__)
 
 def load_image(image_path):
     try:
