@@ -126,6 +126,11 @@ if not initialize_app():
 
 app = Flask(__name__)
 
+# Debug: Print all registered routes
+print("\nRegistered routes:")
+for rule in app.url_map.iter_rules():
+    print(f"  {rule.endpoint}: {rule.rule}")
+
 def load_image(image_path):
     try:
         if image_path.startswith(('http://', 'https://')):
@@ -164,11 +169,9 @@ def format_results(indices, scores):
             continue
     return results
 
-
 @app.route("/")
 def index():
     return "Backend API is running!"
-
 
 @app.route('/api/ready', methods=['GET'])
 def ready():
@@ -197,7 +200,6 @@ def ready():
         "elapsed_seconds": (datetime.now() - initialization_start_time).total_seconds() if initialization_start_time else 0
     }
     return jsonify(status)
-
 
 @app.route('/api/search', methods=['POST'])
 def search():

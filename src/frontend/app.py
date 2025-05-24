@@ -115,20 +115,25 @@ def check_api_ready():
 
 def wait_for_api_ready():
     """Wait for the API to be ready"""
-    while True:
-        if check_api_ready():
-            st.success("✨ Search engine is ready!")
-            time.sleep(1)  # Show success message briefly
-            st.rerun()  # Refresh the page
-            return True
-        
-        # Show simple loading message
+    # Create an empty container for the loading message
+    loading_container = st.empty()
+    
+    # Show loading message once
+    with loading_container:
         st.markdown("""
             <div class="loading-container">
                 <h2>🚀 Initializing Search Engine</h2>
                 <p>Please wait while we get everything ready...</p>
             </div>
         """, unsafe_allow_html=True)
+    
+    while True:
+        if check_api_ready():
+            loading_container.empty()  # Clear the loading message
+            st.success("✨ Search engine is ready!")
+            time.sleep(1)  # Show success message briefly
+            st.rerun()  # Refresh the page
+            return True
         
         time.sleep(1)
 
