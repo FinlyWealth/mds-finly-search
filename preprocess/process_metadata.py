@@ -4,12 +4,20 @@ import time
 from tqdm import tqdm
 import numpy as np
 from datetime import datetime
+import torch
+from sentence_transformers import SentenceTransformer
 
 df = pd.read_csv("data/csv/sample_100k_v2.csv")
 df_sample = df.sample(frac=0.001, random_state=42)
 df_sample.shape
 
-kw_model = KeyBERT()
+# Check for GPU availability
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+
+# Initialize the sentence transformer model with GPU support
+model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+kw_model = KeyBERT(model=model)
 
 def extract_keybert_keywords(text, top_n=5):
     if not isinstance(text, str) or not text.strip():
