@@ -8,17 +8,65 @@ from io import BytesIO
 from flask import Flask, request, jsonify
 import spacy
 import psycopg2
+import time
+from datetime import datetime, timedelta
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
 from src.backend.db import fetch_products_by_pids
-import time
 from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
 from psycopg2.extras import Json
 
+# Track initialization status
+initialization_status = {
+    "minilm_model": False,
+    "clip_model": False,
+    "faiss_indices": False,
+    "database": False
+}
+
+# Track initialization state
+initialization_state = "starting"  # Can be: "starting", "ready", "failed"
+initialization_start_time = None
+CLOUD_RUN_TIMEOUT = 600  # 10 minutes
+WARNING_THRESHOLD = 540  # 9 minutes
+
+top_k = 100
+
+components_config = [
+    {
+        "type": "FaissVectorRetrieval",
+        "params": {
+            "column_name": "fusion_embedding",
+            "nprobe": 32
+        }
+    },
+    {
+        "type": "PostgresVectorRetrieval",
+        "params": {
+            "column_name": "image_clip_embedding"
+        }
+    },
+    {
+        "type": "TextSearchRetrieval",
+        "params": {
+            "rank_method": "ts_rank"
+        }
+    }
+]
+
+# Create retrieval components with database config
+components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
+
+# Initialize spaCy
+nlp = spacy.load("en_core_web_sm")
+
 def initialize_app():
     """Initialize all required components and update status"""
+    global initialization_state, initialization_start_time
+    initialization_start_time = datetime.now()
+    
     try:
         # Print database connection details
         print(f"Connecting to database: {DB_CONFIG['dbname']}")
@@ -60,6 +108,7 @@ def initialize_app():
         print("✓ Database connection successful")
         
         print("\nAll components initialized successfully!")
+        initialization_state = "ready"
         return True
     except Exception as e:
         print(f"Error during initialization: {str(e)}")
@@ -67,45 +116,8 @@ def initialize_app():
         # Reset all status flags to False on failure
         for key in initialization_status:
             initialization_status[key] = False
+        initialization_state = "failed"
         return False
-
-# Initialize spaCy
-nlp = spacy.load("en_core_web_sm")
-
-# Track initialization status
-initialization_status = {
-    "minilm_model": False,
-    "clip_model": False,
-    "faiss_indices": False,
-    "database": False
-}
-
-top_k = 100
-
-components_config = [
-    {
-        "type": "FaissVectorRetrieval",
-        "params": {
-            "column_name": "fusion_embedding",
-            "nprobe": 32
-        }
-    },
-    {
-        "type": "PostgresVectorRetrieval",
-        "params": {
-            "column_name": "image_clip_embedding"
-        }
-    },
-    {
-        "type": "TextSearchRetrieval",
-        "params": {
-            "rank_method": "ts_rank"
-        }
-    }
-]
-
-# Create retrieval components with database config
-components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
 
 # Initialize the application
 if not initialize_app():
@@ -161,10 +173,28 @@ def index():
 @app.route('/api/ready', methods=['GET'])
 def ready():
     """Check if the API is ready to accept queries"""
-    is_ready = all(initialization_status.values())
+    global initialization_state
+    
+    if initialization_state == "starting":
+        elapsed_time = (datetime.now() - initialization_start_time).total_seconds()
+        
+        # Check if we're approaching the Cloud Run timeout
+        if elapsed_time > WARNING_THRESHOLD:
+            print(f"WARNING: Initialization has taken {elapsed_time:.1f} seconds. "
+                  f"Cloud Run will timeout in {CLOUD_RUN_TIMEOUT - elapsed_time:.1f} seconds.")
+        
+        # If we've exceeded the timeout, mark as failed
+        if elapsed_time > CLOUD_RUN_TIMEOUT:
+            print("ERROR: Initialization exceeded Cloud Run timeout limit")
+            initialization_state = "failed"
+            for key in initialization_status:
+                initialization_status[key] = False
+    
     status = {
-        "ready": is_ready,
-        "components": initialization_status
+        "state": initialization_state,
+        "ready": initialization_state == "ready",
+        "components": initialization_status,
+        "elapsed_seconds": (datetime.now() - initialization_start_time).total_seconds() if initialization_start_time else 0
     }
     return jsonify(status)
 
