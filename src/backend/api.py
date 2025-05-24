@@ -31,7 +31,7 @@ initialization_status = {
     "database": False
 }
 
-top_k = 100
+top_k = 25
 
 components_config = [
     {
@@ -112,6 +112,7 @@ def format_results(indices, scores):
                     'Color': str(product['Color']),
                     'Gender': str(product['Gender']),
                     'Size': str(product['Size']),
+                    'Price': str(product['Price']) if product['Price'] is not None else None,
                     'similarity': float(score)
                 })
         except IndexError:
