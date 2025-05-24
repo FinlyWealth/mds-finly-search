@@ -78,6 +78,15 @@ st.markdown("""
             object-fit: contain;
             display: block;
         }
+        [data-testid="stSidebarHeader"] {
+            padding: 4px;
+        }
+        .stHeading [data-testid="stMarkdownContainer"] h2 {
+            padding-top: 0px;
+        }
+        [data-testid="stSidebarCollapsedControl"] {
+            top: 0.2rem;
+        }
     </style>
 """, unsafe_allow_html=True)
 
