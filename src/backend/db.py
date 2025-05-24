@@ -7,26 +7,45 @@ from config.db import DB_CONFIG, TABLE_NAME
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
-def fetch_product_by_pid(pid):
+def fetch_products_by_pids(pids):
+    """Fetch multiple products by their PIDs in a single database query.
+    
+    Args:
+        pids: List of product IDs to fetch
+        
+    Returns:
+        Dict mapping PIDs to product details
+    """
+    if not pids:
+        return {}
+        
     conn = get_db_connection()
     cur = conn.cursor()
+    
+    # Convert list of PIDs to a comma-separated string for SQL
+    pid_list = ','.join([f"'{pid}'" for pid in pids])
+    
     cur.execute(f"""
-        SELECT Name, Description, Brand, Category, Color, Gender, Size, Price
-        FROM {TABLE_NAME} WHERE Pid = %s
-    """, (pid,))
-    row = cur.fetchone()
+        SELECT Pid, Name, Description, Brand, Category, Color, Gender, Size, Price
+        FROM {TABLE_NAME} WHERE Pid IN ({pid_list})
+    """)
+    
+    rows = cur.fetchall()
     cur.close()
     conn.close()
     
-    if row:
-        return {
-            'Name': row[0],
-            'Description': row[1],
-            'Brand': row[2],
-            'Category': row[3],
-            'Color': row[4],
-            'Gender': row[5],
-            'Size': row[6],
-            'Price': row[7]
+    # Convert rows to dictionary mapping PIDs to product details
+    products = {}
+    for row in rows:
+        products[row[0]] = {
+            'Name': row[1],
+            'Description': row[2],
+            'Brand': row[3],
+            'Category': row[4],
+            'Color': row[5],
+            'Gender': row[6],
+            'Size': row[7],
+            'Price': row[8]
         }
-    return None
+    
+    return products

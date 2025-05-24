@@ -11,7 +11,7 @@ import psycopg2
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
 from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
-from src.backend.db import fetch_product_by_pid
+from src.backend.db import fetch_products_by_pids
 import time
 from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
@@ -31,7 +31,7 @@ initialization_status = {
     "database": False
 }
 
-top_k = 25
+top_k = 100
 
 components_config = [
     {
@@ -98,10 +98,12 @@ def load_image(image_path):
 
 def format_results(indices, scores):
     results = []
+    # Fetch all products in a single batch
+    products = fetch_products_by_pids(indices)
+    
     for idx, score in zip(indices, scores):
         try:
-            # Look up product by ID instead of using iloc
-            product = fetch_product_by_pid(idx)
+            product = products.get(idx)
             if product:
                 results.append({
                     'Pid': str(idx),

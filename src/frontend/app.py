@@ -69,11 +69,14 @@ st.markdown("""
             justify-content: center;
             overflow: hidden;
             margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
         }
         .product-image-container img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            display: block;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -178,13 +181,13 @@ def display_product_card(product, score):
             st.write("No image available")
         
         st.write(f"**{product['Name']}**")
-        st.write(f"**Price:** {product['Price']}")
+        st.write(f"Price: ${product['Price']}")
 
         # Product details with similarity score and feedback buttons in one line
         col1, col2, col3 = st.columns([3, 1, 1])
         
         with col1:
-            st.write(f"**Similarity:** {score*100:.1f}%")
+            st.write(f"Similarity: {score*100:.1f}%")
         
         # Initialize feedback state for this product if not exists
         feedback_key = f"feedback_{product['Pid']}"
