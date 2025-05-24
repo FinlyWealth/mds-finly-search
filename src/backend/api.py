@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify
 import spacy
 import psycopg2
 import time
+import logging
 from datetime import datetime, timedelta
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
@@ -17,6 +18,13 @@ from src.backend.db import fetch_products_by_pids
 from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
 from psycopg2.extras import Json
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Track initialization status
 initialization_status = {
@@ -69,67 +77,57 @@ def initialize_app():
     
     try:
         # Print database connection details
-        print(f"Connecting to database: {DB_CONFIG['dbname']}")
-        print(f"Table: {TABLE_NAME}")
+        logger.info(f"Connecting to database: {DB_CONFIG['dbname']}")
+        logger.info(f"Table: {TABLE_NAME}")
         
         # Print components configuration
-        print("\nInitialized retrieval components:")
+        logger.info("\nInitialized retrieval components:")
         for i, comp in enumerate(components_config):
-            print(f"Component {i+1}:")
-            print(f"  Type: {comp['type']}")
-            print(f"  Params: {comp['params']}")
-        print()
+            logger.info(f"Component {i+1}:")
+            logger.info(f"  Type: {comp['type']}")
+            logger.info(f"  Params: {comp['params']}")
+        logger.info("")
         
         # Initialize MiniLM model
-        print("Initializing MiniLM model...")
+        logger.info("Initializing MiniLM model...")
         initialize_minilm_model()
         initialization_status["minilm_model"] = True
-        print("✓ MiniLM model initialized successfully")
+        logger.info("✓ MiniLM model initialized successfully")
         
         # Initialize CLIP model
-        print("Initializing CLIP model...")
+        logger.info("Initializing CLIP model...")
         initialize_clip_model()
         initialization_status["clip_model"] = True
-        print("✓ CLIP model initialized successfully")
+        logger.info("✓ CLIP model initialized successfully")
         
         # Initialize FAISS indices (this happens automatically when creating components)
-        print("Initializing FAISS indices...")
+        logger.info("Initializing FAISS indices...")
         initialization_status["faiss_indices"] = True
-        print("✓ FAISS indices initialized successfully")
+        logger.info("✓ FAISS indices initialized successfully")
         
         # Test database connection
-        print("Testing database connection...")
+        logger.info("Testing database connection...")
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
         cur.execute(f"SELECT 1 FROM {TABLE_NAME} LIMIT 1")
         cur.close()
         conn.close()
         initialization_status["database"] = True
-        print("✓ Database connection successful")
+        logger.info("✓ Database connection successful")
         
-        print("\nAll components initialized successfully!")
+        logger.info("\nAll components initialized successfully!")
         initialization_state = "ready"
         return True
     except Exception as e:
-        print(f"Error during initialization: {str(e)}")
-        print("Warning: Some components failed to initialize")
+        logger.error(f"Error during initialization: {str(e)}")
+        logger.warning("Warning: Some components failed to initialize")
         # Reset all status flags to False on failure
         for key in initialization_status:
             initialization_status[key] = False
         initialization_state = "failed"
         return False
 
-# Initialize the application
-if not initialize_app():
-    print("Fatal: Application initialization failed. Exiting...")
-    sys.exit(1)
-
 app = Flask(__name__)
-
-# Debug: Print all registered routes
-print("\nRegistered routes:")
-for rule in app.url_map.iter_rules():
-    print(f"  {rule.endpoint}: {rule.rule}")
 
 def load_image(image_path):
     try:
@@ -165,7 +163,7 @@ def format_results(indices, scores):
                 })
         except IndexError:
             # Skip products that aren't found in the Database
-            print(f"Warning: Product ID {idx} not found in Database")
+            logger.warning(f"Warning: Product ID {idx} not found in Database")
             continue
     return results
 
@@ -183,12 +181,12 @@ def ready():
         
         # Check if we're approaching the Cloud Run timeout
         if elapsed_time > WARNING_THRESHOLD:
-            print(f"WARNING: Initialization has taken {elapsed_time:.1f} seconds. "
+            logger.warning(f"WARNING: Initialization has taken {elapsed_time:.1f} seconds. "
                   f"Cloud Run will timeout in {CLOUD_RUN_TIMEOUT - elapsed_time:.1f} seconds.")
         
         # If we've exceeded the timeout, mark as failed
         if elapsed_time > CLOUD_RUN_TIMEOUT:
-            print("ERROR: Initialization exceeded Cloud Run timeout limit")
+            logger.error("ERROR: Initialization exceeded Cloud Run timeout limit")
             initialization_state = "failed"
             for key in initialization_status:
                 initialization_status[key] = False
@@ -209,9 +207,9 @@ def search():
         
     try:
         start_time = time.time()  # start the timer
-        print("Received search request")
-        print(f"Form data: {request.form}")
-        print(f"Files: {request.files}")
+        logger.info("Received search request")
+        logger.debug(f"Form data: {request.form}")
+        logger.debug(f"Files: {request.files}")
         query_text = None
         query_image = None
         query_embedding = None
@@ -221,7 +219,7 @@ def search():
 
         # Handle text query from form data
         query_text = request.form.get('query')
-        print(f"Query text: {query_text}")
+        logger.info(f"Query text: {query_text}")
 
         # Handle image query
         if 'file' in request.files:
@@ -236,7 +234,7 @@ def search():
         if not query_text and not query_image:
             return jsonify({'error': 'Either query text or image is required'}), 400
 
-        print("Generating embedding...")
+        logger.info("Generating embedding...")
         # Generate embedding based on available inputs
         if query_text and query_image:
             query_embedding = generate_embedding(query_text=query_text, query_image=query_image)
@@ -245,9 +243,9 @@ def search():
         else:  # query_image only
             query_embedding = generate_embedding(query_image=query_image)
 
-        print(f"Generated embedding shape: {query_embedding.shape}")
+        logger.debug(f"Generated embedding shape: {query_embedding.shape}")
         
-        print("Performing retrieval...")
+        logger.info("Performing retrieval...")
         # Adjust weights based on input type
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
         if query_text and query_image:
@@ -261,13 +259,13 @@ def search():
             weights = [0, 1, 0]  # 100% image CLIP embedding
 
         # Print active components with non-zero weights
-        print("\nActive retrieval components:")
+        logger.info("\nActive retrieval components:")
         for comp, weight in zip(components_config, weights):
             if weight > 0:
-                print(f"  {comp['type']}:")
-                print(f"    Params: {comp['params']}")
-                print(f"    Weight: {weight}")
-        print()
+                logger.info(f"  {comp['type']}:")
+                logger.info(f"    Params: {comp['params']}")
+                logger.info(f"    Weight: {weight}")
+        logger.info("")
 
         search_query = query_text if query_text else ""
         pids, scores = hybrid_retrieval(
@@ -299,13 +297,13 @@ def search():
             'brand_distribution': brand_dist, 
             'session_id': session_id
         }
-        print(f"Response: {response}")
+        logger.debug(f"Response: {response}")
         return jsonify(response)
         
     except Exception as e:
-        print(f"Error in search: {str(e)}")
+        logger.error(f"Error in search: {str(e)}")
         import traceback
-        print(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -362,7 +360,7 @@ def submit_feedback():
             conn.close()
         except (psycopg2.OperationalError, psycopg2.Error) as db_error:
             # Log the error but don't expose it to the client
-            print(f"Database error while storing feedback: {str(db_error)}")
+            logger.error(f"Database error while storing feedback: {str(db_error)}")
             # Continue execution to return success response
         
         return jsonify({'success': True})
@@ -375,4 +373,15 @@ def submit_feedback():
 if __name__ == "__main__":
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
+
+    # Debug: Print all registered routes
+    logger.info("\nRegistered routes:")
+    for rule in app.url_map.iter_rules():
+        logger.info(f"  {rule.endpoint}: {rule.rule}")
+    
+    # Initialize the application
+    if not initialize_app():
+        logger.error("Fatal: Application initialization failed. Exiting...")
+        sys.exit(1)
+    
     app.run(host="0.0.0.0", port=port)
