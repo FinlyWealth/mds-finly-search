@@ -36,31 +36,6 @@ st.markdown("""
             border-radius: 10px;
             margin: 2rem 0;
         }
-        .component-status {
-            display: flex;
-            align-items: center;
-            margin: 0.5rem 0;
-            padding: 0.5rem 1rem;
-            background-color: white;
-            border-radius: 5px;
-            width: 100%;
-            max-width: 400px;
-        }
-        .status-icon {
-            margin-right: 1rem;
-            font-size: 1.5rem;
-        }
-        .status-text {
-            flex-grow: 1;
-        }
-        .status-label {
-            font-weight: bold;
-            margin-bottom: 0.25rem;
-        }
-        .status-description {
-            font-size: 0.8rem;
-            color: #666;
-        }
         .product-image-container {
             width: 100%;
             height: 200px;
@@ -133,25 +108,27 @@ def check_api_ready():
     try:
         response = requests.get(f"{API_BASE_URL}/api/ready")
         if response.status_code == 200:
-            status = response.json()
-            return status["ready"], status["components"]
-        return False, None
+            return response.json()["ready"]
+        return False
     except Exception as e:
-        return False, None
+        return False
 
 def wait_for_api_ready():
     """Wait for the API to be ready"""
     while True:
-        is_ready, components = check_api_ready()
-        if is_ready:
-            st.success("✨ All components initialized successfully!")
+        if check_api_ready():
+            st.success("✨ Search engine is ready!")
             time.sleep(1)  # Show success message briefly
             st.rerun()  # Refresh the page
             return True
         
-        # Show initialization status
-        if components:
-            display_loading_screen(components)
+        # Show simple loading message
+        st.markdown("""
+            <div class="loading-container">
+                <h2>🚀 Initializing Search Engine</h2>
+                <p>Please wait while we get everything ready...</p>
+            </div>
+        """, unsafe_allow_html=True)
         
         time.sleep(1)
 
@@ -278,7 +255,7 @@ def submit_feedback(pid, feedback):
 # Main app
 def main():
     # Check if API is ready
-    if not check_api_ready()[0]:
+    if not check_api_ready():
         wait_for_api_ready()
     
     # Create sidebar for search and statistics

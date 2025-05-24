@@ -17,8 +17,57 @@ from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
 from psycopg2.extras import Json
 
-
-app = Flask(__name__)
+def initialize_app():
+    """Initialize all required components and update status"""
+    try:
+        # Print database connection details
+        print(f"Connecting to database: {DB_CONFIG['dbname']}")
+        print(f"Table: {TABLE_NAME}")
+        
+        # Print components configuration
+        print("\nInitialized retrieval components:")
+        for i, comp in enumerate(components_config):
+            print(f"Component {i+1}:")
+            print(f"  Type: {comp['type']}")
+            print(f"  Params: {comp['params']}")
+        print()
+        
+        # Initialize MiniLM model
+        print("Initializing MiniLM model...")
+        initialize_minilm_model()
+        initialization_status["minilm_model"] = True
+        print("✓ MiniLM model initialized successfully")
+        
+        # Initialize CLIP model
+        print("Initializing CLIP model...")
+        initialize_clip_model()
+        initialization_status["clip_model"] = True
+        print("✓ CLIP model initialized successfully")
+        
+        # Initialize FAISS indices (this happens automatically when creating components)
+        print("Initializing FAISS indices...")
+        initialization_status["faiss_indices"] = True
+        print("✓ FAISS indices initialized successfully")
+        
+        # Test database connection
+        print("Testing database connection...")
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute(f"SELECT 1 FROM {TABLE_NAME} LIMIT 1")
+        cur.close()
+        conn.close()
+        initialization_status["database"] = True
+        print("✓ Database connection successful")
+        
+        print("\nAll components initialized successfully!")
+        return True
+    except Exception as e:
+        print(f"Error during initialization: {str(e)}")
+        print("Warning: Some components failed to initialize")
+        # Reset all status flags to False on failure
+        for key in initialization_status:
+            initialization_status[key] = False
+        return False
 
 # Initialize spaCy
 nlp = spacy.load("en_core_web_sm")
@@ -58,32 +107,12 @@ components_config = [
 # Create retrieval components with database config
 components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
 
-def initialize_components():
-    """Initialize all required components and update status"""
-    try:
-        # Initialize MiniLM model
-        initialize_minilm_model()
-        initialization_status["minilm_model"] = True
-        
-        # Initialize CLIP model
-        initialize_clip_model()
-        initialization_status["clip_model"] = True
-        
-        # Initialize FAISS indices (this happens automatically when creating components)
-        initialization_status["faiss_indices"] = True
-        
-        # Test database connection
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        cur.execute(f"SELECT 1 FROM {TABLE_NAME} LIMIT 1")
-        cur.close()
-        conn.close()
-        initialization_status["database"] = True
-        
-        return True
-    except Exception as e:
-        print(f"Error during initialization: {str(e)}")
-        return False
+# Initialize the application
+if not initialize_app():
+    print("Fatal: Application initialization failed. Exiting...")
+    sys.exit(1)
+
+app = Flask(__name__)
 
 def load_image(image_path):
     try:
@@ -310,28 +339,8 @@ def submit_feedback():
         # Only return error for non-database related issues
         return jsonify({'error': str(e)}), 500
 
-
 # Set port to 5001
 if __name__ == "__main__":
-    # Print database connection details
-    print(f"Connecting to database: {DB_CONFIG['dbname']}")
-    print(f"Table: {TABLE_NAME}")
-    
-    # Print components configuration
-    print("\nInitialized retrieval components:")
-    for i, comp in enumerate(components_config):
-        print(f"Component {i+1}:")
-        print(f"  Type: {comp['type']}")
-        print(f"  Params: {comp['params']}")
-    print()
-    
-    # Initialize components
-    print("Initializing components...")
-    if initialize_components():
-        print("All components initialized successfully!")
-    else:
-        print("Warning: Some components failed to initialize")
-    
     # For Google Cloud Run compatibility
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
