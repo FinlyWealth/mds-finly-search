@@ -61,6 +61,32 @@ st.markdown("""
             font-size: 0.8rem;
             color: #666;
         }
+        .product-image-container {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .product-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        [data-testid="stSidebarHeader"] {
+            padding: 4px;
+        }
+        .stHeading [data-testid="stMarkdownContainer"] h2 {
+            padding-top: 0px;
+        }
+        [data-testid="stSidebarCollapsedControl"] {
+            top: 0.2rem;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -152,27 +178,25 @@ def display_product_card(product, score):
     with st.container():
         # Product image
         try:
-            # Try local path first
-            local_path = f"data/images/{product['Pid']}.jpeg"
-            st.image(local_path, use_container_width=True)
-        except:
-            try:
-                # Fall back to GCS
-                image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
-                st.image(image_url, use_container_width=True)
-            except:
-                st.write("No image available")
+            # Use GCS URL
+            image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
+            st.markdown(f"""
+                <div class="product-image-container">
+                    <img src="{image_url}" alt="{product['Name']}">
+                </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            st.write(f"Image error: {str(e)}")
+            st.write("No image available")
         
+        st.write(f"**{product['Name']}**")
+        st.write(f"Price: ${product['Price']}")
+
         # Product details with similarity score and feedback buttons in one line
-        st.write(
-            f'<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">'
-            f'<div style="flex-grow: 1;"><strong>Similarity:</strong> {score*100:.1f}%</div>'
-            f'</div>',
-            unsafe_allow_html=True
-        )
+        col1, col2, col3 = st.columns([3, 1, 1])
         
-        # Feedback buttons in a single row
-        st.write('<div style="display: flex; gap: 5px;">', unsafe_allow_html=True)
+        with col1:
+            st.write(f"Similarity: {score*100:.1f}%")
         
         # Initialize feedback state for this product if not exists
         feedback_key = f"feedback_{product['Pid']}"
@@ -180,41 +204,40 @@ def display_product_card(product, score):
             st.session_state[feedback_key] = None
         
         # Up button
-        up_button = st.button(
-            "👍", 
-            key=f"up_{product['Pid']}", 
-            use_container_width=True,
-            type="primary" if st.session_state[feedback_key] == True else "secondary"
-        )
-        if up_button:
-            submit_feedback(product['Pid'], True)
-            st.session_state[feedback_key] = True
-            st.rerun()
+        with col2:
+            up_button = st.button(
+                "👍", 
+                key=f"up_{product['Pid']}", 
+                use_container_width=True,
+                type="primary" if st.session_state[feedback_key] == True else "secondary"
+            )
+            if up_button:
+                submit_feedback(product['Pid'], True)
+                st.session_state[feedback_key] = True
+                st.rerun()
         
         # Down button
-        down_button = st.button(
-            "👎", 
-            key=f"down_{product['Pid']}", 
-            use_container_width=True,
-            type="primary" if st.session_state[feedback_key] == False else "secondary"
-        )
-        if down_button:
-            submit_feedback(product['Pid'], False)
-            st.session_state[feedback_key] = False
-            st.rerun()
+        with col3:
+            down_button = st.button(
+                "👎", 
+                key=f"down_{product['Pid']}", 
+                use_container_width=True,
+                type="primary" if st.session_state[feedback_key] == False else "secondary"
+            )
+            if down_button:
+                submit_feedback(product['Pid'], False)
+                st.session_state[feedback_key] = False
+                st.rerun()
             
-        st.write('</div>', unsafe_allow_html=True)
-        
-        st.write(f"**{product['Name']}**")
-        st.write(f"**ID:** {product['Pid']}")
-        st.write(f"Price: {product['Price']}")
-        st.write(f"Brand: {product['Brand']}")
-        st.write(f"Category: {product['Category']}")
-        st.write(f"Color: {product['Color']}")
-        st.write(f"Gender: {product['Gender']}")
-        st.write(f"Size: {product['Size']}")
-        st.write(f"Description: {product['Description']}")
-        
+        # Make description and details collapsible
+        with st.expander("Show Details", expanded=False):
+            st.write(f"Description: {product['Description']}")
+            st.write(f"Brand: {product['Brand']}")
+            st.write(f"Category: {product['Category']}")
+            st.write(f"Color: {product['Color']}")
+            st.write(f"Gender: {product['Gender']}")
+            st.write(f"Size: {product['Size']}")
+            st.write(f"ID: {product['Pid']}")
 
 def submit_feedback(pid, feedback):
     """Submit user feedback to the API"""
@@ -258,10 +281,8 @@ def main():
     if not check_api_ready()[0]:
         wait_for_api_ready()
     
-    # Create two columns for search inputs and results
-    left_col, right_col = st.columns([1, 3])
-    
-    with left_col:
+    # Create sidebar for search and statistics
+    with st.sidebar:
         st.header("🔍 Product Search")
         st.write("Search for similar products using text or image")
         
@@ -370,29 +391,27 @@ def main():
                                                   orient='index', columns=['%'])
                     brand_df.index.name = "Brand"
                     st.table(brand_df.style.format({'%': '{:.2f}'}))
-
     
-    # Display results in the right column
-    with right_col:
-        st.header("Search Results")
+    # Main content area for search results
+    st.header("Search Results")
+    
+    # Display search results if available
+    if hasattr(st.session_state, 'search_results'):
+        results = st.session_state.search_results
+        num_total = len(results['results'])  # get total result count
+        num_show = st.session_state.get('num_results_to_show', 20)  # dynamic result count
+
+        st.caption(f"Showing {min(num_show, num_total)} of {num_total} results")  #  progress indicator
         
-        # Display search results if available
-        if hasattr(st.session_state, 'search_results'):
-            results = st.session_state.search_results
-            num_total = len(results['results'])  # get total result count
-            num_show = st.session_state.get('num_results_to_show', 20)  # dynamic result count
+        # Create four rows of 5 columns each for the products
+        for row in range((num_show + 4) // 5):  # dynamic rows
+            cols = st.columns(5)  # Create 5 columns for each row
+            for col, product in zip(cols, results['results'][row*5:(row+1)*5]):
+                with col:
+                    display_product_card(product, product['similarity'])
 
-            st.caption(f"Showing {min(num_show, num_total)} of {num_total} results")  #  progress indicator
-            
-            # Create four rows of 5 columns each for the products
-            for row in range((num_show + 4) // 5):  # dynamic rows
-                cols = st.columns(5)  # Create 5 columns for each row
-                for col, product in zip(cols, results['results'][row*5:(row+1)*5]):
-                    with col:
-                        display_product_card(product, product['similarity'])
-
-            if num_show < num_total and st.button("Show more results"):
-                st.session_state.num_results_to_show += 20
+        if num_show < num_total and st.button("Show more results"):
+            st.session_state.num_results_to_show += 20
 
 if __name__ == "__main__":
     main() 
