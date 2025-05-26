@@ -364,6 +364,7 @@ def main():
                     st.subheader("📊 Category Distribution")
                     cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
                                                 orient='index', columns=['%'])
+                    cat_df = cat_df.sort_values(by='%', ascending=False)
                     cat_df.index.name = "Category"
                     st.table(cat_df.style.format({'%': '{:.2f}'}))
 
@@ -371,6 +372,7 @@ def main():
                     st.subheader("🏷️ Brand Distribution")
                     brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
                                                   orient='index', columns=['%'])
+                    brand_df = brand_df.sort_values(by='%', ascending=False)
                     brand_df.index.name = "Brand"
                     st.table(brand_df.style.format({'%': '{:.2f}'}))
     
