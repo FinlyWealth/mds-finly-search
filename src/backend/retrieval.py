@@ -1,5 +1,6 @@
 import os
 import logging
+import ast
 import psycopg2
 from psycopg2.extras import execute_values, Json
 import numpy as np
@@ -9,6 +10,12 @@ import openai
 import json
 import sys
 import requests
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.db import DB_CONFIG, TABLE_NAME
@@ -26,6 +33,14 @@ GCS_INDEX_PREFIX = "faiss_indices"
 # Cache for FAISS indices and mappings
 _faiss_index_cache = {}
 _faiss_mapping_cache = {}
+
+
+# Pydantic
+class ReorderOutput(BaseModel):
+    reordered_indices: List[int] = Field(
+        ..., description="Indices in new relevance order"
+    )
+    reasoning: str = Field(..., description="Explanation of reordering")
 
 
 def download_from_gcs(source_path: str, destination_file_name: str):
@@ -329,91 +344,106 @@ def reorder_search_results_by_relevancy(
     query: str,
     search_results: List[Dict],
     api_key: Optional[str] = None,
-    model: str = "gpt-3.5-turbo",
+    model: str = "gpt-3.5-turbo",  # or a gemini model
+    provider: str = "openai",  # can be 'openai' or 'gemini'
     max_results: int = 20,
 ) -> List[Dict]:
     """
-    Reorders search results based on relevancy to the query using an LLM.
+    Reorders search results based on relevancy to the query using an LLM via LangChain.
 
     Parameters:
     - query (str): The search query.
-    - results (list): List of dicts, each with at least a 'title' and 'snippet' key.
-    - model (str): OpenAI model to use (e.g., "gpt-4").
-    - api_key (str): Your OpenAI API key. If not set here, it must be set in environment.
+    - search_results (list): List of dicts with at least a 'Pid' and metadata fields.
+    - model (str): Model name (e.g., "gpt-4", "gemini-pro").
+    - provider (str): LLM provider, either "openai" or "gemini".
+    - api_key (str): API key for the selected provider.
+    - max_results (int): Maximum number of search results to consider.
 
     Returns:
     - List of results reordered by relevance.
     """
 
-    if api_key:
-        openai.api_key = api_key
-    elif not hasattr(openai, "api_key") or not openai.api_key:
-        openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-    results_to_process = search_results[:max_results]  # Limiting results to extract
-
-    # Prepare results summary for the LLM
+    results_to_process = search_results[:max_results]
     keys_to_keep = {"Name", "Brand", "Category", "Color", "Gender", "Size"}
     results_summary = []
-    pid_tracker = {}  # tracks the location of the pids
+    pid_tracker = {}
+
     for i, result in enumerate(results_to_process):
         relevant_data = {k: v for k, v in result.items() if k in keys_to_keep}
-        results_summary.append(
-            {"index": i, **relevant_data}  # Limit content length to avoid token limits
-        )
+        results_summary.append({"index": i, **relevant_data})
         pid_tracker[i] = result["Pid"]
 
-    # Create the prompt
     prompt = f"""You are a search relevancy expert. Given a search query and a list of search results, please reorder the results based on their relevancy to the query.
 
-            Search Query: "{query}"
+    Search Query: "{query}"
 
-            Search Results:
-            {json.dumps(results_summary, indent=2)}
+    Search Results:
+    {json.dumps(results_summary, indent=2)}
 
-            Please analyze each result's relevancy to the search query and return a JSON array containing the indices of the results in order from MOST relevant to LEAST relevant.
+    Please analyze each result's relevancy to the search query and return a JSON array containing the indices of the results in order from MOST relevant to LEAST relevant.
 
-            Consider factors like:
-            1. Semantic similarity to the query intent
-            1. Direct keyword matches
-            2. Brand Name mentions
-            3. `Price comp`arison i.e if the query contains "under 100" products below that price should be weighted more etc
+    Consider factors like:
+    1. Semantic similarity to the query intent
+    2. Direct keyword matches
+    3. Brand Name mentions
+    4. Price comparison i.e if the query contains "under 100" products below that price should be weighted more etc
 
-            Return your response in this exact JSON format:
-            {{
-              "reordered_indices": [2, 0, 1, ...],
-              "reasoning": "Brief explanation of the reordering logic"
-            }}
+    Return your response in this exact JSON format:
+    {{
+      "reordered_indices": [2, 0, 1, ...],
+      "reasoning": "Brief explanation of the reordering logic"
+    }}
 
-            Only return the JSON, nothing else."""
+    Only return the JSON, nothing else."""
 
-    # Make API call with retries
     try:
-        client = openai.OpenAI(api_key=openai.api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a search relevancy expert that outputs JSON.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0,
-            response_format={"type": "json_object"},
+        # Select the appropriate LLM provider
+        if provider.lower() == "gemini":
+            api_key = api_key or os.getenv("GOOGLE_API_KEY")
+            llm = ChatGoogleGenerativeAI(
+                model=model,
+                google_api_key=api_key,
+                temperature=0,
+                convert_system_message_to_human=True,
+            )
+        else:
+            # Default to OpenAI
+            api_key = api_key or os.getenv("OPENAI_API_KEY")
+            llm = ChatOpenAI(
+                model_name=model,
+                openai_api_key=api_key,
+                temperature=0,
+            )
+        parser = PydanticOutputParser(pydantic_object=ReorderOutput)
+        # 3. Build structured prompt
+        format_instructions = parser.get_format_instructions()
+
+        messages = [
+            SystemMessage(
+                content="You are a search relevancy expert that outputs JSON."
+            ),
+            HumanMessage(content=prompt),
+        ]
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                SystemMessage(
+                    content="You are a search relevancy expert that outputs JSON."
+                ),
+                HumanMessage(content=prompt),
+            ]
         )
+        chain = prompt | llm | parser
 
-        # Parse the response
-        result_text = response.choices[0].message.content
-        llm_response = json.loads(result_text)
+        result: ReorderOutput = chain.invoke({})
 
-        # Extract reordered indices
-        reordered_indices = llm_response.get("reordered_indices", [])
-        reasoning = llm_response.get("reasoning", "No reasoning provided")
+        # response = llm.invoke(messages)
+        # result_text = response.content
+        # llm_response = json.loads(result_text)
 
-        logger.info(f"LLM Reasoning: {reasoning}")
+        # reordered_indices = llm_response.get("reordered_indices", [])
+        reordered_indices = set(result.reordered_indices)
+        logger.info(f"LLM Reasoning: {result.reasoning}")
 
-        # Validate all indices are valid
         expected_indices = set(range(len(results_to_process)))
         provided_indices = set(reordered_indices)
 
@@ -428,7 +458,6 @@ def reorder_search_results_by_relevancy(
                 result for result in search_results if result["Pid"] == pid
             ]
 
-        # Add any remaining results that weren't processed
         if len(search_results) > max_results:
             reordered_results.extend(search_results[max_results:])
 
@@ -436,4 +465,4 @@ def reorder_search_results_by_relevancy(
         return reordered_results
 
     except Exception as e:
-        raise ValueError(f"Failed to parse LLM response:") from e
+        raise ValueError(f"Failed to parse LLM response: {e}")
