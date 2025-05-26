@@ -7,9 +7,10 @@ from datetime import datetime
 import torch
 from sentence_transformers import SentenceTransformer
 
+# Load and sample the data
 df = pd.read_csv("data/csv/sample_100k_v2.csv")
-df_sample = df.sample(frac=0.001, random_state=42)
-df_sample.shape
+df_sample = df.sample(frac=0.0001, random_state=42)
+print(f"Sample size: {df_sample.shape}")
 
 # Check for GPU availability
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -19,48 +20,54 @@ print(f"Using device: {device}")
 model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 kw_model = KeyBERT(model=model)
 
-def extract_keybert_keywords(text, top_n=5):
+def extract_keybert_keywords(text, ngram_range, top_n=10):
     if not isinstance(text, str) or not text.strip():
         return []
     keywords = kw_model.extract_keywords(
         text,
-        keyphrase_ngram_range=(1, 2),  # extract 1-gram and 2-gram phrases
+        keyphrase_ngram_range=ngram_range,
         stop_words='english',
         use_maxsum=True,
-        nr_candidates=20,  # generate the top 20 n-gram candidates, and rank them using MaxSum similarity to choose the final top_n
+        nr_candidates=20,
         top_n=top_n
     )
     return [kw[0] for kw in keywords]
 
-def process_batch(texts, batch_size=100):
+def process_batch(texts, ngram_range, batch_size=100):
     results = []
     for text in tqdm(texts, desc="Processing batch"):
-        results.append(extract_keybert_keywords(text))
+        results.append(extract_keybert_keywords(text, ngram_range))
     return results
 
-# Process in batches
-start = time.time()
-batch_size = 100
-total_rows = len(df_sample)
-df_sample['tags_from_keybert'] = None
+# Process both configurations
+configs = [(1, 2), (1, 3)]
+for ngram_range in configs:
+    print(f"\nProcessing with n-gram range {ngram_range}...")
+    df_working = df_sample.copy()
+    
+    # Process in batches
+    start = time.time()
+    batch_size = 100
+    total_rows = len(df_working)
+    df_working['tags_from_keybert'] = None
 
-for i in tqdm(range(0, total_rows, batch_size), desc="Processing batches"):
-    end_idx = min(i + batch_size, total_rows)
-    batch_texts = df_sample['Description'].iloc[i:end_idx].tolist()
-    batch_results = process_batch(batch_texts, batch_size)
-    df_sample.loc[df_sample.index[i:end_idx], 'tags_from_keybert'] = pd.Series(batch_results, index=df_sample.index[i:end_idx])
+    for i in tqdm(range(0, total_rows, batch_size), desc="Processing batches"):
+        end_idx = min(i + batch_size, total_rows)
+        batch_texts = df_working['Description'].iloc[i:end_idx].tolist()
+        batch_results = process_batch(batch_texts, ngram_range, batch_size)
+        df_working.loc[df_working.index[i:end_idx], 'tags_from_keybert'] = pd.Series(batch_results, index=df_working.index[i:end_idx])
 
-print(f"Total process time: {(time.time() - start) / 60:.2f} minutes")
+    print(f"Total process time: {(time.time() - start) / 60:.2f} minutes")
 
-# Create the new concatenated column
-df_sample['cleaned_tags'] = df_sample['tags_from_keybert'].apply(
-    lambda x: x.strip('[]').replace("'", "").replace('"', '') if isinstance(x, str) else ''
-)
-df_sample['CombinedInfo'] = 'name: ' + df_sample['Name'] + ', tags: ' + df_sample['cleaned_tags']
-df_sample = df_sample.drop('cleaned_tags', axis=1)
+    # Create the new concatenated column
+    df_working['cleaned_tags'] = df_working['tags_from_keybert'].apply(
+        lambda x: ', '.join(x) if isinstance(x, list) else ''
+    )
+    df_working['CombinedInfo'] = 'name: ' + df_working['Name'] + ', keywords: ' + df_working['cleaned_tags']
+    df_working = df_working.drop('cleaned_tags', axis=1)
 
-# Save results to CSV
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-output_filename = f"data/csv/keybert_results_{timestamp}.csv"
-df_sample.to_csv(output_filename, index=False)
-print(f"Results saved to: {output_filename}")
+    # Save results to CSV
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f"data/csv/keybert_results_{ngram_range[0]}_{ngram_range[1]}gram_{timestamp}.csv"
+    df_working.to_csv(output_filename, index=False)
+    print(f"Results saved to: {output_filename}")

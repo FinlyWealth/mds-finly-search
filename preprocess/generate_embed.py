@@ -73,6 +73,7 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
                 batch_pids.append(df['Pid'].iloc[i + idx])
             except Exception as e:
                 print(f"Skipping problematic image {path}: {e}")
+                continue
         
         if batch_images:
             try:
@@ -96,7 +97,7 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
         print(f"\rImage embedding batch {batch_num}/{total_image_batches} processed", end='', flush=True)
     
     print(f"\nProcessed {len(product_ids)} valid images out of {len(image_paths)} total images")
-    return image_embeddings, product_ids
+    return np.array(image_embeddings), np.array(product_ids)
 
 def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=None, batch_size=100):
     """
@@ -136,20 +137,25 @@ def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=N
     
     total_text_batches = (len(filtered_texts) + batch_size - 1) // batch_size
     for batch_num, i in enumerate(range(0, len(filtered_texts), batch_size), 1):
-        batch_texts = filtered_texts[i:i+batch_size]
-        inputs = processor(text=batch_texts, return_tensors="pt", padding=True, truncation=True).to(device)
-        
-        with torch.no_grad():
-            batch_features = model.get_text_features(**inputs)
-            batch_features /= batch_features.norm(dim=-1, keepdim=True)
+        try:
+            batch_texts = filtered_texts[i:i+batch_size]
+            inputs = processor(text=batch_texts, return_tensors="pt", padding=True, truncation=True).to(device)
             
-        text_embeddings.extend(batch_features.cpu().numpy())
-        product_ids.extend(filtered_ids[i:i+batch_size])
+            with torch.no_grad():
+                batch_features = model.get_text_features(**inputs)
+                batch_features /= batch_features.norm(dim=-1, keepdim=True)
+                
+            text_embeddings.extend(batch_features.cpu().numpy())
+            product_ids.extend(filtered_ids[i:i+batch_size])
+        except Exception as e:
+            print(f"Error processing text batch {batch_num}: {e}")
+            continue
+            
         print(f"\rText embedding batch {batch_num}/{total_text_batches} processed", end='', flush=True)
     
-    return text_embeddings, product_ids
+    return np.array(text_embeddings), np.array(product_ids)
 
-def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None, batch_size=100):
+def calculate_minilm_embeddings(df, model, tokenizer, device, batch_size=100):
     """
     Calculate sentence embeddings using MiniLM model for the given DataFrame.
     
@@ -158,7 +164,6 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
         model: Sentence transformer model for generating embeddings
         tokenizer: Tokenizer for text preprocessing
         device: Device to run the model on
-        valid_indices (list): Optional list of valid indices to process
         batch_size (int): Size of batches for processing
         
     Returns:
@@ -167,12 +172,8 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
     sentence_embeddings = []
     product_ids = []
     
-    if valid_indices is not None:
-        texts = df['Name'].iloc[valid_indices].tolist()
-        ids = df['Pid'].iloc[valid_indices].tolist()
-    else:
-        texts = df['Name'].tolist()
-        ids = df['Pid'].tolist()
+    texts = df['CombinedInfo'].tolist()
+    ids = df['Pid'].tolist()
     
     # Filter out blank or NaN texts
     filtered_texts = []
@@ -186,21 +187,59 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
     
     total_batches = (len(filtered_texts) + batch_size - 1) // batch_size
     for batch_num, i in enumerate(range(0, len(filtered_texts), batch_size), 1):
-        batch_texts = filtered_texts[i:i+batch_size]
-        inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
-        
-        with torch.no_grad():
-            # Get the model output and use the last hidden state
-            outputs = model(**inputs)
-            # Use the [CLS] token embedding (first token) as the sentence embedding
-            batch_features = outputs.last_hidden_state[:, 0, :]
-            batch_features /= batch_features.norm(dim=-1, keepdim=True)
+        try:
+            batch_texts = filtered_texts[i:i+batch_size]
+            inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
             
-        sentence_embeddings.extend(batch_features.cpu().numpy())
-        product_ids.extend(filtered_ids[i:i+batch_size])
+            with torch.no_grad():
+                outputs = model(**inputs)
+                batch_features = outputs.last_hidden_state[:, 0, :]
+                batch_features /= batch_features.norm(dim=-1, keepdim=True)
+                
+            sentence_embeddings.extend(batch_features.cpu().numpy())
+            product_ids.extend(filtered_ids[i:i+batch_size])
+        except Exception as e:
+            print(f"Error processing MiniLM batch {batch_num}: {e}")
+            continue
+            
         print(f"\rSentence embedding batch {batch_num}/{total_batches} processed", end='', flush=True)
     
-    return sentence_embeddings, product_ids
+    return np.array(sentence_embeddings), np.array(product_ids)
+
+def align_embeddings(image_embeddings, image_product_ids, text_embeddings, text_product_ids):
+    """
+    Align image and text embeddings to ensure they correspond to the same products.
+    
+    Args:
+        image_embeddings (np.ndarray): Array of image embeddings
+        image_product_ids (np.ndarray): Array of product IDs for image embeddings
+        text_embeddings (np.ndarray): Array of text embeddings
+        text_product_ids (np.ndarray): Array of product IDs for text embeddings
+        
+    Returns:
+        tuple: (aligned_image_embeddings, aligned_text_embeddings, aligned_product_ids)
+    """
+    # Find common product IDs
+    common_pids = np.intersect1d(image_product_ids, text_product_ids)
+    
+    # Get indices for common products in both arrays
+    image_indices = np.where(np.isin(image_product_ids, common_pids))[0]
+    text_indices = np.where(np.isin(text_product_ids, common_pids))[0]
+    
+    # Sort indices to ensure alignment
+    image_sort_idx = np.argsort(image_product_ids[image_indices])
+    text_sort_idx = np.argsort(text_product_ids[text_indices])
+    
+    # Align embeddings and product IDs
+    aligned_image_embeddings = image_embeddings[image_indices][image_sort_idx]
+    aligned_text_embeddings = text_embeddings[text_indices][text_sort_idx]
+    aligned_product_ids = image_product_ids[image_indices][image_sort_idx]
+    
+    # Verify alignment
+    assert np.array_equal(image_product_ids[image_indices][image_sort_idx], 
+                         text_product_ids[text_indices][text_sort_idx]), "Product IDs must be aligned"
+    
+    return aligned_image_embeddings, aligned_text_embeddings, aligned_product_ids
 
 def concatenate_embeddings(image_embeddings, text_embeddings):
     """
@@ -304,66 +343,6 @@ def process_batch(batch_df, batch_num, output_zip_path, total_batches, image_dir
         print(f"Error in batch {batch_num + 1}: {str(e)}")
         return 0, len(batch_df), None
 
-def zip_product_images(df, output_zip_path="product_images.zip", batch_size=100000, image_dir="data/images"):
-    """
-    Creates multiple zip files containing product images from the filtered DataFrame,
-    with each zip file containing up to batch_size images. Processes batches in parallel.
-    
-    Args:
-        df (pd.DataFrame): Filtered DataFrame containing valid 'Pid' values
-        output_zip_path (str): Base path where the zip files should be saved
-        batch_size (int): Number of images per zip file (default: 100,000)
-        image_dir (str): Directory containing the product images
-    """
-    # Verify image directory exists
-    if not os.path.exists(image_dir):
-        raise ValueError(f"Image directory not found: {image_dir}")
-    
-    # Calculate number of batches needed
-    total_images = len(df)
-    num_batches = (total_images + batch_size - 1) // batch_size
-    
-    print(f"Processing {total_images} images in {num_batches} batches...")
-    print(f"Looking for images in: {os.path.abspath(image_dir)}")
-    
-    # Create batches
-    batches = []
-    for batch_num in range(num_batches):
-        start_idx = batch_num * batch_size
-        end_idx = min((batch_num + 1) * batch_size, total_images)
-        batch_df = df.iloc[start_idx:end_idx]
-        batches.append((batch_df, batch_num))
-    
-    # Determine number of processes (use 75% of available CPU cores)
-    num_processes = max(1, int(multiprocessing.cpu_count() * 0.75))
-    print(f"Using {num_processes} processes")
-    
-    # Create a partial function with fixed arguments
-    process_func = partial(
-        process_batch,
-        output_zip_path=output_zip_path,
-        total_batches=num_batches,
-        image_dir=image_dir
-    )
-    
-    # Process batches in parallel with timeout
-    try:
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            # Set a timeout of 30 minutes per batch
-            results = pool.starmap(process_func, batches)
-    except Exception as e:
-        print(f"Error during parallel processing: {str(e)}")
-        pool.terminate()
-        raise
-    
-    # Print summary
-    total_successful = sum(r[0] for r in results)
-    total_failed = sum(r[1] for r in results)
-    print(f"\nProcessing complete!")
-    print(f"Total images processed: {total_images}")
-    print(f"Successfully copied: {total_successful}")
-    print(f"Missing images: {total_failed}")
-
 def main():
     # Set device
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
@@ -375,7 +354,7 @@ def main():
     print(f"Total rows in dataset: {total_rows}")
 
     # Filter for valid products
-    filtered_df = filter_valid_products(df)
+    filtered_df = df
     print(f"Valid products after filtering: {len(filtered_df)}")
 
     # Load CLIP model for images
@@ -400,71 +379,64 @@ def main():
         
         # Calculate image CLIP embeddings
         # print("Generating image CLIP embeddings...")
-        # image_embeddings, product_ids = calculate_image_clip_embeddings(
+        # image_embeddings, image_product_ids = calculate_image_clip_embeddings(
         #     chunk_df,
         #     model=clip_model,
         #     processor=clip_processor,
         #     device=device
         # )
 
+        # Save image embeddings
         # save_path = os.path.join(EMBEDDINGS_PATH, "image_clip_embeddings.npz")
         # save_embeddings(
         #     embeddings=image_embeddings,
-        #     product_ids=product_ids,
+        #     product_ids=image_product_ids,
         #     embedding_type="image_clip",
         #     save_path=save_path,
         #     chunk_num=chunk_num
         # )
         
-        Calculate MiniLM embeddings for the same valid indices
+        # Load the NPZ file
+        path = os.path.join(EMBEDDINGS_PATH, "image_clip_embeddings_chunk_0.npz")
+        data = np.load(path)
+
+        # Extract the embeddings and product IDs
+        image_embeddings = data['embeddings']
+        image_product_ids = data['product_ids']
+
+        # Calculate MiniLM embeddings
         print("Generating MiniLM embeddings...")
         text_embeddings, text_product_ids = calculate_minilm_embeddings(
             chunk_df,
             model=minilm_model,
             tokenizer=minilm_tokenizer,
-            device=device,
-            valid_indices=valid_indices
+            device=device
         )
+        print(f"Number of text embeddings: {len(text_product_ids)}")
 
-        # Load image CLIP embeddings
-        image_clip_path = os.path.join(EMBEDDINGS_PATH, f"image_clip_embeddings_chunk_{chunk_num}.npz")
-        with np.load(image_clip_path) as data:
-            image_embeddings = data['embeddings']
-            image_product_ids = data['product_ids']
-            
-        # Ensure we only use embeddings for products that have both image and text embeddings
-        common_indices = np.where(np.isin(image_product_ids, text_product_ids))[0]
-        image_embeddings = image_embeddings[common_indices]
-        image_product_ids = image_product_ids[common_indices]
-        
-        # Sort both arrays by product IDs to ensure alignment
-        sort_idx = np.argsort(image_product_ids)
-        image_embeddings = image_embeddings[sort_idx]
-        image_product_ids = image_product_ids[sort_idx]
-        
-        sort_idx = np.argsort(text_product_ids)
-        text_embeddings = text_embeddings[sort_idx]
-        text_product_ids = text_product_ids[sort_idx]
-        
-        # Verify alignment
-        assert np.array_equal(image_product_ids, text_product_ids), "Product IDs must be aligned before concatenation"
+        # Align embeddings to ensure they correspond to the same products
+        print("Aligning embeddings...")
+        print(f"Number of image embeddings before alignment: {len(image_product_ids)}")
+        print(f"Number of text embeddings before alignment: {len(text_product_ids)}")
+        aligned_image_embeddings, aligned_text_embeddings, aligned_product_ids = align_embeddings(
+            image_embeddings, image_product_ids,
+            text_embeddings, text_product_ids
+        )
+        print(f"Number of aligned embeddings: {len(aligned_product_ids)}")
         
         # Concatenate embeddings
         print("Concatenating embeddings...")
-        fusion_embeddings = concatenate_embeddings(image_embeddings, text_embeddings)
+        fusion_embeddings = concatenate_embeddings(aligned_image_embeddings, aligned_text_embeddings)
         
         # Save chunk embeddings
         save_path = os.path.join(EMBEDDINGS_PATH, "fusion_embeddings.npz")
         save_embeddings(
             embeddings=fusion_embeddings,
-            product_ids=product_ids,
+            product_ids=aligned_product_ids,
             embedding_type="fusion_clip_minilm",
             save_path=save_path,
             chunk_num=chunk_num
         )
-
-    # Uncomment this if you want to zip a subset of product images from the full dataset
-    # zip_product_images(filtered_df)
 
 if __name__ == "__main__":
     main() 
