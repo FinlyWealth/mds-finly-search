@@ -223,9 +223,15 @@ def search():
 
         # formatted_result = format_results(pids, scores)
         formatted_result = fetch_products_by_pids(pids, scores)
-        reordered_result = reorder_search_results_by_relevancy(
-            query_text, formatted_result
-        )
+
+        if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
+            reordered_result = reorder_search_results_by_relevancy(
+                query_text, formatted_result
+            )
+        
+        else:
+            reordered_result = formatted_result[:]
+        
         response = {"session_id": session_id, "results": reordered_result}
         print(f"Response: {response}")
         return jsonify(response)
