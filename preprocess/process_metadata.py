@@ -52,6 +52,13 @@ for i in tqdm(range(0, total_rows, batch_size), desc="Processing batches"):
 
 print(f"Total process time: {(time.time() - start) / 60:.2f} minutes")
 
+# Create the new concatenated column
+df_sample['cleaned_tags'] = df_sample['tags_from_keybert'].apply(
+    lambda x: x.strip('[]').replace("'", "").replace('"', '') if isinstance(x, str) else ''
+)
+df_sample['CombinedInfo'] = 'name: ' + df_sample['Name'] + ', tags: ' + df_sample['cleaned_tags']
+df_sample = df_sample.drop('cleaned_tags', axis=1)
+
 # Save results to CSV
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 output_filename = f"data/csv/keybert_results_{timestamp}.csv"
