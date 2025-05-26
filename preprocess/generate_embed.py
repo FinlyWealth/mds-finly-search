@@ -54,23 +54,23 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
         batch_size (int): Size of batches for processing
         
     Returns:
-        tuple: (image_embeddings, valid_indices)
+        tuple: (image_embeddings, product_ids)
     """
     image_embeddings = []
-    valid_indices = []
+    product_ids = []
     
     image_paths = [f"data/images/{pid}.jpeg" for pid in df['Pid'].tolist()]
     total_image_batches = (len(image_paths) + batch_size - 1) // batch_size
     
     for batch_num, i in enumerate(range(0, len(image_paths), batch_size), 1):
         batch_images = []
-        batch_valid_indices = []
+        batch_pids = []
         
         for idx, path in enumerate(image_paths[i:i+batch_size]):
             try:
                 image = Image.open(path).convert("RGB")
                 batch_images.append(image)
-                batch_valid_indices.append(i + idx)
+                batch_pids.append(df['Pid'].iloc[i + idx])
             except Exception as e:
                 print(f"Skipping problematic image {path}: {e}")
         
@@ -87,7 +87,7 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
                     batch_features /= batch_features.norm(dim=-1, keepdim=True)
                 
                 image_embeddings.extend(batch_features.cpu().numpy())
-                valid_indices.extend(batch_valid_indices)
+                product_ids.extend(batch_pids)
                 
             except Exception as e:
                 print(f"Error processing batch {batch_num}: {e}")
@@ -95,8 +95,8 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
                 
         print(f"\rImage embedding batch {batch_num}/{total_image_batches} processed", end='', flush=True)
     
-    print(f"\nProcessed {len(valid_indices)} valid images out of {len(image_paths)} total images")
-    return image_embeddings, valid_indices
+    print(f"\nProcessed {len(product_ids)} valid images out of {len(image_paths)} total images")
+    return image_embeddings, product_ids
 
 def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=None, batch_size=100):
     """
@@ -399,23 +399,55 @@ def main():
         print(f"\nProcessing chunk {chunk_num + 1}/{num_chunks} (rows {start_idx}-{end_idx})")
         
         # Calculate image CLIP embeddings
-        print("Generating image CLIP embeddings...")
-        image_embeddings, valid_indices = calculate_image_clip_embeddings(
-            chunk_df,
-            model=clip_model,
-            processor=clip_processor,
-            device=device
-        )
+        # print("Generating image CLIP embeddings...")
+        # image_embeddings, product_ids = calculate_image_clip_embeddings(
+        #     chunk_df,
+        #     model=clip_model,
+        #     processor=clip_processor,
+        #     device=device
+        # )
+
+        # save_path = os.path.join(EMBEDDINGS_PATH, "image_clip_embeddings.npz")
+        # save_embeddings(
+        #     embeddings=image_embeddings,
+        #     product_ids=product_ids,
+        #     embedding_type="image_clip",
+        #     save_path=save_path,
+        #     chunk_num=chunk_num
+        # )
         
-        # Calculate MiniLM embeddings for the same valid indices
+        Calculate MiniLM embeddings for the same valid indices
         print("Generating MiniLM embeddings...")
-        text_embeddings, product_ids = calculate_minilm_embeddings(
+        text_embeddings, text_product_ids = calculate_minilm_embeddings(
             chunk_df,
             model=minilm_model,
             tokenizer=minilm_tokenizer,
             device=device,
             valid_indices=valid_indices
         )
+
+        # Load image CLIP embeddings
+        image_clip_path = os.path.join(EMBEDDINGS_PATH, f"image_clip_embeddings_chunk_{chunk_num}.npz")
+        with np.load(image_clip_path) as data:
+            image_embeddings = data['embeddings']
+            image_product_ids = data['product_ids']
+            
+        # Ensure we only use embeddings for products that have both image and text embeddings
+        common_indices = np.where(np.isin(image_product_ids, text_product_ids))[0]
+        image_embeddings = image_embeddings[common_indices]
+        image_product_ids = image_product_ids[common_indices]
+        
+        # Sort both arrays by product IDs to ensure alignment
+        sort_idx = np.argsort(image_product_ids)
+        image_embeddings = image_embeddings[sort_idx]
+        image_product_ids = image_product_ids[sort_idx]
+        
+        sort_idx = np.argsort(text_product_ids)
+        text_embeddings = text_embeddings[sort_idx]
+        text_product_ids = text_product_ids[sort_idx]
+        
+        # Verify alignment
+        assert np.array_equal(image_product_ids, text_product_ids), "Product IDs must be aligned before concatenation"
         
         # Concatenate embeddings
         print("Concatenating embeddings...")
