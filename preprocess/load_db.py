@@ -220,6 +220,10 @@ def validate_text(value, field_name):
     Returns:
         str or None: Validated text value
     """
+    if not isinstance(value, (str, int, float, bool)) and not pd.api.types.is_scalar(value):
+        print(f"Warning: Invalid text value type for {field_name}: {value}")
+        return None
+
     if pd.isna(value) or value == '':
         return None
     try:
