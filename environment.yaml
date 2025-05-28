@@ -19,11 +19,11 @@ dependencies:
   - tqdm
   - pyarrow
   - sentencepiece
-  - protobuf
+  - protobuf<=3.20.0
   - accelerate
   - streamlit
   - faiss-cpu
-  - mlflow
+  - mlflow=2.22.0
   - quarto
   - pip
   - pip:
