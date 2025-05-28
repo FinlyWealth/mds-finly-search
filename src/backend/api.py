@@ -322,18 +322,24 @@ def search():
         df["Brand"] = df["Brand"].fillna("None")
         df["Category"] = df["Category"].fillna("None")
 
-        # Calculate the distribution
-        category_dist = (
-            (df["Category"].value_counts(normalize=True) * 100).round(2).to_dict()
-        )
-        brand_dist = (df["Brand"].value_counts(normalize=True) * 100).round(2).to_dict()
+        # Calculate the distribution of category and brand
+        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
+        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
 
+        # Calculate price range and average price, excluding NaN
+        df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
+        min_price = df['Price'].min(skipna=True)
+        max_price = df['Price'].max(skipna=True)
+        avg_price = df['Price'].mean(skipna=True)
+        
         response = {
-            "results": reordered_result,
-            "elapsed_time_sec": round(elapsed_time, 3),
-            "category_distribution": category_dist,
-            "brand_distribution": brand_dist,
-            "session_id": session_id,
+            'results': format_results(pids, scores),
+            'elapsed_time_sec': round(elapsed_time, 3),
+            'category_distribution': category_dist,   
+            'brand_distribution': brand_dist, 
+            'price_range': [round(min_price, 2), round(max_price, 2)],
+            'average_price': round(avg_price, 2),
+            'session_id': session_id
         }
         logger.debug(f"Response: {response}")
         return jsonify(response)

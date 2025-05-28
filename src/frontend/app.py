@@ -361,19 +361,31 @@ def main():
 
             if 'results' in results and isinstance(results['results'], list):
                 if 'category_distribution' in results:
-                    st.subheader("📊 Category Distribution")
+                    st.subheader("📊 Category Distribution among retrieved products")
                     cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
                                                 orient='index', columns=['%'])
+                    cat_df = cat_df.sort_values(by='%', ascending=False)
                     cat_df.index.name = "Category"
-                    st.table(cat_df.style.format({'%': '{:.2f}'}))
+                    cat_df['%'] = cat_df['%'].astype(int).astype(str) + '%'
+                    st.table(cat_df)
 
                 if 'brand_distribution' in results:
-                    st.subheader("🏷️ Brand Distribution")
+                    st.subheader("🏷️ Brand Distribution among retrieved products")
                     brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
                                                   orient='index', columns=['%'])
+                    brand_df = brand_df.sort_values(by='%', ascending=False)
                     brand_df.index.name = "Brand"
-                    st.table(brand_df.style.format({'%': '{:.2f}'}))
-    
+                    brand_df['%'] = brand_df['%'].astype(int).astype(str) + '%'
+                    st.table(brand_df)
+
+                if 'price_range' in results:
+                    st.subheader("💲 Price Summary")
+                    price_min, price_max = results['price_range']
+                    st.markdown(f"🔻 **Price Range:** ${price_min:.2f} – ${price_max:.2f}")
+        
+                if 'average_price' in results:
+                    st.markdown(f"📈 **Average Price:** ${results['average_price']:.2f}")
+                 
     # Main content area for search results
     st.header("Search Results")
     
