@@ -3,17 +3,19 @@
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
 ## Version 0.2.0
+
 - 1M products
 - Increase search results to 100
 - Added summary statistics on search results
 - Improved UI
 
 ### Note
+
 - The web application is hosted on-demand on Google Cloud Run. Therefore the 1st query may be take 1-2 minutes. Subsequent queries should be less than 1 second.
 
 ## Setup Instructions - User
 
-The application can be accessed via the link in the Github repo description. 
+The application can be accessed via the link in the Github repo description.
 
 ## Setup Instructions - Developer
 
@@ -32,7 +34,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
 1. Copy and paste the following in to the `.env` file.
 
-    ```         
+    ```
     # User, password and location of the Postgres database
     PGUSER=postgres
     PGPASSWORD=ZK3RjyBv6twoA9
@@ -59,7 +61,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: https://cloud.google.com/sdk/docs/install-sdk
+2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: <https://cloud.google.com/sdk/docs/install-sdk>
 
 3. To setup the proxy connection:
 
@@ -86,7 +88,7 @@ This setup is for a running the app with a local Postgres database. You would us
 
 2. Add the following to environment variables. Change the Postgres credentials as needed to the local db.
 
-    ```         
+    ```
     # User, password and location of the Postgres database
     PGUSER=finly-admin
     PGPASSWORD=123
@@ -248,3 +250,12 @@ The search engine supports the following retrieval components that can be combin
     - Uses PostgreSQL full-text search capabilities
     - Parameters:
         - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
+
+### Result Reranking
+
+Add your OpenAI or GEMINI Api key to env file as such
+
+```
+OPENAI_API_KEY=<your-api-key>
+GOOGLE_API_KEY=<your-api-key>
+```
