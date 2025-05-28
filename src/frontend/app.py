@@ -148,8 +148,10 @@ def load_image(image_path):
             response = requests.get(image_path, headers=headers)
             image = Image.open(BytesIO(response.content))
         else:
+            # Normalize path separators for Windows compatibility
+            normalized_path = os.path.normpath(image_path)
             # Load image from local file
-            image = Image.open(image_path)
+            image = Image.open(normalized_path)
         return image
     except Exception as e:
         st.error(f"Error loading image: {e}")

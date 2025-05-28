@@ -23,45 +23,62 @@ def load_embeddings_from_files():
     embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'embeddings')
     
     embeddings_data = {}
-    embedding_type = 'fusion'
     
-    # Find all NPZ files for fusion embeddings
-    npz_files = sorted([f for f in os.listdir(embeddings_dir) if f.startswith('fusion_embeddings_chunk_') and f.endswith('.npz')])
+    # Find all NPZ files and group them by their prefix
+    npz_files = [f for f in os.listdir(embeddings_dir) if f.endswith('.npz')]
+    embedding_groups = {}
     
-    if not npz_files:
-        raise ValueError("No fusion embedding NPZ files found in the data/embeddings folder")
+    for npz_file in npz_files:
+        # Extract the prefix (everything before _chunk)
+        if '_chunk_' in npz_file:
+            prefix = npz_file.split('_chunk_')[0]
+            if prefix not in embedding_groups:
+                embedding_groups[prefix] = []
+            embedding_groups[prefix].append(npz_file)
     
-    print(f"Found {len(npz_files)} NPZ files to process...")
+    if not embedding_groups:
+        raise ValueError("No embedding NPZ files found in the data/embeddings folder")
     
-    all_pids = []
-    all_embeddings = []
+    print(f"Found {len(embedding_groups)} embedding types to process...")
     
-    # Load each NPZ file
-    for npz_file in tqdm(npz_files, desc="Loading NPZ files"):
-        file_path = os.path.join(embeddings_dir, npz_file)
-        data = np.load(file_path)
+    # Process each embedding type
+    for embedding_type, npz_files in embedding_groups.items():
+        print(f"\nProcessing {embedding_type} embeddings...")
+        print(f"Found {len(npz_files)} NPZ files for {embedding_type}")
         
-        # Load data using correct key names
-        pids = data['product_ids']
-        embeddings = data['embeddings']
+        all_pids = []
+        all_embeddings = []
         
-        all_pids.extend(pids)
-        all_embeddings.append(embeddings)
+        # Load each NPZ file for this embedding type
+        for npz_file in tqdm(sorted(npz_files), desc=f"Loading {embedding_type} NPZ files"):
+            file_path = os.path.join(embeddings_dir, npz_file)
+            data = np.load(file_path)
+            
+            # Load data using correct key names
+            pids = data['product_ids']
+            embeddings = data['embeddings']
+            
+            all_pids.extend(pids)
+            all_embeddings.append(embeddings)
+            
+            # Print memory usage after each file
+            print(f"\nCurrent memory usage after loading {npz_file}: {get_memory_usage():.2f} GB")
         
-        # Print memory usage after each file
-        print(f"\nCurrent memory usage after loading {npz_file}: {get_memory_usage():.2f} GB")
+        # Concatenate all embeddings for this type
+        all_embeddings = np.vstack(all_embeddings)
+        
+        if len(all_embeddings) == 0:
+            print(f"Warning: No embeddings found for {embedding_type}")
+            continue
+        
+        embeddings_data[embedding_type] = {
+            'pids': all_pids,
+            'embeddings': all_embeddings,
+            'dim': len(all_embeddings[0])
+        }
     
-    # Concatenate all embeddings
-    all_embeddings = np.vstack(all_embeddings)
-    
-    if len(all_embeddings) == 0:
-        raise ValueError("No fusion embeddings found in the NPZ files")
-    
-    embeddings_data[embedding_type] = {
-        'pids': all_pids,
-        'embeddings': all_embeddings,
-        'dim': len(all_embeddings[0])
-    }
+    if not embeddings_data:
+        raise ValueError("No valid embeddings found in any of the NPZ files")
     
     return embeddings_data
 
@@ -178,6 +195,8 @@ def main():
     
     # Create and save indexes for each embedding type and nlist value
     for embedding_type, data in embeddings_data.items():
+        # Remove 'embeddings' from the type name
+        base_type = embedding_type.replace('_embeddings', '')
         print(f"\nProcessing {embedding_type} embeddings...")
         
         for nlist in N_LIST_VALUES:
@@ -192,18 +211,17 @@ def main():
             )
             
             # Save the index
-            index_type = 'compressed' if COMPRESSED else 'uncompressed'
-            index_path = os.path.join(output_dir, f'{embedding_type}_index_{index_type}_nlist{nlist}.faiss')
+            index_path = os.path.join(output_dir, f'{base_type}_index.faiss')
             print(f"Saving index to {index_path}...")
             save_index(index, index_path)
             
             # Save the mapping
-            mapping_path = os.path.join(output_dir, f'{embedding_type}_index_mapping_{index_type}_nlist{nlist}.json')
+            mapping_path = os.path.join(output_dir, f'{base_type}_index_mapping.json')
             print(f"Saving index mapping to {mapping_path}...")
             save_mapping(pid_map, mapping_path)
             
             # Save the product IDs (keeping this for backward compatibility)
-            pids_path = os.path.join(output_dir, f'{embedding_type}_pids_{index_type}_nlist{nlist}.npy')
+            pids_path = os.path.join(output_dir, f'{base_type}_pids.npy')
             print(f"Saving product IDs to {pids_path}...")
             np.save(pids_path, data['pids'])
             

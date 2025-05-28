@@ -97,8 +97,6 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         """
         # Extract the base type from the column name (e.g., 'fusion' from 'fusion_embedding')
         index_type = column_name.replace('_embedding', '')
-        if index_type not in ['text', 'image', 'fusion']:
-            raise ValueError("column_name must end with '_embedding' and the base type must be 'text', 'image', or 'fusion'")
             
         # Load the index from cache or file
         index_path = os.path.join(FAISS_INDEX_DIR, f'{index_type}_index.faiss')

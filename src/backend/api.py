@@ -53,9 +53,10 @@ components_config = [
         }
     },
     {
-        "type": "PostgresVectorRetrieval",
+        "type": "FaissVectorRetrieval",
         "params": {
-            "column_name": "image_clip_embedding"
+            "column_name": "image_clip_embedding",
+            "nprobe": 32
         }
     },
     {
