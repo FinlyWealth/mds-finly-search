@@ -323,8 +323,8 @@ def search():
         df["Category"] = df["Category"].fillna("None")
 
         # Calculate the distribution of category and brand
-        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(2).to_dict()
-        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(2).to_dict()
+        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
+        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
 
         # Calculate price range and average price, excluding NaN
         df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
