@@ -19,7 +19,7 @@ dependencies:
   - tqdm
   - pyarrow
   - sentencepiece
-  - protobuf<=3.20.0
+  - protobuf
   - accelerate
   - streamlit
   - faiss-cpu

@@ -360,34 +360,43 @@ def main():
                 stats_render_end = time.time()   # get the end time
                 total_elapsed = round(stats_render_end - st.session_state['search_start_time'], 3)
                 st.markdown(f"🕒 **Total Time (click → display):** {total_elapsed} seconds")
+            
+            if 'price_range' in results:
+                price_min, price_max = results['price_range']
+                st.markdown(f"🔻 **Price Range:** &dollar;{price_min:.2f} – &dollar;{price_max:.2f}")
+    
+            if 'average_price' in results:
+                st.markdown(f"📈 **Average Price:** &dollar;{results['average_price']:.2f}")
 
             if 'results' in results and isinstance(results['results'], list):
+                if 'brand_distribution' in results:
+                    st.subheader("🏷️ Top 5 Brands")
+                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
+                                                  orient='index', columns=['%'])
+                    brand_df = brand_df.sort_values(by='%', ascending=False).head(5)
+                    brand_df.index.name = "Brand"
+                    brand_df['%'] = brand_df['%'].astype(int).astype(str) + '%'
+                    st.table(brand_df)
+
                 if 'category_distribution' in results:
-                    st.subheader("📊 Category Distribution among retrieved products")
+                    st.subheader("📊 Product Categories")
+                    # Create DataFrame and split categories
                     cat_df = pd.DataFrame.from_dict(results['category_distribution'], 
                                                 orient='index', columns=['%'])
+                    # Extract base category (everything before '>')
+                    cat_df.index = cat_df.index.str.split('>').str[0].str.strip()
+                    # Group by base category and sum percentages
+                    cat_df = cat_df.groupby(level=0)['%'].sum().reset_index()
+                    cat_df.set_index('index', inplace=True)
                     cat_df = cat_df.sort_values(by='%', ascending=False)
                     cat_df.index.name = "Category"
                     cat_df['%'] = cat_df['%'].astype(int).astype(str) + '%'
                     st.table(cat_df)
 
-                if 'brand_distribution' in results:
-                    st.subheader("🏷️ Brand Distribution among retrieved products")
-                    brand_df = pd.DataFrame.from_dict(results['brand_distribution'], 
-                                                  orient='index', columns=['%'])
-                    brand_df = brand_df.sort_values(by='%', ascending=False)
-                    brand_df.index.name = "Brand"
-                    brand_df['%'] = brand_df['%'].astype(int).astype(str) + '%'
-                    st.table(brand_df)
+                if 'reasoning' in results:
+                    st.subheader("🤖 LLM Reasoning")
+                    st.info(results['reasoning'])
 
-                if 'price_range' in results:
-                    st.subheader("💲 Price Summary")
-                    price_min, price_max = results['price_range']
-                    st.markdown(f"🔻 **Price Range:** ${price_min:.2f} – ${price_max:.2f}")
-        
-                if 'average_price' in results:
-                    st.markdown(f"📈 **Average Price:** ${results['average_price']:.2f}")
-                 
     # Main content area for search results
     st.header("Search Results")
     

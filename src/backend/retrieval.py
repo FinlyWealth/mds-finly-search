@@ -341,7 +341,7 @@ def reorder_search_results_by_relevancy(
     model: str = "gpt-3.5-turbo",  # or a gemini model
     provider: str = "openai",  # can be 'openai' or 'gemini'
     max_results: int = 20,
-) -> List[Dict]:
+) -> tuple[List[Dict], str]:
     """
     Reorders search results based on relevancy to the query using an LLM via LangChain.
     Parameters:
@@ -352,7 +352,9 @@ def reorder_search_results_by_relevancy(
     - api_key (str): API key for the selected provider.
     - max_results (int): Maximum number of search results to consider.
     Returns:
-    - List of results reordered by relevance.
+    - Tuple containing:
+        - List of results reordered by relevance
+        - String containing the LLM's reasoning for the reordering
     """
 
     results_to_process = search_results[:max_results]
@@ -430,7 +432,7 @@ def reorder_search_results_by_relevancy(
 
         if expected_indices != provided_indices:
             logger.warning("Invalid indices provided by LLM. Using original order.")
-            return search_results
+            return search_results, "Using original order due to invalid indices from LLM"
 
         reordered_results = []
         for index in result.reordered_indices:
@@ -443,7 +445,7 @@ def reorder_search_results_by_relevancy(
             reordered_results.extend(search_results[max_results:])
 
         logger.info(f"Successfully reordered {len(results_to_process)} search results")
-        return reordered_results
+        return reordered_results, result.reasoning
 
     except Exception as e:
         raise ValueError(f"Failed to parse LLM response: {e}")
