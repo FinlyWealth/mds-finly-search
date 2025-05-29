@@ -58,8 +58,11 @@ components_config = [
         "params": {"column_name": "fusion_embedding", "nprobe": 32},
     },
     {
-        "type": "PostgresVectorRetrieval",
-        "params": {"column_name": "image_clip_embedding"},
+        "type": "FaissVectorRetrieval",
+        "params": {
+            "column_name": "image_clip_embedding",
+            "nprobe": 32
+        }
     },
     {"type": "TextSearchRetrieval", "params": {"rank_method": "ts_rank"}},
 ]
@@ -304,16 +307,20 @@ def search():
 
         elapsed_time = time.time() - start_time  # calculate the time
 
-        # formatted_result = format_results(pids, scores)
         formatted_result = format_results(pids, scores)
 
-        if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
-            reordered_result = reorder_search_results_by_relevancy(
-                query_text, formatted_result
-            )
-
+        # Only use LLM to reorder results if we have text queries
+        if query_text:
+            if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
+                reordered_result, reasoning = reorder_search_results_by_relevancy(
+                    query_text, formatted_result
+                )
+            else:
+                reordered_result = formatted_result[:]
+                reasoning = "No API key available, no LLM reordering performed"
         else:
             reordered_result = formatted_result[:]
+            reasoning = "Image search only, no LLM reordering performed"
 
         # transfer the results into data frame for statistics purpose
         df = pd.DataFrame(reordered_result)
@@ -333,13 +340,14 @@ def search():
         avg_price = df['Price'].mean(skipna=True)
         
         response = {
-            'results': format_results(pids, scores),
+            'results': reordered_result,  # Use reordered results instead of original
             'elapsed_time_sec': round(elapsed_time, 3),
             'category_distribution': category_dist,   
             'brand_distribution': brand_dist, 
             'price_range': [round(min_price, 2), round(max_price, 2)],
             'average_price': round(avg_price, 2),
-            'session_id': session_id
+            'session_id': session_id,
+            'reasoning': reasoning
         }
         logger.debug(f"Response: {response}")
         return jsonify(response)

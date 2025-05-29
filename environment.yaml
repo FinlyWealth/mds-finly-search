@@ -23,7 +23,7 @@ dependencies:
   - accelerate
   - streamlit
   - faiss-cpu
-  - mlflow
+  - mlflow=2.22.0
   - quarto
   - pip
   - pytest

@@ -2,22 +2,75 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Version 0.2.0
+Use **Setup Instructions - Docker Containers** to run the application.
 
-- 1M products
-- Increase search results to 100
-- Added summary statistics on search results
-- Improved UI
+Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
 
-### Note
+## Setup Instructions - Docker Containers
 
-- The web application is hosted on-demand on Google Cloud Run. Therefore the 1st query may be take 1-2 minutes. Subsequent queries should be less than 1 second.
+**Prerequisites**
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
+- Git (optional, for cloning the repo)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
 
-## Setup Instructions - User
+### Google Cloud Setup
+1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+2. Ensure you've been granted access to Google Cloud from the repo admin
+3. Run the following commands to set up and start the proxy:
 
-The application can be accessed via the link in the Github repo description.
+```bash
+# If running for the first time, this will setup and run the proxy
+make proxy-setup
 
-## Setup Instructions - Developer
+# Use the following to start the proxy after a reboot
+make proxy
+```
+
+### Step 1. Clone the Repository
+First, you'll need to get a copy of the codebase on your local machine.
+
+```bash
+git clone FinlyWealth/mds-finly-search
+cd mds-finly-search
+```
+
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access.
+
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=
+```
+
+### Step 3. Build Docker Containers
+Create the Docker images for both frontend and backend services.
+
+```bash
+docker compose build
+```
+This step may take several minutes as it downloads and builds all required dependencies.
+
+### Step 4. Start the Application
+Launch the application services and ensure the database proxy is running.
+
+```bash
+docker compose up
+```
+
+The application will start two services:
+- Frontend: Access the search interface at http://localhost:8501
+- Backend API: Running at http://localhost:5001
+
+## Setup Instructions - Makefile
 
 ### Step 1. Setup Python environment and environment variables
 
@@ -59,6 +112,9 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
     # URL of mlflow server
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
+
+    # LLM API key
+    OPENAI_API_KEY=<your-api-key>
     ```
 
 2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: <https://cloud.google.com/sdk/docs/install-sdk>
@@ -143,7 +199,7 @@ This setup is for a running the app with a local Postgres database. You would us
 
     Use Ctrl+C to stop the app. Use `make clean` afterwards to release the assigned ports. Otherwise you may encounter a message about port conflict the next time you start the app.
 
-## Setup Troubleshooting
+### Setup Troubleshooting
 
 **To test the api through command line**
 
@@ -184,78 +240,4 @@ sudo mkdir -p /Library/PostgreSQL/16/share/extension
 sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.control /Library/PostgreSQL/16/share/extension/
 
 sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
-```
-
-## Running Experiments
-
-`experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
-
-1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config.
-
-    ``` json
-     {
-         "experiment_group_name": [
-             {
-                 "name": "experiment_name",
-                 "components": [
-                     {
-                         "type": "PostgresVectorRetrieval",
-                         "params": {
-                             "column_name": "text_embedding"
-                         }
-                     },
-                     {
-                         "type": "PostgresVectorRetrieval",
-                         "params": {
-                             "column_name": "image_embedding"
-                         }
-                     },
-                     {
-                         "type": "TextSearchRetrieval",
-                         "params": {
-                             "rank_method": "ts_rank_cd"
-                         }
-                     }
-                 ],
-                 "weights": [0.4, 0.3, 0.3]
-             }
-         ]
-     } 
-    ```
-
-2. Run experiments using the make command:
-
-    ``` bash
-    make experiments
-    ```
-
-    This will execute each experiment defined in experiment_configs.json and log results to MLflow
-
-3. View experiment results: <http://35.209.59.178:8591>
-
-### Supported Retrieval Components
-
-The search engine supports the following retrieval components that can be combined in experiments:
-
-1. **PostgresVectorRetrieval**
-    - Uses pgvector for vector similarity search
-    - Parameters:
-        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
-2. **FaissVectorRetrieval**
-    - Uses FAISS for efficient vector similarity search
-    - Parameters:
-        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
-        - `nprobe`: Number of clusters to search in
-3. **TextSearchRetrieval**
-    - Uses PostgreSQL full-text search capabilities
-    - Parameters:
-        - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)
-
-### Result Reranking
-
-Add your OpenAI or GEMINI Api key to env file as such
-
-```
-OPENAI_API_KEY=<your-api-key>
-GOOGLE_API_KEY=<your-api-key>
 ```
