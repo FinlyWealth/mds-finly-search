@@ -36,7 +36,7 @@ jobs:
             --allow-unauthenticated \
             --port=5001 \
             --timeout=900s \
-            --memory=12Gi \
+            --memory=16Gi \
             --cpu=4 \
             --min-instances=1 \
             --add-cloudsql-instances=$CLOUDSQL_INSTANCE \
