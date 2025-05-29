@@ -2,6 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Accept build argument for OpenAI API key
+ARG OPENAI_API_KEY
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
+
 # Install system dependencies required by some Python packages (e.g., psycopg2)
 RUN apt-get update && apt-get install -y \
     build-essential \

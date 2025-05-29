@@ -43,6 +43,7 @@ jobs:
     - name: Build and push Backend
       run: |
         docker build -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.BACKEND_IMAGE }}:latest \
+          --build-arg OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
           -f ./src/backend/Dockerfile .
         docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.BACKEND_IMAGE }}:latest
 

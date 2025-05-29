@@ -2,20 +2,80 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Version 0.2.0
-- 1M products
-- Increase search results to 100
-- Added summary statistics on search results
-- Improved UI
+Use **Setup Instructions - Docker Containers** to run the application.
 
-### Note
-- The web application is hosted on-demand on Google Cloud Run. Therefore the 1st query may be take 1-2 minutes. Subsequent queries should be less than 1 second.
+Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
 
-## Setup Instructions - User
+## Setup Instructions - Docker Containers
 
-The application can be accessed via the link in the Github repo description. 
+**Prerequisites**
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
+- Git (optional, for cloning the repo)
 
-## Setup Instructions - Developer
+### Google Cloud Setup
+1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+2. Ensure you've been granted access to Google Cloud from the repo admin
+3. Run the following commands to set up and start the proxy:
+
+```bash
+# If running for the first time, this will also setup the proxy
+make proxy
+```
+
+### Step 1. Clone the Repository
+In a separate terminal, clone the repository.
+
+```bash
+git clone FinlyWealth/mds-finly-search
+cd mds-finly-search
+```
+
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
+
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+```
+
+### Step 3. Build Docker Containers
+Create the Docker images for both frontend and backend services.
+
+```bash
+docker compose build
+```
+This step may take several minutes as it downloads and builds all required dependencies.
+
+### Step 4. Start the Application
+Make sure the proxy is running and launch the application.
+
+```bash
+docker compose up
+```
+
+The application will start two services:
+- Frontend: Access the search interface at http://localhost:8501
+- Backend API: Running at http://localhost:5001
+
+### Step 5. Clean Up
+To close the container and free up the port once the proxy is not needed
+```bash
+docker compose down
+make clean
+``` 
+
+
+## Setup Instructions - Makefile
 
 ### Step 1. Setup Python environment and environment variables
 
@@ -32,7 +92,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
 1. Copy and paste the following in to the `.env` file.
 
-    ```         
+    ```
     # User, password and location of the Postgres database
     PGUSER=postgres
     PGPASSWORD=ZK3RjyBv6twoA9
@@ -57,9 +117,12 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
 
     # URL of mlflow server
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
+
+    # LLM API key
+    OPENAI_API_KEY=<your-api-key>
     ```
 
-2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: https://cloud.google.com/sdk/docs/install-sdk
+2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: <https://cloud.google.com/sdk/docs/install-sdk>
 
 3. To setup the proxy connection:
 
@@ -86,7 +149,7 @@ This setup is for a running the app with a local Postgres database. You would us
 
 2. Add the following to environment variables. Change the Postgres credentials as needed to the local db.
 
-    ```         
+    ```
     # User, password and location of the Postgres database
     PGUSER=finly-admin
     PGPASSWORD=123
@@ -141,7 +204,7 @@ This setup is for a running the app with a local Postgres database. You would us
 
     Use Ctrl+C to stop the app. Use `make clean` afterwards to release the assigned ports. Otherwise you may encounter a message about port conflict the next time you start the app.
 
-## Setup Troubleshooting
+### Setup Troubleshooting
 
 **To test the api through command line**
 
@@ -183,68 +246,3 @@ sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.cont
 
 sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
 ```
-
-## Running Experiments
-
-`experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
-
-1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config.
-
-    ``` json
-     {
-         "experiment_group_name": [
-             {
-                 "name": "experiment_name",
-                 "components": [
-                     {
-                         "type": "PostgresVectorRetrieval",
-                         "params": {
-                             "column_name": "text_embedding"
-                         }
-                     },
-                     {
-                         "type": "PostgresVectorRetrieval",
-                         "params": {
-                             "column_name": "image_embedding"
-                         }
-                     },
-                     {
-                         "type": "TextSearchRetrieval",
-                         "params": {
-                             "rank_method": "ts_rank_cd"
-                         }
-                     }
-                 ],
-                 "weights": [0.4, 0.3, 0.3]
-             }
-         ]
-     } 
-    ```
-
-2. Run experiments using the make command:
-
-    ``` bash
-    make experiments
-    ```
-
-    This will execute each experiment defined in experiment_configs.json and log results to MLflow
-
-3. View experiment results: <http://35.209.59.178:8591>
-
-### Supported Retrieval Components
-
-The search engine supports the following retrieval components that can be combined in experiments:
-
-1. **PostgresVectorRetrieval**
-    - Uses pgvector for vector similarity search
-    - Parameters:
-        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
-2. **FaissVectorRetrieval**
-    - Uses FAISS for efficient vector similarity search
-    - Parameters:
-        - `column_name`: Name of the vector column to search (e.g., "fusion_embedding")
-        - `nprobe`: Number of clusters to search in
-3. **TextSearchRetrieval**
-    - Uses PostgreSQL full-text search capabilities
-    - Parameters:
-        - `rank_method`: Ranking method to use (e.g., "ts_rank" which ranks purely on frequency or "ts_rank_cd" which also measure proximity of words)

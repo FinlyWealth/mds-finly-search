@@ -11,9 +11,18 @@ import psycopg2
 import time
 import logging
 from datetime import datetime, timedelta
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.backend.embedding import generate_embedding, initialize_minilm_model, initialize_clip_model
-from src.backend.retrieval import hybrid_retrieval, create_retrieval_component
+from src.backend.embedding import (
+    generate_embedding,
+    initialize_minilm_model,
+    initialize_clip_model,
+)
+from src.backend.retrieval import (
+    hybrid_retrieval,
+    create_retrieval_component,
+    reorder_search_results_by_relevancy,
+)
 from src.backend.db import fetch_products_by_pids
 from collections import Counter
 from config.db import DB_CONFIG, TABLE_NAME
@@ -21,8 +30,7 @@ from psycopg2.extras import Json
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -33,7 +41,7 @@ initialization_status = {
     "minilm_model": False,
     "clip_model": False,
     "faiss_indices": False,
-    "database": False
+    "database": False,
 }
 
 # Track initialization state
@@ -47,40 +55,36 @@ top_k = 100
 components_config = [
     {
         "type": "FaissVectorRetrieval",
+        "params": {"column_name": "fusion_embedding", "nprobe": 32},
+    },
+    {
+        "type": "FaissVectorRetrieval",
         "params": {
-            "column_name": "fusion_embedding",
+            "column_name": "image_clip_embedding",
             "nprobe": 32
         }
     },
-    {
-        "type": "PostgresVectorRetrieval",
-        "params": {
-            "column_name": "image_clip_embedding"
-        }
-    },
-    {
-        "type": "TextSearchRetrieval",
-        "params": {
-            "rank_method": "ts_rank"
-        }
-    }
+    {"type": "TextSearchRetrieval", "params": {"rank_method": "ts_rank"}},
 ]
+
 
 def initialize_app():
     """Initialize all required components and update status"""
     global initialization_state, initialization_start_time, components, nlp
     initialization_start_time = datetime.now()
-    
+
     try:
         # Create retrieval components with database config
-        components = [create_retrieval_component(comp, DB_CONFIG) for comp in components_config]
+        components = [
+            create_retrieval_component(comp, DB_CONFIG) for comp in components_config
+        ]
         # Initialize spaCy
         nlp = spacy.load("en_core_web_sm")
-        
+
         # Print database connection details
         logger.info(f"Connecting to database: {DB_CONFIG['dbname']}")
         logger.info(f"Table: {TABLE_NAME}")
-        
+
         # Print components configuration
         logger.info("\nInitialized retrieval components:")
         for i, comp in enumerate(components_config):
@@ -88,24 +92,24 @@ def initialize_app():
             logger.info(f"  Type: {comp['type']}")
             logger.info(f"  Params: {comp['params']}")
         logger.info("")
-        
+
         # Initialize MiniLM model
         logger.info("Initializing MiniLM model...")
         initialize_minilm_model()
         initialization_status["minilm_model"] = True
         logger.info("✓ MiniLM model initialized successfully")
-        
+
         # Initialize CLIP model
         logger.info("Initializing CLIP model...")
         initialize_clip_model()
         initialization_status["clip_model"] = True
         logger.info("✓ CLIP model initialized successfully")
-        
+
         # Initialize FAISS indices (this happens automatically when creating components)
         logger.info("Initializing FAISS indices...")
         initialization_status["faiss_indices"] = True
         logger.info("✓ FAISS indices initialized successfully")
-        
+
         # Test database connection
         logger.info("Testing database connection...")
         conn = psycopg2.connect(**DB_CONFIG)
@@ -115,7 +119,7 @@ def initialize_app():
         conn.close()
         initialization_status["database"] = True
         logger.info("✓ Database connection successful")
-        
+
         logger.info("\nAll components initialized successfully!")
         initialization_state = "ready"
         return True
@@ -128,9 +132,10 @@ def initialize_app():
         initialization_state = "failed"
         return False
 
+
 def load_image(image_path):
     try:
-        if image_path.startswith(('http://', 'https://')):
+        if image_path.startswith(("http://", "https://")):
             response = requests.get(image_path)
             image = Image.open(BytesIO(response.content))
         else:
@@ -139,71 +144,94 @@ def load_image(image_path):
     except Exception as e:
         raise Exception(f"Error loading image: {e}")
 
+
 def format_results(indices, scores):
     results = []
     # Fetch all products in a single batch
     products = fetch_products_by_pids(indices)
-    
+
     for idx, score in zip(indices, scores):
         try:
             product = products.get(idx)
             if product:
-                results.append({
-                    'Pid': str(idx),
-                    'Name': str(product['Name']),
-                    'Description': str(product['Description']),
-                    'Brand': str(product['Brand']),
-                    'Category': str(product['Category']),
-                    'Color': str(product['Color']),
-                    'Gender': str(product['Gender']),
-                    'Size': str(product['Size']),
-                    'Price': str(product['Price']) if product['Price'] is not None else None,
-                    'similarity': float(score)
-                })
+                results.append(
+                    {
+                        "Pid": str(idx),
+                        "Name": str(product["Name"]),
+                        "Description": str(product["Description"]),
+                        "Brand": str(product["Brand"]),
+                        "Category": str(product["Category"]),
+                        "Color": str(product["Color"]),
+                        "Gender": str(product["Gender"]),
+                        "Size": str(product["Size"]),
+                        "Price": (
+                            str(product["Price"])
+                            if product["Price"] is not None
+                            else None
+                        ),
+                        "similarity": float(score),
+                    }
+                )
         except IndexError:
             # Skip products that aren't found in the Database
             logger.warning(f"Warning: Product ID {idx} not found in Database")
             continue
     return results
 
+
 @app.route("/")
 def index():
     return "Backend API is running!"
 
-@app.route('/api/ready', methods=['GET'])
+
+@app.route("/api/ready", methods=["GET"])
 def ready():
     """Check if the API is ready to accept queries"""
     global initialization_state
-    
+
     if initialization_state == "starting":
         elapsed_time = (datetime.now() - initialization_start_time).total_seconds()
-        
+
         # Check if we're approaching the Cloud Run timeout
         if elapsed_time > WARNING_THRESHOLD:
-            logger.warning(f"WARNING: Initialization has taken {elapsed_time:.1f} seconds. "
-                  f"Cloud Run will timeout in {CLOUD_RUN_TIMEOUT - elapsed_time:.1f} seconds.")
-        
+            logger.warning(
+                f"WARNING: Initialization has taken {elapsed_time:.1f} seconds. "
+                f"Cloud Run will timeout in {CLOUD_RUN_TIMEOUT - elapsed_time:.1f} seconds."
+            )
+
         # If we've exceeded the timeout, mark as failed
         if elapsed_time > CLOUD_RUN_TIMEOUT:
             logger.error("ERROR: Initialization exceeded Cloud Run timeout limit")
             initialization_state = "failed"
             for key in initialization_status:
                 initialization_status[key] = False
-    
+
     status = {
         "state": initialization_state,
         "ready": initialization_state == "ready",
         "components": initialization_status,
-        "elapsed_seconds": (datetime.now() - initialization_start_time).total_seconds() if initialization_start_time else 0
+        "elapsed_seconds": (
+            (datetime.now() - initialization_start_time).total_seconds()
+            if initialization_start_time
+            else 0
+        ),
     }
     return jsonify(status)
 
-@app.route('/api/search', methods=['POST'])
+
+@app.route("/api/search", methods=["POST"])
 def search():
     # Check if API is ready
     if not all(initialization_status.values()):
-        return jsonify({'error': 'API is not ready yet. Please wait for initialization to complete.'}), 503
-        
+        return (
+            jsonify(
+                {
+                    "error": "API is not ready yet. Please wait for initialization to complete."
+                }
+            ),
+            503,
+        )
+
     try:
         start_time = time.time()  # start the timer
         logger.info("Received search request")
@@ -217,33 +245,35 @@ def search():
         session_id = str(uuid.uuid4())
 
         # Handle text query from form data
-        query_text = request.form.get('query')
+        query_text = request.form.get("query")
         logger.info(f"Query text: {query_text}")
 
         # Handle image query
-        if 'file' in request.files:
+        if "file" in request.files:
             # uploaded image
-            file = request.files['file']
+            file = request.files["file"]
             query_image = Image.open(file.stream)
-        elif request.form.get('image_path'):
+        elif request.form.get("image_path"):
             # image from url
-            image_path = request.form.get('image_path')
+            image_path = request.form.get("image_path")
             query_image = load_image(image_path)
 
         if not query_text and not query_image:
-            return jsonify({'error': 'Either query text or image is required'}), 400
+            return jsonify({"error": "Either query text or image is required"}), 400
 
         logger.info("Generating embedding...")
         # Generate embedding based on available inputs
         if query_text and query_image:
-            query_embedding = generate_embedding(query_text=query_text, query_image=query_image)
+            query_embedding = generate_embedding(
+                query_text=query_text, query_image=query_image
+            )
         elif query_text:
             query_embedding = generate_embedding(query_text=query_text)
         else:  # query_image only
             query_embedding = generate_embedding(query_image=query_image)
 
         logger.debug(f"Generated embedding shape: {query_embedding.shape}")
-        
+
         logger.info("Performing retrieval...")
         # Adjust weights based on input type
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
@@ -270,90 +300,123 @@ def search():
         pids, scores = hybrid_retrieval(
             query=search_query,
             query_embedding=query_embedding,
-            components=components, 
+            components=components,
             weights=weights,
-            top_k=top_k
+            top_k=top_k,
         )
 
         elapsed_time = time.time() - start_time  # calculate the time
 
+        formatted_result = format_results(pids, scores)
+
+        # Only use LLM to reorder results if we have text queries
+        if query_text:
+            if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
+                reordered_result, reasoning = reorder_search_results_by_relevancy(
+                    query_text, formatted_result
+                )
+            else:
+                reordered_result = formatted_result[:]
+                reasoning = "No API key available, no LLM reordering performed"
+        else:
+            reordered_result = formatted_result[:]
+            reasoning = "Image search only, no LLM reordering performed"
+
         # transfer the results into data frame for statistics purpose
-        results = format_results(pids, scores)
-        df = pd.DataFrame(results)
+        df = pd.DataFrame(reordered_result)
 
         # Transfer NaN to None
-        df['Brand'] = df['Brand'].fillna('None')
-        df['Category'] = df['Category'].fillna('None')
+        df["Brand"] = df["Brand"].fillna("None")
+        df["Category"] = df["Category"].fillna("None")
 
-        # Calculate the distribution
-        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(2).to_dict()
-        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(2).to_dict()
+        # Calculate the distribution of category and brand
+        category_dist = (df['Category'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
+        brand_dist = (df['Brand'].value_counts(normalize=True) * 100).round(0).astype(int).to_dict()
+
+        # Calculate price range and average price, excluding NaN
+        df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
+        min_price = df['Price'].min(skipna=True)
+        max_price = df['Price'].max(skipna=True)
+        avg_price = df['Price'].mean(skipna=True)
         
         response = {
-            'results': format_results(pids, scores),
+            'results': reordered_result,  # Use reordered results instead of original
             'elapsed_time_sec': round(elapsed_time, 3),
             'category_distribution': category_dist,   
             'brand_distribution': brand_dist, 
-            'session_id': session_id
+            'price_range': [round(min_price, 2), round(max_price, 2)],
+            'average_price': round(avg_price, 2),
+            'session_id': session_id,
+            'reasoning': reasoning
         }
         logger.debug(f"Response: {response}")
         return jsonify(response)
-        
+
     except Exception as e:
         logger.error(f"Error in search: {str(e)}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/feedback', methods=['POST'])
+@app.route("/api/feedback", methods=["POST"])
 def submit_feedback():
     """Handle user feedback for search results"""
     try:
         data = request.get_json()
-        query_text = data.get('query_text')
-        image_path = data.get('image_path')
-        pid = data.get('pid')
-        feedback = data.get('feedback')  # True for thumbs up, False for thumbs down
-        session_id = data.get('session_id')  # Get session ID from request
-        
+        query_text = data.get("query_text")
+        image_path = data.get("image_path")
+        pid = data.get("pid")
+        feedback = data.get("feedback")  # True for thumbs up, False for thumbs down
+        session_id = data.get("session_id")  # Get session ID from request
+
         if not pid or feedback is None:
-            return jsonify({'error': 'Missing required fields'}), 400
-            
+            return jsonify({"error": "Missing required fields"}), 400
+
         if not session_id:
-            return jsonify({'error': 'Missing session_id'}), 400
-            
+            return jsonify({"error": "Missing session_id"}), 400
+
         try:
             # Store feedback in database
             conn = psycopg2.connect(**DB_CONFIG)
             cur = conn.cursor()
-            
+
             # First check if a row exists for this session_id
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT feedback FROM user_feedback 
                 WHERE session_id = %s
-            """, (session_id,))
-            
+            """,
+                (session_id,),
+            )
+
             existing_row = cur.fetchone()
-            
+
             if existing_row:
                 # Update existing row by appending to feedback list
                 existing_feedback = existing_row[0]
                 existing_feedback.append({"pid": pid, "feedback": feedback})
-                
-                cur.execute("""
+
+                cur.execute(
+                    """
                     UPDATE user_feedback 
                     SET feedback = %s
                     WHERE session_id = %s
-                """, (Json(existing_feedback), session_id))
+                """,
+                    (Json(existing_feedback), session_id),
+                )
             else:
                 # Create new row for this session
                 feedback_list = [{"pid": pid, "feedback": feedback}]
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
                     VALUES (%s, %s, %s, %s)
-                """, (query_text, image_path, Json(feedback_list), session_id))
-            
+                """,
+                    (query_text, image_path, Json(feedback_list), session_id),
+                )
+
             conn.commit()
             cur.close()
             conn.close()
@@ -361,12 +424,13 @@ def submit_feedback():
             # Log the error but don't expose it to the client
             logger.error(f"Database error while storing feedback: {str(db_error)}")
             # Continue execution to return success response
-        
-        return jsonify({'success': True})
-        
+
+        return jsonify({"success": True})
+
     except Exception as e:
         # Only return error for non-database related issues
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
 
 # Set port to 5001
 if __name__ == "__main__":
@@ -377,10 +441,10 @@ if __name__ == "__main__":
     logger.info("\nRegistered routes:")
     for rule in app.url_map.iter_rules():
         logger.info(f"  {rule.endpoint}: {rule.rule}")
-    
+
     # Initialize the application
     if not initialize_app():
         logger.error("Fatal: Application initialization failed. Exiting...")
         sys.exit(1)
-    
+
     app.run(host="0.0.0.0", port=port)
