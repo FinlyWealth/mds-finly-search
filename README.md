@@ -20,18 +20,12 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 3. Run the following commands to set up and start the proxy:
 
 ```bash
-# If running for the first time, this will setup and run the proxy
-make proxy-setup
-
-# Use the following to start the proxy
+# If running for the first time, this will also setup the proxy
 make proxy
-
-# Run the folloowing to free up the port once the proxy is no longer needed
-make clean
 ```
 
 ### Step 1. Clone the Repository
-First, you'll need to get a copy of the codebase on your local machine.
+In a separate terminal, clone the repository.
 
 ```bash
 git clone FinlyWealth/mds-finly-search
@@ -39,7 +33,7 @@ cd mds-finly-search
 ```
 
 ### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access.
+Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
 
 ```bash
 # Database configuration
@@ -51,7 +45,7 @@ PGDATABASE=postgres
 PGTABLE=products_1M
 
 # LLM API key
-OPENAI_API_KEY=
+OPENAI_API_KEY=<insert-api-key>
 ```
 
 ### Step 3. Build Docker Containers
@@ -63,7 +57,7 @@ docker compose build
 This step may take several minutes as it downloads and builds all required dependencies.
 
 ### Step 4. Start the Application
-Launch the application services and ensure the database proxy is running.
+Make sure the proxy is running and launch the application.
 
 ```bash
 docker compose up
@@ -72,6 +66,14 @@ docker compose up
 The application will start two services:
 - Frontend: Access the search interface at http://localhost:8501
 - Backend API: Running at http://localhost:5001
+
+### Step 5. Clean Up
+To close the container and free up the port once the proxy is not needed
+```bash
+docker compose down
+make clean
+``` 
+
 
 ## Setup Instructions - Makefile
 
