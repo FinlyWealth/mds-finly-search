@@ -18,15 +18,20 @@ from config.path import METADATA_PATH, EMBEDDINGS_PATH
 CHUNK_SIZE = 500_000  # Process 500k rows at a time
 
 def save_embeddings(embeddings, product_ids, embedding_type, save_path, chunk_num=None):
-    """
-    Save embeddings and product IDs to a numpy compressed file.
+    """Save embeddings and product IDs to a numpy compressed file.
     
-    Args:
-        embeddings (np.ndarray): Array of embeddings
-        product_ids (np.ndarray): Array of product IDs
-        embedding_type (str): Type of embeddings
-        save_path (str): Path where the embeddings should be saved
-        chunk_num (int, optional): Chunk number for large datasets
+    Parameters
+    ----------
+    embeddings : numpy.ndarray
+        Array of embeddings to save.
+    product_ids : numpy.ndarray
+        Array of product IDs corresponding to the embeddings.
+    embedding_type : str
+        Type of embeddings being saved.
+    save_path : str
+        Path where the embeddings should be saved.
+    chunk_num : int, optional
+        Chunk number for large datasets, by default None.
     """
     # Ensure the directory exists
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -43,18 +48,29 @@ def save_embeddings(embeddings, product_ids, embedding_type, save_path, chunk_nu
     print(f"\nSaved {embedding_type} embeddings to {save_path}")
 
 def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100):
-    """
-    Calculate image embeddings for the given DataFrame using CLIP model.
+    """Calculate image embeddings for the given DataFrame using CLIP model.
     
-    Args:
-        df (pd.DataFrame): DataFrame containing product information
-        model: CLIP model for generating embeddings
-        processor: CLIP processor for image preprocessing
-        device: Device to run the model on
-        batch_size (int): Size of batches for processing
-        
-    Returns:
-        tuple: (image_embeddings, valid_indices)
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing product information.
+    model : transformers.AutoModel
+        CLIP model for generating embeddings.
+    processor : transformers.AutoProcessor
+        CLIP processor for image preprocessing.
+    device : str
+        Device to run the model on (e.g., 'cuda', 'cpu').
+    batch_size : int, optional
+        Size of batches for processing, by default 100.
+    
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - image_embeddings : list
+            List of image embeddings.
+        - valid_indices : list
+            List of valid indices corresponding to successful embeddings.
     """
     image_embeddings = []
     valid_indices = []
@@ -99,19 +115,31 @@ def calculate_image_clip_embeddings(df, model, processor, device, batch_size=100
     return image_embeddings, valid_indices
 
 def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=None, batch_size=100):
-    """
-    Calculate text embeddings for the given DataFrame using CLIP model.
+    """Calculate text embeddings for the given DataFrame using CLIP model.
     
-    Args:
-        df (pd.DataFrame): DataFrame containing product information
-        model: CLIP model for generating embeddings
-        processor: CLIP processor for text preprocessing
-        device: Device to run the model on
-        valid_indices (list): Optional list of valid indices to process
-        batch_size (int): Size of batches for processing
-        
-    Returns:
-        tuple: (text_embeddings, product_ids)
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing product information.
+    model : transformers.AutoModel
+        CLIP model for generating embeddings.
+    processor : transformers.AutoProcessor
+        CLIP processor for text preprocessing.
+    device : str
+        Device to run the model on (e.g., 'cuda', 'cpu').
+    valid_indices : list, optional
+        Optional list of valid indices to process, by default None.
+    batch_size : int, optional
+        Size of batches for processing, by default 100.
+    
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - text_embeddings : list
+            List of text embeddings.
+        - product_ids : list
+            List of product IDs corresponding to the embeddings.
     """
     text_embeddings = []
     product_ids = []
@@ -150,19 +178,31 @@ def calculate_text_clip_embeddings(df, model, processor, device, valid_indices=N
     return text_embeddings, product_ids
 
 def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None, batch_size=100):
-    """
-    Calculate sentence embeddings using MiniLM model for the given DataFrame.
+    """Calculate sentence embeddings using MiniLM model for the given DataFrame.
     
-    Args:
-        df (pd.DataFrame): DataFrame containing product information
-        model: Sentence transformer model for generating embeddings
-        tokenizer: Tokenizer for text preprocessing
-        device: Device to run the model on
-        valid_indices (list): Optional list of valid indices to process
-        batch_size (int): Size of batches for processing
-        
-    Returns:
-        tuple: (sentence_embeddings, product_ids)
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing product information.
+    model : transformers.AutoModel
+        Sentence transformer model for generating embeddings.
+    tokenizer : transformers.AutoTokenizer
+        Tokenizer for text preprocessing.
+    device : str
+        Device to run the model on (e.g., 'cuda', 'cpu').
+    valid_indices : list, optional
+        Optional list of valid indices to process, by default None.
+    batch_size : int, optional
+        Size of batches for processing, by default 100.
+    
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - sentence_embeddings : list
+            List of sentence embeddings.
+        - product_ids : list
+            List of product IDs corresponding to the embeddings.
     """
     sentence_embeddings = []
     product_ids = []
@@ -203,27 +243,34 @@ def calculate_minilm_embeddings(df, model, tokenizer, device, valid_indices=None
     return sentence_embeddings, product_ids
 
 def concatenate_embeddings(image_embeddings, text_embeddings):
-    """
-    Concatenate image CLIP embeddings and MiniLM embeddings.
+    """Concatenate image CLIP embeddings and MiniLM embeddings.
     
-    Args:
-        image_embeddings (np.ndarray): Array of image CLIP embeddings
-        text_embeddings (np.ndarray): Array of MiniLM embeddings
-        
-    Returns:
-        np.ndarray: Concatenated embeddings
+    Parameters
+    ----------
+    image_embeddings : numpy.ndarray
+        Array of image CLIP embeddings.
+    text_embeddings : numpy.ndarray
+        Array of MiniLM embeddings.
+    
+    Returns
+    -------
+    numpy.ndarray
+        Concatenated embeddings.
     """
     return np.concatenate([image_embeddings, text_embeddings], axis=1)
 
 def filter_valid_products(df):
-    """
-    Filters the DataFrame to only include rows with valid product names and existing images.
+    """Filter the DataFrame to only include rows with valid product names and existing images.
     
-    Args:
-        df (pd.DataFrame): DataFrame containing the 'Pid' and 'Name' columns
-        
-    Returns:
-        pd.DataFrame: Filtered DataFrame containing only rows with valid products
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing the 'Pid' and 'Name' columns.
+    
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered DataFrame containing only rows with valid products.
     """
     # Get the list of Pids from the DataFrame
     pids = df['Pid'].tolist()
@@ -249,18 +296,31 @@ def filter_valid_products(df):
     return filtered_df
 
 def process_batch(batch_df, batch_num, output_zip_path, total_batches, image_dir="data/images"):
-    """
-    Process a single batch of images and create a zip file.
+    """Process a single batch of images and create a zip file.
     
-    Args:
-        batch_df (pd.DataFrame): DataFrame containing the batch of images to process
-        batch_num (int): Current batch number
-        output_zip_path (str): Base path where the zip files should be saved
-        total_batches (int): Total number of batches being processed
-        image_dir (str): Directory containing the product images
+    Parameters
+    ----------
+    batch_df : pandas.DataFrame
+        DataFrame containing the batch of images to process.
+    batch_num : int
+        Current batch number.
+    output_zip_path : str
+        Base path where the zip files should be saved.
+    total_batches : int
+        Total number of batches being processed.
+    image_dir : str, optional
+        Directory containing the product images, by default "data/images".
     
-    Returns:
-        tuple: (successful_copies, failed_copies, batch_zip_path)
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - successful_copies : int
+            Number of successfully copied images.
+        - failed_copies : int
+            Number of failed image copies.
+        - batch_zip_path : str
+            Path to the created zip file.
     """
     try:
         batch_zip_path = output_zip_path.replace('.zip', f'_batch_{batch_num + 1}.zip')
@@ -305,15 +365,21 @@ def process_batch(batch_df, batch_num, output_zip_path, total_batches, image_dir
         return 0, len(batch_df), None
 
 def zip_product_images(df, output_zip_path="product_images.zip", batch_size=100000, image_dir="data/images"):
-    """
-    Creates multiple zip files containing product images from the filtered DataFrame,
-    with each zip file containing up to batch_size images. Processes batches in parallel.
+    """Create multiple zip files containing product images from the filtered DataFrame.
     
-    Args:
-        df (pd.DataFrame): Filtered DataFrame containing valid 'Pid' values
-        output_zip_path (str): Base path where the zip files should be saved
-        batch_size (int): Number of images per zip file (default: 100,000)
-        image_dir (str): Directory containing the product images
+    Creates multiple zip files, with each zip file containing up to batch_size images.
+    Processes batches in parallel.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Filtered DataFrame containing valid 'Pid' values.
+    output_zip_path : str, optional
+        Base path where the zip files should be saved, by default "product_images.zip".
+    batch_size : int, optional
+        Number of images per zip file, by default 100000.
+    image_dir : str, optional
+        Directory containing the product images, by default "data/images".
     """
     # Verify image directory exists
     if not os.path.exists(image_dir):
