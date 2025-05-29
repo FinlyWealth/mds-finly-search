@@ -2,12 +2,28 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-## Setup Instructions - User
+Use **Setup Instructions - Docker Containers** to run the application. Use the **Setup Instructions - Makefile** if running preprocessing scripts or experiments. 
+
+## Setup Instructions - Docker Containers
 
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
 - Git (optional, for cloning the repo)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
+
+### Google Cloud Setup
+1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+2. Ensure you've been granted access to Google Cloud from the repo admin
+3. Run the following commands to set up and start the proxy:
+
+```bash
+# If running for the first time, this will setup and run the proxy
+make proxy-setup
+
+# Use the following to start the proxy after a reboot
+make proxy
+```
 
 ### Step 1
 Clone the repository
@@ -42,7 +58,7 @@ docker compose build
 This step may take several minutes as it downloads and builds all required dependencies.
 
 ### Step 4
-Start the application:
+Ensure `make proxy` is running. Start the application in a second terminal:
 
 ```bash
 docker compose up
@@ -52,7 +68,7 @@ The application will start two services:
 - Frontend: Access the search interface at http://localhost:8501
 - Backend API: Running at http://localhost:5001
 
-## Setup Instructions - Developer
+## Setup Instructions - Makefile
 
 ### Step 1. Setup Python environment and environment variables
 
