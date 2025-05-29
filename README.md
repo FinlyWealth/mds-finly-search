@@ -18,6 +18,22 @@ cd mds-finly-search
 ```
 
 ### Step 2
+Create a `.env` file in the root directory with the following content:
+
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=
+```
+
+### Step 3
 Build the Docker containers:
 
 ```bash
@@ -25,7 +41,7 @@ docker compose build
 ```
 This step may take several minutes as it downloads and builds all required dependencies.
 
-### Step 3
+### Step 4
 Start the application:
 
 ```bash
