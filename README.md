@@ -11,8 +11,8 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
-- Git (optional, for cloning the repo)
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
+- Git (optional, for cloning the repo)
 
 ### Google Cloud Setup
 1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
@@ -23,8 +23,11 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 # If running for the first time, this will setup and run the proxy
 make proxy-setup
 
-# Use the following to start the proxy after a reboot
+# Use the following to start the proxy
 make proxy
+
+# Run the folloowing to free up the port once the proxy is no longer needed
+make clean
 ```
 
 ### Step 1. Clone the Repository
