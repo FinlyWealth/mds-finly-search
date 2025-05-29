@@ -2,7 +2,9 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-Use **Setup Instructions - Docker Containers** to run the application. Use the **Setup Instructions - Makefile** if running preprocessing scripts or experiments. 
+Use **Setup Instructions - Docker Containers** to run the application.
+
+Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
 
 ## Setup Instructions - Docker Containers
 
@@ -25,16 +27,16 @@ make proxy-setup
 make proxy
 ```
 
-### Step 1
-Clone the repository
+### Step 1. Clone the Repository
+First, you'll need to get a copy of the codebase on your local machine.
 
 ```bash
 git clone FinlyWealth/mds-finly-search
 cd mds-finly-search
 ```
 
-### Step 2
-Create a `.env` file in the root directory with the following content:
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access.
 
 ```bash
 # Database configuration
@@ -49,16 +51,16 @@ PGTABLE=products_1M
 OPENAI_API_KEY=
 ```
 
-### Step 3
-Build the Docker containers:
+### Step 3. Build Docker Containers
+Create the Docker images for both frontend and backend services.
 
 ```bash
 docker compose build
 ```
 This step may take several minutes as it downloads and builds all required dependencies.
 
-### Step 4
-Ensure `make proxy` is running. Start the application in a second terminal:
+### Step 4. Start the Application
+Launch the application services and ensure the database proxy is running.
 
 ```bash
 docker compose up
