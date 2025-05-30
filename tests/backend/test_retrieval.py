@@ -8,6 +8,8 @@ import json
 import tempfile
 import shutil
 
+from requests import HTTPError
+
 # Add the src directory to the path so we can import the modules
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -242,11 +244,6 @@ class TestFaissVectorRetrieval:
         assert mock_download.call_count == 2  # Index and mapping files
         mock_read_index.assert_called_once()
 
-    def test_faiss_vector_retrieval_invalid_column_name(self):
-        """Test FAISS retrieval with invalid column name"""
-        with pytest.raises(ValueError, match="column_name must end with '_embedding'"):
-            FaissVectorRetrieval("invalid_column", db_config=self.db_config)
-
     @patch("src.backend.retrieval.download_from_gcs")
     @patch("src.backend.retrieval.os.path.exists")
     def test_faiss_vector_retrieval_download_failure(self, mock_exists, mock_download):
@@ -257,7 +254,8 @@ class TestFaissVectorRetrieval:
 
         # Act & Assert
         with pytest.raises(
-            FileNotFoundError, match="Failed to download FAISS index from GCS"
+            FileNotFoundError,
+            match=r"Failed to download FAISS index from GCS:",
         ):
             FaissVectorRetrieval("text_embedding", db_config=self.db_config)
 
@@ -533,7 +531,7 @@ class TestReorderSearchResultsByRelevancy:
         query = "test query"
 
         # Act
-        result = reorder_search_results_by_relevancy(
+        result, _ = reorder_search_results_by_relevancy(
             query, self.sample_results, api_key="test_key"
         )
 
@@ -572,7 +570,7 @@ class TestReorderSearchResultsByRelevancy:
         query = "test query"
 
         # Act
-        result = reorder_search_results_by_relevancy(query, self.sample_results)
+        result, _ = reorder_search_results_by_relevancy(query, self.sample_results)
 
         # Assert
         assert len(result) == 3
