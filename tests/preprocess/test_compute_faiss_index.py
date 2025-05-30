@@ -6,7 +6,7 @@ import json
 from unittest.mock import patch, mock_open, MagicMock
 import sys
 import psutil
-from preprocess.compute_faiss_index import (
+from src.preprocess.compute_faiss_index import (
     get_memory_usage,
     load_embeddings_from_files,
     create_faiss_index,
@@ -36,30 +36,34 @@ def test_get_memory_usage():
 
 @patch('os.listdir')
 @patch('numpy.load')
-def test_load_embeddings_from_files(mock_np_load, mock_listdir):
+def test_load_embeddings_from_files(mock_np_load, mock_listdir, mock_npz_data):
     """Test loading embeddings from NPZ files"""
     # Mock directory listing
     mock_listdir.return_value = ['test_embeddings_chunk_0.npz']
     
     # Mock NPZ file loading
-    mock_np_load.return_value = mock_npz_data()
+    mock_np_load.return_value = mock_npz_data
     
     # Mock file path
     with patch('os.path.join', return_value='dummy/path'):
         with patch('os.path.exists', return_value=True):
             embeddings_data = load_embeddings_from_files()
     
-    assert 'test' in embeddings_data
-    assert 'pids' in embeddings_data['test']
-    assert 'embeddings' in embeddings_data['test']
-    assert 'dim' in embeddings_data['test']
-    assert embeddings_data['test']['dim'] == 128
+    assert 'test_embeddings' in embeddings_data
+    assert 'pids' in embeddings_data['test_embeddings']
+    assert 'embeddings' in embeddings_data['test_embeddings']
+    assert 'dim' in embeddings_data['test_embeddings']
+    assert embeddings_data['test_embeddings']['dim'] == 128
 
 def test_create_faiss_index():
     """Test FAISS index creation"""
     nlist = 10
+    # Normalize embeddings for cosine similarity
+    normalized_embeddings = SAMPLE_EMBEDDINGS.copy()
+    faiss.normalize_L2(normalized_embeddings)
+    
     index, pid_map = create_faiss_index(
-        SAMPLE_EMBEDDINGS,
+        normalized_embeddings,
         SAMPLE_PIDS,
         embedding_dim=128,
         nlist=nlist,
@@ -68,7 +72,9 @@ def test_create_faiss_index():
     
     assert isinstance(index, faiss.Index)
     assert len(pid_map) == len(SAMPLE_PIDS)
-    assert all(str(i) in pid_map for i in range(len(SAMPLE_PIDS)))
+    # Check that each index maps to the correct PID
+    for i, pid in enumerate(SAMPLE_PIDS):
+        assert pid_map[i] == pid
 
 def test_verify_index():
     """Test index verification"""
@@ -100,7 +106,14 @@ def test_save_mapping(mock_file):
     mapping = create_index_mapping(SAMPLE_PIDS)
     save_mapping(mapping, 'test_mapping.json')
     mock_file.assert_called_once_with('test_mapping.json', 'w')
-    mock_file().write.assert_called_once()
+    
+    # Get all write calls and join them to get the complete JSON string
+    write_calls = mock_file().write.call_args_list
+    json_str = ''.join(call[0][0] for call in write_calls)
+    
+    # Verify the content is valid JSON and matches our mapping
+    loaded_mapping = json.loads(json_str)
+    assert loaded_mapping == mapping
 
 @pytest.mark.parametrize("compressed", [True, False])
 def test_create_faiss_index_compression(compressed):

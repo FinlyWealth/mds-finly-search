@@ -12,7 +12,7 @@ import glob
 from dotenv import load_dotenv
 import time
 import pickle
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.db import DB_CONFIG, TABLE_NAME
 from config.path import METADATA_PATH, EMBEDDINGS_PATH
 

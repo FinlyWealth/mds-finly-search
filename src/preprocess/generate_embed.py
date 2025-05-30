@@ -12,7 +12,7 @@ import os
 import sys
 import multiprocessing
 from functools import partial
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.path import METADATA_PATH, EMBEDDINGS_PATH
 
 CHUNK_SIZE = 500_000  # Process 500k rows at a time

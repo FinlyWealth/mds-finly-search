@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 # Import the functions to test
-from preprocess.generate_embed import (
+from src.preprocess.generate_embed import (
     save_embeddings,
     calculate_image_clip_embeddings,
     calculate_text_clip_embeddings,
@@ -66,78 +66,78 @@ def test_concatenate_embeddings():
     assert np.array_equal(result[:, :512], image_embeddings)
     assert np.array_equal(result[:, 512:], text_embeddings)
 
+@pytest.mark.slow
 @patch('PIL.Image.open')
 def test_calculate_image_clip_embeddings(mock_image_open, sample_data):
-    """Test image CLIP embedding calculation."""
-    # Mock image and model
-    mock_image = Mock()
-    mock_image.convert.return_value = mock_image
-    mock_image_open.return_value = mock_image
-    
-    mock_model = Mock()
-    mock_processor = Mock()
-    mock_model.get_image_features.return_value = torch.randn(1, 512)
-    
-    # Create temporary image files
-    with tempfile.TemporaryDirectory() as temp_dir:
-        for pid in sample_data['Pid']:
-            Path(f"{temp_dir}/{pid}.jpeg").touch()
-        
-        # Calculate embeddings
+    """Test image CLIP embedding calculation with real model and processor."""
+    import torch
+    from transformers import AutoModel, AutoProcessor
+    device = 'cpu'
+    model = AutoModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    model.eval()
+
+    # Mock image open to avoid actual file I/O
+    from PIL import Image
+    dummy_image = Image.new('RGB', (224, 224))
+    mock_image_open.return_value = dummy_image
+
+    # Create data/images directory if it doesn't exist
+    os.makedirs('data/images', exist_ok=True)
+    for pid in sample_data['Pid']:
+        Path(f"data/images/{pid}.jpeg").touch()
+    try:
         embeddings, valid_indices = calculate_image_clip_embeddings(
             sample_data,
-            mock_model,
-            mock_processor,
-            device="cpu",
+            model,
+            processor,
+            device=device,
             batch_size=1
         )
-        
-        # Verify results
         assert len(embeddings) > 0
         assert len(valid_indices) > 0
-        assert mock_model.get_image_features.called
+    finally:
+        for pid in sample_data['Pid']:
+            os.remove(f"data/images/{pid}.jpeg")
+        os.rmdir('data/images')
 
+@pytest.mark.slow
 def test_calculate_text_clip_embeddings(sample_data):
-    """Test text CLIP embedding calculation."""
-    # Mock model and processor
-    mock_model = Mock()
-    mock_processor = Mock()
-    mock_model.get_text_features.return_value = torch.randn(1, 512)
-    
-    # Calculate embeddings
+    """Test text CLIP embedding calculation with real model and processor."""
+    import torch
+    from transformers import AutoModel, AutoProcessor
+    device = 'cpu'
+    model = AutoModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    model.eval()
     embeddings, product_ids = calculate_text_clip_embeddings(
         sample_data,
-        mock_model,
-        mock_processor,
-        device="cpu",
+        model,
+        processor,
+        device=device,
         batch_size=1
     )
-    
-    # Verify results
     assert len(embeddings) == len(sample_data)
     assert len(product_ids) == len(sample_data)
-    assert mock_model.get_text_features.called
 
+@pytest.mark.slow
 def test_calculate_minilm_embeddings(sample_data):
-    """Test MiniLM embedding calculation."""
-    # Mock model and tokenizer
-    mock_model = Mock()
-    mock_tokenizer = Mock()
-    mock_model.return_value.last_hidden_state = torch.randn(1, 10, 512)
-    
-    # Calculate embeddings
+    """Test MiniLM embedding calculation with real model and tokenizer."""
+    import torch
+    from transformers import AutoModel, AutoTokenizer
+    device = 'cpu'
+    model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2").to(device)
+    tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    model.eval()
     embeddings, product_ids = calculate_minilm_embeddings(
         sample_data,
-        mock_model,
-        mock_tokenizer,
-        device="cpu",
+        model,
+        tokenizer,
+        device=device,
         batch_size=1
     )
-    
-    # Verify results
     assert len(embeddings) == len(sample_data)
     assert len(product_ids) == len(sample_data)
-    assert mock_model.called
 
 @patch('os.path.exists')
 def test_filter_valid_products(mock_exists, sample_data):

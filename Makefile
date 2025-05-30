@@ -5,17 +5,17 @@ all: proxy-setup run
 
 # Individual preprocessing targets
 embed:
-	python preprocess/generate_embed.py
+	python src/preprocess/generate_embed.py
 
 db-setup:
 	chmod +x scripts/setup_local_db.sh
 	./scripts/setup_local_db.sh
 
 db-load:
-	python preprocess/load_db.py
+	python src/preprocess/load_db.py
 
 faiss:
-	python preprocess/compute_faiss_index.py
+	python src/preprocess/compute_faiss_index.py
 
 # Run experiments and track results on MLflow
 experiments:

@@ -6,7 +6,12 @@ import sys
 import psutil
 import gc
 from tqdm import tqdm
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import time
+from pathlib import Path
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from config.path import EMBEDDINGS_PATH
 
 # FAISS configuration
 N_LIST_VALUES = [int(x) for x in os.getenv('FAISS_NLIST', '100').split(',')]  # Accept comma-separated list of nlist values
@@ -21,11 +26,10 @@ def get_memory_usage():
     float
         Current memory usage in gigabytes.
     """
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss / 1024 / 1024 / 1024
+    return psutil.Process().memory_info().rss / 1024 / 1024 / 1024
 
 def load_embeddings_from_files():
-    """Load embeddings from NPZ files in the data/embeddings folder.
+    """Load embeddings from NPZ files in the embeddings folder.
     
     Returns
     -------
@@ -40,7 +44,7 @@ def load_embeddings_from_files():
     ValueError
         If no embedding NPZ files are found or no valid embeddings are found.
     """
-    embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'embeddings')
+    embeddings_dir = EMBEDDINGS_PATH
     
     embeddings_data = {}
     
@@ -57,7 +61,7 @@ def load_embeddings_from_files():
             embedding_groups[prefix].append(npz_file)
     
     if not embedding_groups:
-        raise ValueError("No embedding NPZ files found in the data/embeddings folder")
+        raise ValueError("No embedding NPZ files found in the embeddings folder")
     
     print(f"Found {len(embedding_groups)} embedding types to process...")
     
@@ -271,7 +275,7 @@ def save_mapping(mapping, filename):
 def main():
     """Main function to create and save FAISS indices for different embedding types."""
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indices')
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'faiss_indices')
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"Initial memory usage: {get_memory_usage():.2f} GB")

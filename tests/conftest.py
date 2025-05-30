@@ -5,8 +5,21 @@ import urllib.parse
 import numpy as np
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from preprocess import load_db
+from src.preprocess.load_db import (
+    get_base_embedding_type,
+    get_embedding_paths,
+    get_enabled_embedding_types,
+    get_chunked_files,
+    validate_numeric,
+    validate_boolean,
+    validate_text,
+    validate_and_clean_dataframe,
+    save_checkpoint,
+    load_checkpoint,
+    insert_data,
+    init_db,
+    main
+)
 import numpy as np
 
 @pytest.fixture(scope="module")
