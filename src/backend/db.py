@@ -1,14 +1,13 @@
-from typing import Dict, List
 import psycopg2
 import os
 import sys
-
+from typing import Dict, List
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from config.db import DB_CONFIG, TABLE_NAME
+import config.db
 
 
 def get_db_connection():
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(**config.db.DB_CONFIG)
 
 
 def fetch_products_by_pids(pids):
@@ -32,7 +31,7 @@ def fetch_products_by_pids(pids):
     cur.execute(
         f"""
         SELECT Pid, Name, Description, Brand, Category, Color, Gender, Size, Price
-        FROM {TABLE_NAME} WHERE Pid IN ({pid_list})
+        FROM {config.db.TABLE_NAME} WHERE Pid IN ({pid_list})
     """
     )
 

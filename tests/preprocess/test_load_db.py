@@ -5,6 +5,8 @@ import pandas as pd
 from unittest.mock import MagicMock
 import sys
 import os
+import time
+from src.preprocess import load_db
 from src.preprocess.load_db import (
     get_base_embedding_type,
     get_embedding_paths,
@@ -88,6 +90,19 @@ def sample_metadata_df():
 def get_enabled_embedding_types():
     return ['fusion']
 
+def wait_for_db(container_config, max_retries=5, delay=2):
+    """Wait for database to be ready with retries"""
+    for i in range(max_retries):
+        try:
+            conn = psycopg2.connect(**container_config)
+            conn.close()
+            return True
+        except psycopg2.OperationalError:
+            if i < max_retries - 1:
+                time.sleep(delay)
+            continue
+    return False
+
 def test_init_db(monkeypatch, pg_container, pg_conn):
     """
     Test the `init_db` function to ensure the database and required tables are created correctly.
@@ -103,11 +118,15 @@ def test_init_db(monkeypatch, pg_container, pg_conn):
         pg_container (dict): Dictionary containing dynamic connection parameters for the test Postgres container.
         pg_conn (psycopg2.connection): A live connection to the test Postgres instance for verification queries.
     """
+    # Wait for database to be ready
+    assert wait_for_db(pg_container), "Database failed to become ready"
+    
+    # Print connection details for debugging
+    print(f"Container config: {pg_container}")
+    
     # Patch config.db.DB_CONFIG and TABLE_NAME to test container values
     monkeypatch.setattr('config.db.DB_CONFIG', pg_container)
     monkeypatch.setattr('config.db.TABLE_NAME', TABLE_NAME)
-
-    # Also patch get_enabled_embedding_types if needed inside your module
     monkeypatch.setattr('src.preprocess.load_db.get_enabled_embedding_types', get_enabled_embedding_types)
 
     # Now call init_db, it uses the patched config.db values
