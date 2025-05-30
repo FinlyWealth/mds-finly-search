@@ -18,7 +18,7 @@ sys.path.insert(0, str(root_dir / "preprocess"))
 
 from embedding import generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
-import config.db
+from config.db import DB_CONFIG, TABLE_NAME
 from config.path import MLFLOW_TRACKING_URI, BENCHMARK_QUERY_CSV
 
 def load_configs(config_path):
@@ -72,7 +72,7 @@ def run_experiment(config, db_config=None):
         
         mlflow.log_params({
             "benchmark": benchmark_file,
-            "table": config.db.TABLE_NAME,
+            "table": TABLE_NAME,
             "top_k": TOP_K,
             "faiss_nlist": next((c.index.nlist for c in components if isinstance(c, FaissVectorRetrieval)), None),
             **component_weights,
@@ -175,7 +175,7 @@ def main():
         mlflow.set_experiment(experiment_name)
         
         for config in experiment_configs:
-            run_experiment(config, db_config=config.db.DB_CONFIG)
+            run_experiment(config, db_config=DB_CONFIG)
 
 if __name__ == "__main__":
     main() 
