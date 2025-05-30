@@ -26,13 +26,9 @@ jobs:
         environment-file: environment.yaml
         auto-activate-base: false
         
-    - name: Install pytest-cov
-      run: |
-        conda install -c conda-forge pytest-cov
-        
     - name: Run tests with coverage
       run: |
-        pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+        python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
         
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
