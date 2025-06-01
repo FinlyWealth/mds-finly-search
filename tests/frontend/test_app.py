@@ -60,13 +60,15 @@ def test_load_image_from_url(mock_get):
 
 def test_load_image_from_local():
     """Test loading image from local path"""
+    import tempfile
+    
     # Create a temporary test image
     test_image = Image.new('RGB', (100, 100))
-    test_path = "test_image.png"
     
-    # Save and explicitly close the image
-    with open(test_path, 'wb') as f:
-        test_image.save(f)
+    # Create a temporary file that will be automatically cleaned up
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+        test_path = temp_file.name
+        test_image.save(test_path)
     
     try:
         image = load_image(test_path)
@@ -75,9 +77,7 @@ def test_load_image_from_local():
     finally:
         # Clean up
         if os.path.exists(test_path):
-            import time
-            time.sleep(0.1)  # Small delay to ensure file is released
-            os.remove(test_path)
+            os.unlink(test_path)  # Use unlink instead of remove
 
 @patch('requests.post')
 def test_submit_feedback(mock_post):
