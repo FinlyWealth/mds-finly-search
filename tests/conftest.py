@@ -5,9 +5,8 @@ import urllib.parse
 import numpy as np
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from preprocess import load_db
-
+from src.preprocess import load_db
+import numpy as np
 
 @pytest.fixture(scope="module")
 def pg_container():
@@ -31,6 +30,32 @@ def pg_conn(pg_container):
     conn = psycopg2.connect(**pg_container)
     yield conn
     conn.close()
+
+@pytest.fixture(scope="session")
+def sample_embeddings():
+    """Create sample embeddings for testing"""
+    return np.random.rand(100, 128).astype(np.float32)
+
+@pytest.fixture(scope="session")
+def sample_pids():
+    """Create sample product IDs for testing"""
+    return [f"pid_{i}" for i in range(100)]
+
+@pytest.fixture(scope="session")
+def test_data_dir(tmp_path_factory):
+    """Create a temporary directory for test data"""
+    return tmp_path_factory.mktemp("test_data")
+
+@pytest.fixture(scope="session")
+def mock_npz_file(test_data_dir, sample_embeddings, sample_pids):
+    """Create a mock NPZ file for testing"""
+    npz_path = test_data_dir / "test_embeddings_chunk_0.npz"
+    np.savez(
+        npz_path,
+        product_ids=sample_pids,
+        embeddings=sample_embeddings
+    )
+    return str(npz_path) 
 
 
 @pytest.fixture

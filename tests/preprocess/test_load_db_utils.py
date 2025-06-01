@@ -7,8 +7,22 @@ import tempfile
 import time
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from preprocess import load_db
+from src.preprocess import load_db
+from src.preprocess.load_db import (
+    get_base_embedding_type,
+    get_embedding_paths,
+    get_enabled_embedding_types,
+    get_chunked_files,
+    validate_numeric,
+    validate_boolean,
+    validate_text,
+    validate_and_clean_dataframe,
+    save_checkpoint,
+    load_checkpoint,
+    insert_data,
+    init_db,
+    main
+)
 
 
 @pytest.mark.parametrize("filename, expected", [
@@ -32,7 +46,7 @@ def test_get_base_embedding_type(filename, expected):
     The function returns the correct base type by stripping '_embeddings',
     chunk suffixes like '_chunk_X', and file extensions.
     """
-    assert load_db.get_base_embedding_type(filename) == expected
+    assert get_base_embedding_type(filename) == expected
 
 
 def test_get_embedding_paths(fake_embeddings_dir):
@@ -53,7 +67,7 @@ def test_get_embedding_paths(fake_embeddings_dir):
     filenames, path = fake_embeddings_dir
     expected_keys = {"fusion", "image", "text"}
 
-    result = load_db.get_embedding_paths()
+    result = get_embedding_paths()
 
     assert set(result.keys()) == expected_keys
     for key, file_path in result.items():
@@ -80,7 +94,7 @@ def test_get_enabled_embedding_types(fake_embeddings_dir):
     filenames, _ = fake_embeddings_dir
 
     expected = ["fusion", "image", "text"]
-    result = load_db.get_enabled_embedding_types()
+    result = get_enabled_embedding_types()
 
     assert sorted(result) == sorted(expected)
 
@@ -101,14 +115,14 @@ def test_get_chunked_files_returns_sorted_chunks(fake_embeddings_dir):
     """
     filenames, path = fake_embeddings_dir
 
-    result = load_db.get_chunked_files("fusion")
+    result = get_chunked_files("fusion")
     expected_files = sorted([
         path / "fusion_embeddings_chunk_0.npz",
         path / "fusion_embeddings_chunk_1.npz"
     ], key=lambda p: int(re.search(r'chunk_(\d+)', p.name).group(1)))
     assert result == [str(p) for p in expected_files]
 
-    result = load_db.get_chunked_files("image")
+    result = get_chunked_files("image")
     expected_files = sorted([
         path / "image_embeddings_chunk_0.npz",
     ], key=lambda p: int(re.search(r'chunk_(\d+)', p.name).group(1)))
@@ -119,14 +133,14 @@ def test_get_chunked_files_returns_non_chunked(fake_embeddings_dir):
     """
     Test that get_chunked_files returns non-chunked file correctly when no chunks exist.
     """
-    result = load_db.get_chunked_files("text")
+    result = get_chunked_files("text")
     assert len(result) == 0
 
 def test_get_chunked_files_returns_empty_for_missing_type(fake_embeddings_dir):
     """
     Test that get_chunked_files returns an empty list when no files match the type.
     """
-    result = load_db.get_chunked_files("nonexistent")
+    result = get_chunked_files("nonexistent")
     assert result == []
 
 
@@ -160,7 +174,7 @@ def test_validate_numeric(value, expected, capsys):
     Captures and checks warning message if input is invalid.
     """
     field_name = "test_field"
-    result = load_db.validate_numeric(value, field_name)
+    result = validate_numeric(value, field_name)
     assert result == expected
 
     if expected is None and not pd.isna(value) and value != "":
@@ -190,7 +204,7 @@ def test_validate_boolean_simple(value, expected, capsys):
     capsys : fixture
         Pytest fixture to capture printed warnings for invalid inputs.
     """
-    result = load_db.validate_boolean(value, "test_field")
+    result = validate_boolean(value, "test_field")
     assert result == expected
 
     if expected is None and not (pd.isna(value) or value == ''):
@@ -233,7 +247,7 @@ def test_validate_text(value, expected, expect_warning, capsys):
     Captures and checks warning message if input is invalid.
     """
     field_name = "test_field"
-    result = load_db.validate_text(value, field_name)
+    result = validate_text(value, field_name)
     assert result == expected
 
     captured = capsys.readouterr()
@@ -279,7 +293,7 @@ def test_validate_and_clean_dataframe(capsys):
     })
 
     # Run validation and cleaning
-    cleaned_df = load_db.validate_and_clean_dataframe(df)
+    cleaned_df = validate_and_clean_dataframe(df)
 
     # Capture printed output
     captured = capsys.readouterr()
@@ -327,14 +341,14 @@ def test_save_checkpoint(monkeypatch, capsys):
         tmp_path = tmp.name
 
     # Monkeypatch the global CHECKPOINT_FILE used in the function
-    monkeypatch.setattr(load_db, "CHECKPOINT_FILE", tmp_path)
+    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
 
     batch_number = 5
     total_batches = 20
     before = time.time()
 
     # Call the function
-    load_db.save_checkpoint(batch_number, total_batches)
+    save_checkpoint(batch_number, total_batches)
 
     # Capture print output
     captured = capsys.readouterr()
@@ -384,8 +398,8 @@ def test_load_checkpoint(monkeypatch, capsys):
         with open(tmp_path, 'wb') as f:
             pickle.dump(checkpoint_data, f)
 
-    monkeypatch.setattr(load_db, "CHECKPOINT_FILE", tmp_path)
-    batch_number, total_batches = load_db.load_checkpoint()
+    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
+    batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert batch_number == 3
     assert total_batches == 10
@@ -394,8 +408,8 @@ def test_load_checkpoint(monkeypatch, capsys):
     os.remove(tmp_path)
 
     # 2. Test with no checkpoint file
-    monkeypatch.setattr(load_db, "CHECKPOINT_FILE", tmp_path)  # Same path, now deleted
-    batch_number, total_batches = load_db.load_checkpoint()
+    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)  # Same path, now deleted
+    batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert (batch_number, total_batches) == (0, None)
     assert "Loaded checkpoint" not in captured.out  # Should not print anything on missing file
@@ -403,8 +417,8 @@ def test_load_checkpoint(monkeypatch, capsys):
     # 3. Test with corrupt file
     with open(tmp_path, 'wb') as f:
         f.write(b"not a pickle")
-    monkeypatch.setattr(load_db, "CHECKPOINT_FILE", tmp_path)
-    batch_number, total_batches = load_db.load_checkpoint()
+    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
+    batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert (batch_number, total_batches) == (0, None)
     assert "Error loading checkpoint:" in captured.out

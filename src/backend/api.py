@@ -25,7 +25,7 @@ from src.backend.retrieval import (
 )
 from src.backend.db import fetch_products_by_pids
 from collections import Counter
-from config.db import DB_CONFIG, TABLE_NAME
+import config.db
 from psycopg2.extras import Json
 
 # Configure logging
@@ -76,14 +76,14 @@ def initialize_app():
     try:
         # Create retrieval components with database config
         components = [
-            create_retrieval_component(comp, DB_CONFIG) for comp in components_config
+            create_retrieval_component(comp, config.db.DB_CONFIG) for comp in components_config
         ]
         # Initialize spaCy
         nlp = spacy.load("en_core_web_sm")
 
         # Print database connection details
-        logger.info(f"Connecting to database: {DB_CONFIG['dbname']}")
-        logger.info(f"Table: {TABLE_NAME}")
+        logger.info(f"Connecting to database: {config.db.DB_CONFIG['dbname']}")
+        logger.info(f"Table: {config.db.TABLE_NAME}")
 
         # Print components configuration
         logger.info("\nInitialized retrieval components:")
@@ -112,9 +112,9 @@ def initialize_app():
 
         # Test database connection
         logger.info("Testing database connection...")
-        conn = psycopg2.connect(**DB_CONFIG)
+        conn = psycopg2.connect(**config.db.DB_CONFIG)
         cur = conn.cursor()
-        cur.execute(f"SELECT 1 FROM {TABLE_NAME} LIMIT 1")
+        cur.execute(f"SELECT 1 FROM {config.db.TABLE_NAME} LIMIT 1")
         cur.close()
         conn.close()
         initialization_status["database"] = True
@@ -379,7 +379,7 @@ def submit_feedback():
 
         try:
             # Store feedback in database
-            conn = psycopg2.connect(**DB_CONFIG)
+            conn = psycopg2.connect(**config.db.DB_CONFIG)
             cur = conn.cursor()
 
             # First check if a row exists for this session_id

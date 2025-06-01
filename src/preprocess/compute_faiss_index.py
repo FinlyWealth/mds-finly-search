@@ -6,7 +6,12 @@ import sys
 import psutil
 import gc
 from tqdm import tqdm
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import time
+from pathlib import Path
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from config.path import EMBEDDINGS_PATH
 
 # FAISS configuration
 N_LIST_VALUES = [int(x) for x in os.getenv('FAISS_NLIST', '100').split(',')]  # Accept comma-separated list of nlist values
@@ -14,13 +19,32 @@ BATCH_SIZE = int(os.getenv('BATCH_SIZE', '10000'))  # Default batch size for dat
 COMPRESSED = os.getenv('COMPRESSED', 'false').lower() == 'true'  # Whether to use scalar quantization
 
 def get_memory_usage():
-    """Get current memory usage in GB"""
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss / 1024 / 1024 / 1024
+    """Get current memory usage in GB.
+    
+    Returns
+    -------
+    float
+        Current memory usage in gigabytes.
+    """
+    return psutil.Process().memory_info().rss / 1024 / 1024 / 1024
 
 def load_embeddings_from_files():
-    """Load embeddings from NPZ files in the data/embeddings folder"""
-    embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'embeddings')
+    """Load embeddings from NPZ files in the embeddings folder.
+    
+    Returns
+    -------
+    dict
+        Dictionary containing embedding data for each type, with keys:
+        - 'pids': List of product IDs
+        - 'embeddings': numpy.ndarray of embeddings
+        - 'dim': int, dimension of the embeddings
+    
+    Raises
+    ------
+    ValueError
+        If no embedding NPZ files are found or no valid embeddings are found.
+    """
+    embeddings_dir = EMBEDDINGS_PATH
     
     embeddings_data = {}
     
@@ -37,7 +61,7 @@ def load_embeddings_from_files():
             embedding_groups[prefix].append(npz_file)
     
     if not embedding_groups:
-        raise ValueError("No embedding NPZ files found in the data/embeddings folder")
+        raise ValueError("No embedding NPZ files found in the embeddings folder")
     
     print(f"Found {len(embedding_groups)} embedding types to process...")
     
@@ -83,10 +107,32 @@ def load_embeddings_from_files():
     return embeddings_data
 
 def create_faiss_index(embeddings, pids, embedding_dim, nlist, compressed=False):
-    """
-    Create a FAISS index with cosine similarity and explicit PID mapping
-    nlist: number of clusters for the IVF index
-    compressed: whether to use scalar quantization for compression
+    """Create a FAISS index with cosine similarity and explicit PID mapping.
+    
+    Parameters
+    ----------
+    embeddings : numpy.ndarray
+        Array of embeddings to index.
+    pids : list
+        List of product IDs corresponding to the embeddings.
+    embedding_dim : int
+        Dimension of the embeddings.
+    nlist : int
+        Number of clusters for the IVF index.
+    compressed : bool, optional
+        Whether to use scalar quantization for compression, by default False.
+    
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - faiss.Index: The trained FAISS index
+        - dict: Mapping from index positions to PIDs
+    
+    Raises
+    ------
+    ValueError
+        If there are not enough vectors to train the index.
     """
     print(f"Creating {'compressed' if compressed else 'uncompressed'} index with {len(embeddings)} vectors and nlist={nlist}...")
     
@@ -143,7 +189,22 @@ def create_faiss_index(embeddings, pids, embedding_dim, nlist, compressed=False)
     return index, idx_to_pid
 
 def verify_index(index, embeddings, pids):
-    """Verify that all embeddings are present in the index and mapped to correct PIDs."""
+    """Verify that all embeddings are present in the index and mapped to correct PIDs.
+    
+    Parameters
+    ----------
+    index : faiss.Index
+        The FAISS index to verify.
+    embeddings : numpy.ndarray
+        Array of embeddings to verify.
+    pids : list
+        List of product IDs corresponding to the embeddings.
+    
+    Returns
+    -------
+    bool
+        True if all embeddings are verified successfully, False otherwise.
+    """
     print(f"\nVerifying index with {len(embeddings)} embeddings...")
     mismatches = 0
     
@@ -172,21 +233,49 @@ def verify_index(index, embeddings, pids):
     return mismatches == 0
 
 def save_index(index, filename):
-    """Save the FAISS index to disk"""
+    """Save the FAISS index to disk.
+    
+    Parameters
+    ----------
+    index : faiss.Index
+        The FAISS index to save.
+    filename : str
+        Path where the index will be saved.
+    """
     faiss.write_index(index, filename)
 
 def create_index_mapping(pids):
-    """Create a mapping between index positions and PIDs"""
+    """Create a mapping between index positions and PIDs.
+    
+    Parameters
+    ----------
+    pids : list
+        List of product IDs.
+    
+    Returns
+    -------
+    dict
+        Dictionary mapping index positions to PIDs.
+    """
     return {str(i): pid for i, pid in enumerate(pids)}
 
 def save_mapping(mapping, filename):
-    """Save the index-to-PID mapping to disk"""
+    """Save the index-to-PID mapping to disk.
+    
+    Parameters
+    ----------
+    mapping : dict
+        Dictionary containing the index-to-PID mapping.
+    filename : str
+        Path where the mapping will be saved.
+    """
     with open(filename, 'w') as f:
         json.dump(mapping, f)
 
 def main():
+    """Main function to create and save FAISS indices for different embedding types."""
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'faiss_indices')
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'faiss_indices')
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"Initial memory usage: {get_memory_usage():.2f} GB")

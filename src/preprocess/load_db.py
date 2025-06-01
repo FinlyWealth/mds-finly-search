@@ -12,8 +12,8 @@ import glob
 from dotenv import load_dotenv
 import time
 import pickle
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config.db import DB_CONFIG, TABLE_NAME
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+import config.db
 from config.path import METADATA_PATH, EMBEDDINGS_PATH
 
 # Load environment variables
@@ -119,7 +119,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
         embedding_dims (dict): Dictionary mapping embedding types to their dimensions
         drop (bool): Whether to drop the existing table before creating a new one. Defaults to False.
     """
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(**config.db.DB_CONFIG)
     cur = conn.cursor()
     
     # Enable pgvector extension
@@ -127,7 +127,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
     
     # Drop the table if drop is True
     if drop:
-        cur.execute(f"DROP TABLE IF EXISTS {TABLE_NAME};")
+        cur.execute(f"DROP TABLE IF EXISTS {config.db.TABLE_NAME};")
     
     # Create embedding columns based on enabled types and their dimensions
     embedding_columns = []
@@ -137,7 +137,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
     
     # Create single products table with dynamic vector dimensions and metadata columns
     cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+        CREATE TABLE IF NOT EXISTS {config.db.TABLE_NAME} (
             id SERIAL PRIMARY KEY,
             Pid TEXT UNIQUE,
             {', '.join(embedding_columns)},
@@ -161,7 +161,7 @@ def init_db(embedding_dims: dict, drop: bool = False):
     
     # Create GIST index on the document tsvector column
     print("Creating GIST index on document column...")
-    cur.execute(f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_document ON {TABLE_NAME} USING GIST (document);")
+    cur.execute(f"CREATE INDEX IF NOT EXISTS idx_{config.db.TABLE_NAME}_document ON {config.db.TABLE_NAME} USING GIST (document);")
     
     conn.commit()
     cur.close()
@@ -414,14 +414,14 @@ def insert_data(embeddings_dict, pids, df):
             # Retry logic for database operations
             for retry in range(max_retries):
                 try:
-                    conn = psycopg2.connect(**DB_CONFIG)
+                    conn = psycopg2.connect(**config.db.DB_CONFIG)
                     cur = conn.cursor()
                     
                     # Use execute_values for bulk insert with VALUES clause
                     execute_values(
                         cur,
                         f"""
-                        INSERT INTO {TABLE_NAME} (
+                        INSERT INTO {config.db.TABLE_NAME} (
                             {', '.join(columns)}
                         ) 
                         SELECT 
@@ -508,10 +508,10 @@ def main():
     
     # Print database connection info
     print("\nDatabase Connection Info:")
-    print(f"Host: {DB_CONFIG['host']}")
-    print(f"Database: {DB_CONFIG['dbname']}")
-    print(f"User: {DB_CONFIG['user']}")
-    print(f"Port: {DB_CONFIG['port']}")
+    print(f"Host: {config.db.DB_CONFIG['host']}")
+    print(f"Database: {config.db.DB_CONFIG['dbname']}")
+    print(f"User: {config.db.DB_CONFIG['user']}")
+    print(f"Port: {config.db.DB_CONFIG['port']}")
     print("\n" + "="*50 + "\n")
     
     print("Loading metadata...")
