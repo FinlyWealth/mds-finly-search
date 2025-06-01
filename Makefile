@@ -55,3 +55,9 @@ clean:
 	@-pkill -f "cloud_sql_proxy" || true
 	rm -f report/capstone_proposal_report.pdf
 	rm -rf report/capstone_proposal_report_files
+	rm -f .coverage
+	rm -f coverage.xml
+	rm -rf .pytest_cache
+	rm -rf **/.pytest_cache
+	rm -rf **/__pycache__
+	rm -rf **/*.pyc

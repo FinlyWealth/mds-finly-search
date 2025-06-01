@@ -97,9 +97,9 @@ def test_calculate_image_clip_embeddings(mock_image_open, sample_data):
         assert len(embeddings) > 0
         assert len(valid_indices) > 0
     finally:
+        # Only remove the test image files, not the directory
         for pid in sample_data['Pid']:
             os.remove(f"data/images/{pid}.jpeg")
-        os.rmdir('data/images')
 
 @pytest.mark.slow
 def test_calculate_text_clip_embeddings(sample_data):

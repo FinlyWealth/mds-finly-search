@@ -63,7 +63,10 @@ def test_load_image_from_local():
     # Create a temporary test image
     test_image = Image.new('RGB', (100, 100))
     test_path = "test_image.png"
-    test_image.save(test_path)
+    
+    # Save and explicitly close the image
+    with open(test_path, 'wb') as f:
+        test_image.save(f)
     
     try:
         image = load_image(test_path)
@@ -72,6 +75,8 @@ def test_load_image_from_local():
     finally:
         # Clean up
         if os.path.exists(test_path):
+            import time
+            time.sleep(0.1)  # Small delay to ensure file is released
             os.remove(test_path)
 
 @patch('requests.post')
