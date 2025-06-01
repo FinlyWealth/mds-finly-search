@@ -74,6 +74,8 @@ def test_load_image_from_local():
         image = load_image(test_path)
         assert isinstance(image, Image.Image)
         assert image.size == (100, 100)
+        # Close the image to release the file handle
+        image.close()
     finally:
         # Clean up
         if os.path.exists(test_path):
