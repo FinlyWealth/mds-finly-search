@@ -1,15 +1,8 @@
 {
-    "1M_faiss_ts_optimization": [
+    "1M_faiss_fusion": [
         {
-            "name": "fusion_ts_faiss_nprobe_16",
+            "name": "tfidf",
             "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "fusion_embedding",
-                        "nprobe": 16
-                    }
-                },
                 {
                     "type": "TextSearchRetrieval",
                     "params": {
@@ -17,10 +10,10 @@
                     }
                 }
             ],
-            "weights": [0.5, 0.5]
+            "weights": [1]
         },
         {
-            "name": "fusion_ts_faiss_nprobe_32",
+            "name": "tfidf_fusion",
             "components": [
                 {
                     "type": "FaissVectorRetrieval",

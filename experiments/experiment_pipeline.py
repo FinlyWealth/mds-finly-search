@@ -160,7 +160,7 @@ def main():
 
     # Global settings
     global TOP_K, df
-    TOP_K = 5
+    TOP_K = 20
 
     # Load benchmark data
     print(f"Loading benchmark dataset from: {BENCHMARK_QUERY_CSV}")
