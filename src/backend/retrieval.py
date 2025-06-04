@@ -340,7 +340,7 @@ def reorder_search_results_by_relevancy(
     api_key: Optional[str] = None,
     model: str = "gpt-3.5-turbo",  # or a gemini model
     provider: str = "openai",  # can be 'openai' or 'gemini'
-    max_results: int = 20,
+    max_results: int = 30,
 ) -> tuple[List[Dict], str]:
     """
     Reorders search results based on relevancy to the query using an LLM via LangChain.
@@ -403,15 +403,7 @@ def reorder_search_results_by_relevancy(
                 temperature=0,
             )
         parser = PydanticOutputParser(pydantic_object=ReorderOutput)
-        # 3. Build structured prompt
-        format_instructions = parser.get_format_instructions()
 
-        messages = [
-            SystemMessage(
-                content="You are a search relevancy expert that outputs JSON."
-            ),
-            HumanMessage(content=prompt),
-        ]
         prompt = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(
@@ -431,15 +423,29 @@ def reorder_search_results_by_relevancy(
         provided_indices = set(reordered_indices)
 
         if expected_indices != provided_indices:
-            logger.warning("Invalid indices provided by LLM. Using original order.")
-            return search_results, "Using original order due to invalid indices from LLM"
+            logger.warning("Provided indices by LLM less than expected.")
+            logger.warning(f"Expected indices: {expected_indices}")
+            logger.warning(f"Provided indices: {provided_indices}")
 
         reordered_results = []
+        # Track which indices we've processed
+        processed_indices = set()
+        
+        # First add results for the indices provided by the LLM
         for index in result.reordered_indices:
             pid = pid_tracker[index]
             reordered_results += [
                 result for result in search_results if result["Pid"] == pid
             ]
+            processed_indices.add(index)
+        
+        # Add any missing indices at the end
+        for i in range(len(results_to_process)):
+            if i not in processed_indices:
+                pid = pid_tracker[i]
+                reordered_results += [
+                    result for result in search_results if result["Pid"] == pid
+                ]
 
         if len(search_results) > max_results:
             reordered_results.extend(search_results[max_results:])

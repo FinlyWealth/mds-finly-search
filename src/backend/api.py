@@ -282,7 +282,7 @@ def search():
             weights = [0.5, 0, 0.5]
         elif query_text:
             # Text-only search: Use fusion_embedding (CLIP text + MiniLM text) and text search
-            weights = [0, 0, 1]
+            weights = [0.5, 0, 0.5]
         else:
             # Image-only search: Use only image_clip_embedding
             weights = [0, 1, 0]  # 100% image CLIP embedding
