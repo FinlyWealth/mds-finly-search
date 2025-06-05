@@ -17,9 +17,10 @@ sys.path.insert(0, str(root_dir / "src" / "backend"))
 sys.path.insert(0, str(root_dir / "preprocess"))
 
 from embedding import generate_embedding
-from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval
+from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval, reorder_search_results_by_relevancy
 from config.db import DB_CONFIG, TABLE_NAME
 from config.path import MLFLOW_TRACKING_URI, BENCHMARK_QUERY_CSV
+from api import format_results
 
 def load_configs(config_path):
     """Load experiment configurations from JSON file."""
@@ -105,13 +106,25 @@ def run_experiment(config, db_config=None):
                     
                     # Generate embedding and run hybrid search
                     query_embedding = generate_embedding(query_text=query)
-                    pids, _ = hybrid_retrieval(
+                    pids, scores = hybrid_retrieval(
                         query=query,
                         query_embedding=query_embedding,
                         components=components,
                         weights=config['weights'],
-                        top_k=TOP_K
+                        top_k=40
                     )
+                    
+                    # Format results using the existing function
+                    formatted_results = format_results(pids, scores)
+                    
+                    # Reorder results if we have text queries and API keys
+                    if query and (os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY")):
+                        reordered_results, _ = reorder_search_results_by_relevancy(
+                            query=query,
+                            search_results=formatted_results
+                        )
+                        # Extract PIDs from reordered results
+                        pids = [result['Pid'] for result in reordered_results]
                     
                     # Check if the ground truth Pid is in the results
                     hit = target_pid in pids

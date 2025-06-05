@@ -1,19 +1,7 @@
 {
     "1M_faiss_fusion": [
         {
-            "name": "tfidf",
-            "components": [
-                {
-                    "type": "TextSearchRetrieval",
-                    "params": {
-                        "rank_method": "ts_rank_cd"
-                    }
-                }
-            ],
-            "weights": [1]
-        },
-        {
-            "name": "tfidf_fusion",
+            "name": "tfidf_fusion_gpt3.5_turbo",
             "components": [
                 {
                     "type": "FaissVectorRetrieval",
