@@ -1,26 +1,7 @@
 {
-    "1M_faiss_ts_optimization": [
+    "1M_faiss_fusion": [
         {
-            "name": "fusion_ts_faiss_nprobe_16",
-            "components": [
-                {
-                    "type": "FaissVectorRetrieval",
-                    "params": {
-                        "column_name": "fusion_embedding",
-                        "nprobe": 16
-                    }
-                },
-                {
-                    "type": "TextSearchRetrieval",
-                    "params": {
-                        "rank_method": "ts_rank_cd"
-                    }
-                }
-            ],
-            "weights": [0.5, 0.5]
-        },
-        {
-            "name": "fusion_ts_faiss_nprobe_32",
+            "name": "tfidf_fusion_gpt3.5_turbo",
             "components": [
                 {
                     "type": "FaissVectorRetrieval",

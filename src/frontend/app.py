@@ -137,26 +137,6 @@ def wait_for_api_ready():
         
         time.sleep(1)
 
-# Function to load image from URL or local path
-def load_image(image_path):
-    try:
-        if image_path.startswith(('http://', 'https://')):
-            # Load image from URL
-            headers = {
-                "User-Agent": "Mozilla/5.0"
-            }
-            response = requests.get(image_path, headers=headers)
-            image = Image.open(BytesIO(response.content))
-        else:
-            # Normalize path separators for Windows compatibility
-            normalized_path = os.path.normpath(image_path)
-            # Load image from local file
-            image = Image.open(normalized_path)
-        return image
-    except Exception as e:
-        st.error(f"Error loading image: {e}")
-        return None
-
 # Function to display a product card
 def display_product_card(product, score):
     with st.container():
@@ -278,19 +258,19 @@ def main():
             on_change=lambda: st.session_state.update({"trigger_search": True}) if st.session_state.query_text else None
         )
         
-        # Combined image input
-        image_input = st.text_input(
-            "Enter image path or URL", 
-            placeholder="e.g., /path/to/image.jpg or https://example.com/image.jpg",
-            key="image_input",
-            on_change=lambda: st.session_state.update({"trigger_search": True}) if st.session_state.image_input else None
-        )
+        # Image upload
+        uploaded_file = st.file_uploader("Upload an image", type=['jpg', 'jpeg', 'png'], key="image_input")
+        if uploaded_file is not None:
+            # Display the uploaded image
+            image = Image.open(uploaded_file)
+            st.image(image, caption="Uploaded Image", use_container_width=True)
+            st.session_state.update({"trigger_search": True})
         
         # Add search button
         search_button = st.button("🔍 Search", type="primary", use_container_width=True)
         
         # Handle search when button is clicked or enter is pressed
-        if (search_button or st.session_state.get("trigger_search", False)) and (query_text or image_input):
+        if (search_button or st.session_state.get("trigger_search", False)) and (query_text or uploaded_file is not None):
             # Reset the trigger
             if "trigger_search" in st.session_state:
                 del st.session_state.trigger_search
@@ -307,22 +287,32 @@ def main():
                     if query_text:
                         request_data["query"] = query_text
                     
-                    if image_input:
-                        image = load_image(image_input)
-                        if image:
-                            request_data["image_path"] = image_input
-                            # Display the input image
-                            st.image(image, caption="Input Image", use_container_width=True)
+                    if uploaded_file is not None:
+                        # Save the uploaded file to a temporary file
+                        temp_file = BytesIO()
+                        image = Image.open(uploaded_file)
+                        # Get the original format or default to JPEG
+                        format = image.format.lower() if image.format else 'jpeg'
+                        image.save(temp_file, format=format)
+                        temp_file.seek(0)
+                        files = {'file': (f'image.{format}', temp_file, f'image/{format}')}
+                        # Set search type based on whether we have text query
+                        request_data["search_type"] = "multimodal" if query_text else "image"
 
                     request_data["top_k"] = 100  # backend will return 100 results
                     
-                    # Call API endpoint
-                    response = requests.post(
-                        f"{API_BASE_URL}/api/search",
-                        files=files if files else None,
-                        data=request_data,
-                        headers={'Content-Type': 'application/x-www-form-urlencoded'}
-                    )
+                    # Ensure we're sending the data correctly
+                    if files:
+                        response = requests.post(
+                            f"{API_BASE_URL}/api/search",
+                            files=files,
+                            data=request_data
+                        )
+                    else:
+                        response = requests.post(
+                            f"{API_BASE_URL}/api/search",
+                            data=request_data
+                        )
                     
                     if response.status_code == 200:
                         try:

@@ -55,7 +55,10 @@ top_k = 100
 components_config = [
     {
         "type": "FaissVectorRetrieval",
-        "params": {"column_name": "fusion_embedding", "nprobe": 32},
+        "params": {
+            "column_name": "fusion_embedding", 
+            "nprobe": 32
+        },
     },
     {
         "type": "FaissVectorRetrieval",
@@ -64,9 +67,13 @@ components_config = [
             "nprobe": 32
         }
     },
-    {"type": "TextSearchRetrieval", "params": {"rank_method": "ts_rank"}},
+    {   "type": "TextSearchRetrieval", 
+        "params": {
+            "rank_method": "ts_rank",
+            "nprobe": 32
+        }
+    },
 ]
-
 
 def initialize_app():
     """Initialize all required components and update status"""
@@ -247,30 +254,50 @@ def search():
         # Handle text query from form data
         query_text = request.form.get("query")
         logger.info(f"Query text: {query_text}")
+        logger.info(f"Form data: {request.form}")
+        logger.info(f"Files: {request.files}")
 
         # Handle image query
         if "file" in request.files:
             # uploaded image
             file = request.files["file"]
+            logger.info(f"Found file in request: {file.filename}")
             query_image = Image.open(file.stream)
+            logger.info("Successfully opened image from file")
         elif request.form.get("image_path"):
             # image from url
             image_path = request.form.get("image_path")
             query_image = load_image(image_path)
+            logger.info(f"Loaded image from path: {image_path}")
+
+        # Get search type
+        search_type = request.form.get("search_type")
+        logger.info(f"Initial search type from request: {search_type}")
+        if not search_type:
+            # Determine search type based on available inputs
+            if query_text and query_image:
+                search_type = "multimodal"
+            elif query_image:
+                search_type = "image"
+            elif query_text:
+                search_type = "text"
+            logger.info(f"Determined search type from inputs: {search_type}")
+        logger.info(f"Final search type: {search_type}")
 
         if not query_text and not query_image:
+            logger.error("No query text or image found in request")
             return jsonify({"error": "Either query text or image is required"}), 400
 
         logger.info("Generating embedding...")
-        # Generate embedding based on available inputs
-        if query_text and query_image:
+        # Generate embedding based on search type
+        if search_type == "multimodal":
             query_embedding = generate_embedding(
                 query_text=query_text, query_image=query_image
             )
-        elif query_text:
-            query_embedding = generate_embedding(query_text=query_text)
-        else:  # query_image only
+        elif search_type == "image":
             query_embedding = generate_embedding(query_image=query_image)
+        else:  # text search
+            query_embedding = generate_embedding(query_text=query_text)
 
         logger.debug(f"Generated embedding shape: {query_embedding.shape}")
 
@@ -313,7 +340,7 @@ def search():
         if query_text:
             if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
                 reordered_result, reasoning = reorder_search_results_by_relevancy(
-                    query_text, formatted_result
+                    query_text, formatted_result, max_results=0.3*top_k
                 )
             else:
                 reordered_result = formatted_result[:]

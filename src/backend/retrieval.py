@@ -340,7 +340,7 @@ def reorder_search_results_by_relevancy(
     api_key: Optional[str] = None,
     model: str = "gpt-3.5-turbo",  # or a gemini model
     provider: str = "openai",  # can be 'openai' or 'gemini'
-    max_results: int = 20,
+    max_results: int = 30,
 ) -> tuple[List[Dict], str]:
     """
     Reorders search results based on relevancy to the query using an LLM via LangChain.
@@ -402,50 +402,78 @@ def reorder_search_results_by_relevancy(
                 openai_api_key=api_key,
                 temperature=0,
             )
-        parser = PydanticOutputParser(pydantic_object=ReorderOutput)
-        # 3. Build structured prompt
-        format_instructions = parser.get_format_instructions()
 
-        messages = [
-            SystemMessage(
-                content="You are a search relevancy expert that outputs JSON."
-            ),
-            HumanMessage(content=prompt),
-        ]
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessage(
-                    content="You are a search relevancy expert that outputs JSON."
-                ),
+        # First try to get structured output
+        try:
+            parser = PydanticOutputParser(pydantic_object=ReorderOutput)
+            messages = [
+                SystemMessage(content="You are a search relevancy expert that outputs JSON."),
                 HumanMessage(content=prompt),
             ]
-        )
-        chain = prompt | llm | parser
+            prompt = ChatPromptTemplate.from_messages(messages)
+            chain = prompt | llm | parser
+            result: ReorderOutput = chain.invoke({})
+            reordered_indices = result.reordered_indices
+            reasoning = result.reasoning
+        except Exception as e:
+            # If structured parsing fails, get raw output
+            logger.warning(f"Failed to parse structured output: {str(e)}")
+            raw_response = llm.invoke(prompt)
+            # Try to extract indices and reasoning from raw response
+            try:
+                # Look for JSON-like structure in the response
+                import re
+                json_match = re.search(r'\{.*\}', raw_response.content, re.DOTALL)
+                if json_match:
+                    raw_json = json.loads(json_match.group())
+                    reordered_indices = raw_json.get('reordered_indices', list(range(len(results_to_process))))
+                    reasoning = raw_json.get('reasoning', 'No reasoning provided')
+                else:
+                    # If no JSON found, use default ordering
+                    reordered_indices = list(range(len(results_to_process)))
+                    reasoning = raw_response.content
+            except Exception as json_e:
+                logger.warning(f"Failed to extract JSON from raw response: {str(json_e)}")
+                reordered_indices = list(range(len(results_to_process)))
+                reasoning = raw_response.content
 
-        result: ReorderOutput = chain.invoke({})
-
-        reordered_indices = set(result.reordered_indices)
-        logger.info(f"LLM Reasoning: {result.reasoning}")
+        reordered_indices = set(reordered_indices)
+        logger.info(f"LLM Reasoning: {reasoning}")
 
         expected_indices = set(range(len(results_to_process)))
         provided_indices = set(reordered_indices)
 
         if expected_indices != provided_indices:
-            logger.warning("Invalid indices provided by LLM. Using original order.")
-            return search_results, "Using original order due to invalid indices from LLM"
+            logger.warning("Provided indices by LLM less than expected.")
+            logger.warning(f"Expected indices: {expected_indices}")
+            logger.warning(f"Provided indices: {provided_indices}")
 
         reordered_results = []
-        for index in result.reordered_indices:
+        # Track which indices we've processed
+        processed_indices = set()
+        
+        # First add results for the indices provided by the LLM
+        for index in reordered_indices:
             pid = pid_tracker[index]
             reordered_results += [
                 result for result in search_results if result["Pid"] == pid
             ]
+            processed_indices.add(index)
+        
+        # Add any missing indices at the end
+        for i in range(len(results_to_process)):
+            if i not in processed_indices:
+                pid = pid_tracker[i]
+                reordered_results += [
+                    result for result in search_results if result["Pid"] == pid
+                ]
 
         if len(search_results) > max_results:
             reordered_results.extend(search_results[max_results:])
 
         logger.info(f"Successfully reordered {len(results_to_process)} search results")
-        return reordered_results, result.reasoning
+        return reordered_results, reasoning
 
     except Exception as e:
-        raise ValueError(f"Failed to parse LLM response: {e}")
+        logger.error(f"Failed to process search results: {str(e)}")
+        return search_results, f"Error during reordering: {str(e)}"
