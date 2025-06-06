@@ -325,8 +325,18 @@ def search():
         # transfer the results into data frame for statistics purpose
         df = pd.DataFrame(reordered_result)
 
+        if df.empty:
+            response = {
+                'results': [],
+                'elapsed_time_sec': round(elapsed_time, 3),
+                'session_id': session_id,
+                'reasoning': reasoning
+            }
+            logger.debug(f"Response: {response}")
+            return jsonify(response)
+            
         # Transfer NaN to None
-        df["Brand"] = df["Brand"].fillna("None")
+        df["Brand"] = df["Brand"].fillna("None") 
         df["Category"] = df["Category"].fillna("None")
 
         # Calculate the distribution of category and brand
