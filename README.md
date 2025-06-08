@@ -49,7 +49,7 @@ OPENAI_API_KEY=<insert-api-key>
 ```
 
 ### Step 3. Build Docker Containers
-Create the Docker images for both frontend and backend services.
+Start Docker and create the Docker images for both frontend and backend services.
 
 ```bash
 docker compose build
@@ -99,26 +99,9 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     PGHOST=localhost
     PGPORT=5433
     PGDATABASE=postgres
-    PGTABLE=products_100k
+    PGTABLE=products_1M
 
-    # Location of the embeddings and metadata that'll be imported in to the database
-    METADATA_PATH=data/csv/sample_100k_v2.csv
-
-    # Model configurations
-    TEXT_CLIP_MODEL=openai/clip-vit-base-patch32
-    IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
-    MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-    # Location to save the index
-    FAISS_INDEX_DIR=data/faiss_indexes
-
-    # Number of clusters to use
-    FAISS_NLIST=100
-
-    # URL of mlflow server
-    MLFLOW_TRACKING_URI=http://35.209.59.178:8591
-
-    # LLM API key
+    # LLM API key (do not put this variable in the env file if you plan to use LLM)
     OPENAI_API_KEY=<your-api-key>
     ```
 
@@ -141,7 +124,7 @@ This setup uses the Google Cloud SQL proxy. It connects to the cloud database vi
     make run
     ```
 
-**Option B: Local Postgres**
+**Option B: Local Postgres (use a 100k sample data)**
 
 This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings.
 
@@ -158,18 +141,10 @@ This setup is for a running the app with a local Postgres database. You would us
     PGDATABASE=finly
     PGTABLE=products_100k
 
+    # Variables for preprocessing scripts
     # Location of the embeddings and metadata that'll be imported in to the database
     EMBEDDINGS_PATH=data/embeddings
     METADATA_PATH=data/csv/sample_100k_v2.csv
-
-    # Model configurations
-    TEXT_CLIP_MODEL=openai/clip-vit-base-patch32
-    IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
-    MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-    # Location to save the index
-    FAISS_INDEX_DIR=data/faiss_indexes
-
     # Number of clusters to use
     FAISS_NLIST=100
 
@@ -177,7 +152,15 @@ This setup is for a running the app with a local Postgres database. You would us
     MLFLOW_TRACKING_URI=http://35.209.59.178:8591
     ```
 
-3. To setup the database:
+3. Get embeddings:
+    - It is recommended to download the pre-generated embeddings `fusion_embeddings_chunk_0.npz` from the Google Drive: https://drive.google.com/drive/folders/1tRf1Ps0gcMdJOCWQ_7bEMpjPBPnpc8a1
+    - If you want to generate your own embeddings:
+        - Download the sample_100k_v2.csv and images_100k_v2.zip from the same Google Drive
+        - Extract images_100k_v2.zip into the data/images folder. Put sample_100k_v2.csv under data/csv
+        - Run `make embed`
+    - Put `fusion_embeddings_chunk_0.npz` under data/embeddings
+    
+4. To setup the database:
 
     ```{bash}
     # If running for the first time, this will setup the sql table, add pgvector and load the embedding files in to the db
