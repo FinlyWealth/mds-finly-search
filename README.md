@@ -153,12 +153,12 @@ This setup is for a running the app with a local Postgres database. You would us
     ```
 
 3. Get embeddings:
-    - It is recommended to download the pre-generated embeddings `fusion_embeddings_chunk_0.npz` from the Google Drive: https://drive.google.com/drive/folders/1tRf1Ps0gcMdJOCWQ_7bEMpjPBPnpc8a1
+    - It is recommended to download the pre-generated embeddings `fusion_embeddings_chunk_0.npz` and `image_clip_embeddings_chunk_0.npz` from the Google Drive: https://drive.google.com/drive/folders/1tRf1Ps0gcMdJOCWQ_7bEMpjPBPnpc8a1
     - If you want to generate your own embeddings:
         - Download the sample_100k_v2.csv and images_100k_v2.zip from the same Google Drive
         - Extract images_100k_v2.zip into the data/images folder. Put sample_100k_v2.csv under data/csv
         - Run `make embed`
-    - Put `fusion_embeddings_chunk_0.npz` under data/embeddings
+    - Put `fusion_embeddings_chunk_0.npz` and `image_clip_embeddings_chunk_0.npz` under data/embeddings
     
 4. To setup the database:
 
