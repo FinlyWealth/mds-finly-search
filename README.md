@@ -2,11 +2,11 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
+Use **Setup Instructions - Google Cloud** to setup the Google SQL proxy to connect to the database hosted on Google. 
+
 Use **Setup Instructions - Docker Containers** to run the application.
 
 Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
-
-## Setup Instructions - Docker Containers
 
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
@@ -14,7 +14,7 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
 - Git (optional, for cloning the repo)
 
-### Google Cloud Setup
+## Setup Instructions - Google Cloud
 1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
 2. Ensure you've been granted access to Google Cloud from the repo admin
 3. Run the following commands to set up and start the proxy:
@@ -23,6 +23,8 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 # If running for the first time, this will also setup the proxy
 make proxy
 ```
+
+## Setup Instructions - Docker
 
 ### Step 1. Clone the Repository
 In a separate terminal, clone the repository.
@@ -49,7 +51,7 @@ OPENAI_API_KEY=<insert-api-key>
 ```
 
 ### Step 3. Build Docker Containers
-Create the Docker images for both frontend and backend services.
+Start Docker and create the Docker images for both frontend and backend services.
 
 ```bash
 docker compose build
@@ -77,132 +79,37 @@ make clean
 
 ## Setup Instructions - Makefile
 
-### Step 1. Setup Python environment and environment variables
+### Step 1. Setup Python environment
 
-1. Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
-2. Create environment variable `.env` file in the root folder
+Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
 
-### Step 2. Database Setup
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
 
-Choose Option A or Option B based on your use case.
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
 
-**Option A: Google Cloud**
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+```
 
-This setup uses the Google Cloud SQL proxy. It connects to the cloud database via a localhost connection. Requires Google authentication.
+### Step 3. Start Application
+To start the app and the server:
 
-1. Copy and paste the following in to the `.env` file.
+```{bash}
+# Starts streamlit frontend and API backend
+make run
+```
 
-    ```
-    # User, password and location of the Postgres database
-    PGUSER=postgres
-    PGPASSWORD=ZK3RjyBv6twoA9
-    PGHOST=localhost
-    PGPORT=5433
-    PGDATABASE=postgres
-    PGTABLE=products_100k
+**For local development**
 
-    # Location of the embeddings and metadata that'll be imported in to the database
-    METADATA_PATH=data/csv/sample_100k_v2.csv
-
-    # Model configurations
-    TEXT_CLIP_MODEL=openai/clip-vit-base-patch32
-    IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
-    MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-    # Location to save the index
-    FAISS_INDEX_DIR=data/faiss_indexes
-
-    # Number of clusters to use
-    FAISS_NLIST=100
-
-    # URL of mlflow server
-    MLFLOW_TRACKING_URI=http://35.209.59.178:8591
-
-    # LLM API key
-    OPENAI_API_KEY=<your-api-key>
-    ```
-
-2. Ensure you've been granted access to Google Cloud from the repo admin and then install Google Cloud CLI for your platform: <https://cloud.google.com/sdk/docs/install-sdk>
-
-3. To setup the proxy connection:
-
-    ```{bash}
-    # If running for the first time, this will setup and run the proxy
-    make proxy-setup
-
-    # Use the following to start the proxy after a reboot
-    make proxy
-    ```
-
-4. To start the app and the server:
-
-    ```{bash}
-    # Starts streamlit frontend and API backend
-    make run
-    ```
-
-**Option B: Local Postgres**
-
-This setup is for a running the app with a local Postgres database. You would use this setup if you wish to develop with different embeddings.
-
-1. Unless you intend to genereate your own custom embeddings via `make embed`, it is recommended to download the pre-generated embeddings `fusion_embedding.npz` from the same Google Drive. If the file is large, there could be many chunks. Put all chunks under `data/embeddings`.
-
-2. Add the following to environment variables. Change the Postgres credentials as needed to the local db.
-
-    ```
-    # User, password and location of the Postgres database
-    PGUSER=finly-admin
-    PGPASSWORD=123
-    PGHOST=localhost
-    PGPORT=5432
-    PGDATABASE=finly
-    PGTABLE=products_100k
-
-    # Location of the embeddings and metadata that'll be imported in to the database
-    EMBEDDINGS_PATH=data/embeddings
-    METADATA_PATH=data/csv/sample_100k_v2.csv
-
-    # Model configurations
-    TEXT_CLIP_MODEL=openai/clip-vit-base-patch32
-    IMAGE_CLIP_MODEL=openai/clip-vit-base-patch32
-    MINILM_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-    # Location to save the index
-    FAISS_INDEX_DIR=data/faiss_indexes
-
-    # Number of clusters to use
-    FAISS_NLIST=100
-
-    # URL of mlflow server
-    MLFLOW_TRACKING_URI=http://35.209.59.178:8591
-    ```
-
-3. To setup the database:
-
-    ```{bash}
-    # If running for the first time, this will setup the sql table, add pgvector and load the embedding files in to the db
-    make db-setup
-
-    # Once the db is setup and you want to use other types of embeddings, use the following to load the db
-    # CAUTION: This will drop the existing table and create a new one
-    make db-load
-    ```
-
-4. Optional: If using FAISS indexes, run the following to build the indexes after the embeddings have been imported.
-
-    ```{bash}
-    # Builds FAISS index for each embedding column
-    make faiss
-    ```
-
-5. To run the overall app:
-
-    ```{bash}
-    # Starts streamlit frontend and API backend
-    make run
-    ```
-
-    Use Ctrl+C to stop the app. Use `make clean` afterwards to release the assigned ports. Otherwise you may encounter a message about port conflict the next time you start the app.
+For detailed instructions on setting up the local Postgres database with sample data, including embedding generation and database setup, please refer to the [Preprocessing Instructions](src/preprocess/README.md).
 
 ### Setup Troubleshooting
 

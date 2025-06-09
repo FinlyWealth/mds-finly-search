@@ -503,7 +503,7 @@ def insert_data(embeddings_dict, pids, df):
 
 # This script is used to load the embeddings and update documents in the database
 def main():
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     data_dir = os.path.join(project_root, 'data')
     
     # Print database connection info
