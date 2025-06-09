@@ -2,6 +2,26 @@
 
 `experiments/experiment_pipeline.py` is designed to run multiple experiments to evaluate the performance of different retrieval components. These components can be combined with different weights in the experiment configuration to perform hybrid search.
 
+### Setting Up Local MLflow Server
+
+To run experiments locally and track them with MLflow, follow these steps:
+
+1. Start the MLflow server:
+    ```bash
+    mlflow server --host 0.0.0.0 --port 5000
+    ```
+
+2. Set the MLflow tracking URI in your `.env` file:
+    ```bash
+    MLFLOW_TRACKING_URI=http://localhost:5000
+    ```
+
+3. Access the MLflow UI at http://localhost:5000
+
+Note: Make sure to update the MLflow tracking URI in your experiment configuration if you're using a local server instead of the remote one.
+
+### Configure Experiment Parameters
+
 1. Edit `experiments/experiment_configs.json` to setup the experiment configurations. See next section on supported retrieval components that can be specified in the config.
 
     ``` json
