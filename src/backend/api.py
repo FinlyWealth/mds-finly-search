@@ -340,7 +340,7 @@ def search():
         if query_text:
             if os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY"):
                 reordered_result, reasoning = reorder_search_results_by_relevancy(
-                    query_text, formatted_result, max_results=0.3*top_k
+                    query_text, formatted_result, max_results=int(0.3*top_k)
                 )
             else:
                 reordered_result = formatted_result[:]
