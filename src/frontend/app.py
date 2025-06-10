@@ -67,6 +67,7 @@ st.markdown("""
 
 # API configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5001")
+GCS_BUCKET_URL = os.getenv("GCS_BUCKET_URL", "https://storage.googleapis.com/mds-finly")
 
 def get_component_description(component):
     """Get description for each component"""
@@ -143,7 +144,7 @@ def display_product_card(product, score):
         # Product image
         try:
             # Use GCS URL
-            image_url = f"https://storage.googleapis.com/finly-mds/images/{product['Pid']}.jpeg"
+            image_url = f"{GCS_BUCKET_URL}/images/{product['Pid']}.jpeg"
             st.markdown(f"""
                 <div class="product-image-container">
                     <img src="{image_url}" alt="{product['Name']}">
