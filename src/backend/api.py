@@ -69,8 +69,7 @@ components_config = [
     },
     {   "type": "TextSearchRetrieval", 
         "params": {
-            "rank_method": "ts_rank",
-            "nprobe": 32
+            "rank_method": "ts_rank"
         }
     },
 ]
