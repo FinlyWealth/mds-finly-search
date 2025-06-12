@@ -6,6 +6,20 @@ This directory contains scripts for preprocessing data and generating embeddings
 
 Before running the scripts, make sure you've setup the database either a local database (Postgres) or a cloud database (Google Cloud) following the README instructions in the root folder. 
 
+Add the following to the `.env` file
+
+```bash
+# Location of the raw csv file and where to save the clean one
+RAW_CSV_PATH=data/csv/raw/data.csv
+CLEAN_CSV_PATH=data/csv/clean/data.csv
+
+# Location to save the indices
+FAISS_INDEX_DIR=data/faiss_indices
+
+# Number of clusters to train
+FAISS_NLIST=100
+```
+
 ## Running the Complete Preprocessing Pipeline
 
 You can run the entire preprocessing script using:
