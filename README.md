@@ -153,7 +153,7 @@ brew services start postgresql@17
 ```
 ## Setup Instructions - Preprocess
 
-METADATA_PATH=data/csv/data.csv
+CLEAN_CSV_PATH=data/csv/clean/data.csv
 
 
 ## Setup Troubleshooting

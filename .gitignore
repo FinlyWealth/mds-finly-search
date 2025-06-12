@@ -19,3 +19,4 @@ data/csv/sample_100k_v2.csv
 /.cloud_sql_proxy
 data/csv/sample_1M.csv
 data/faiss_indices/
+/data/csv/raw

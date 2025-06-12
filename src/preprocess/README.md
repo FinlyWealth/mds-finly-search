@@ -18,7 +18,7 @@ This directory contains scripts for preprocessing data and generating embeddings
     # Variables for preprocessing scripts
     # Location of the embeddings and metadata that'll be imported in to the database
     EMBEDDINGS_PATH=data/embeddings
-    METADATA_PATH=data/csv/sample_100k_v2.csv
+    CLEAN_CSV_PATH=data/csv/sample_100k_v2.csv
     # Number of clusters to use
     FAISS_NLIST=4000
     ```

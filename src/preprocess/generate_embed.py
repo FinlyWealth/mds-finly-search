@@ -13,7 +13,7 @@ import sys
 import multiprocessing
 from functools import partial
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from config.path import METADATA_PATH, EMBEDDINGS_PATH
+from config.path import CLEAN_CSV_PATH, EMBEDDINGS_PATH
 
 CHUNK_SIZE = 500_000  # Process 500k rows at a time
 
@@ -370,7 +370,7 @@ def main():
     print(f"Device is {device}")
 
     # Load data
-    df = pd.read_csv(METADATA_PATH)
+    df = pd.read_csv(CLEAN_CSV_PATH)
     total_rows = len(df)
     print(f"Total rows in dataset: {total_rows}")
 
