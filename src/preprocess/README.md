@@ -4,7 +4,7 @@ This directory contains scripts for preprocessing data and generating embeddings
 
 ## Setup and Configuration
 
-Before running the scripts, make sure you've setup the database either a local database (Postgres) or a cloud database (Google Cloud) following the README instructions in the root folder. 
+Before running the scripts, make sure you've setup either a local database (Postgres) or a cloud database (Google Cloud) following the README instructions in the root folder. 
 
 Add the following to the `.env` file
 
