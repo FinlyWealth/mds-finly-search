@@ -47,19 +47,8 @@ Select your Google project (repo admin should provide you with the project ID)
 When prompted to configure a default Compute Region and Zone, select `n`. 
 ![region-zone](./img/region-zone.png)
 
-## Setup Instructions - Makefile
-
-### Step 1. Setup Python environment
-
-Set up Python environment:
-
-```{bash}
-# Create a new Python environment
-conda env create --f environment.yaml
-```
-
-### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
+### Step 3. Add the Google Cloud SQL Credentials
+Add the following by creating a `.env` text file in the root folder with the following configurations.
 
 ```bash
 # Database configuration
@@ -69,76 +58,7 @@ PGHOST=localhost
 PGPORT=5433
 PGDATABASE=postgres
 PGTABLE=products_1M
-
-# LLM API key
-OPENAI_API_KEY=<insert-api-key>
 ```
-
-### Step 3. Start Application
-To start the app and the server:
-
-```{bash}
-# Starts streamlit frontend and API backend
-make run
-```
-
-## Using Makefile to Run mlflow Experiments
-Please refer to the [Experiment Instructions](experiments/README.md).
-
-## Using Makefile for Preprocessing and Generating Indices
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
-
-## Setup Instructions - Docker
-
-### Step 1. Clone the Repository
-In a separate terminal, clone the repository.
-
-```bash
-git clone FinlyWealth/mds-finly-search
-cd mds-finly-search
-```
-
-### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
-
-```bash
-# Database configuration
-PGUSER=postgres
-PGPASSWORD=ZK3RjyBv6twoA9
-PGHOST=localhost
-PGPORT=5433
-PGDATABASE=postgres
-PGTABLE=products_1M
-
-# LLM API key
-OPENAI_API_KEY=<insert-api-key>
-```
-
-### Step 3. Build Docker Containers
-Start Docker and create the Docker images for both frontend and backend services.
-
-```bash
-docker compose build
-```
-This step may take several minutes as it downloads and builds all required dependencies.
-
-### Step 4. Start the Application
-Make sure the proxy is running and launch the application.
-
-```bash
-docker compose up
-```
-
-The application will start two services:
-- Frontend: Access the search interface at http://localhost:8501
-- Backend API: Running at http://localhost:5001
-
-### Step 5. Clean Up
-To close the container and free up the port once the proxy is not needed
-```bash
-docker compose down
-make clean
-``` 
 
 ## Setup Instructions - Local Postgres
 
@@ -173,6 +93,99 @@ This will create the database using information from Step 3. It will also add th
 ```bash
 make db-setup
 ```
+
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data. 
+
+## Setup Instructions - Makefile
+
+### Step 1. Setup Python environment
+
+Set up Python environment:
+
+```{bash}
+# Create a new Python environment
+conda env create --f environment.yaml
+```
+
+### Step 2. Configure Environment Variables
+Add the following to the `.env` file.
+
+```bash
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+
+# Location of product images and FAISS indices on Google Cloud Storage
+GCS_BUCKET_URL=https://storage.googleapis.com/mds-finly
+```
+
+### Step 3. Start Application
+To start the app and the server:
+
+```{bash}
+# Starts streamlit frontend and API backend
+make run
+```
+
+## Using Makefile to Run mlflow Experiments
+Please refer to the [Experiment Instructions](experiments/README.md).
+
+## Using Makefile for Preprocessing and Generating Indices
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
+
+## Setup Instructions - Docker
+
+### Step 1. Clone the Repository
+In a separate terminal, clone the repository.
+
+```bash
+git clone FinlyWealth/mds-finly-search
+cd mds-finly-search
+```
+
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
+
+```bash
+# Database configuration for Google Cloud
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+
+# Location of product images and FAISS indices on Google Cloud Storage
+GCS_BUCKET_URL=https://storage.googleapis.com/mds-finly
+```
+
+### Step 3. Build Docker Containers
+Start Docker and create the Docker images for both frontend and backend services.
+
+```bash
+docker compose build
+```
+This step may take several minutes as it downloads and builds all required dependencies.
+
+### Step 4. Start the Application
+Make sure the proxy is running and launch the application.
+
+```bash
+docker compose up
+```
+
+The application will start two services:
+- Frontend: Access the search interface at http://localhost:8501
+- Backend API: Running at http://localhost:5001
+
+### Step 5. Clean Up
+To close the container and free up the port once the proxy is not needed
+```bash
+docker compose down
+make clean
+``` 
 
 ## Setup Troubleshooting
 
