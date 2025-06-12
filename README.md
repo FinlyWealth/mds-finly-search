@@ -2,11 +2,10 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-Use **Setup Instructions - Google Cloud SDK** to setup the Google SQL proxy to connect to the database hosted on Google. 
-
-Use **Setup Instructions - Docker Containers** to run the application.
-
-Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
+- Use **Setup Instructions - Google Cloud SDK** to setup the Google SQL proxy to connect to the database hosted on Google. 
+- Use **Setup Instructions - Makefile** to run the applicaiton, preprocessing scripts or experiments. 
+- Deployments are done using Docker images. Use **Setup Instructions - Docker Containers** to build and test images locally.
+- Use GitHub Actions to build and deploy images to Google Cloud.
 
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
@@ -15,15 +14,70 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 - Git (optional, for cloning the repo)
 
 ## Setup Instructions - Google Cloud SDK
-1. Install Google Cloud SDK for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
-2. Once installation is complete, sign in to your Google account. Ensure you've been granted access to the Google project from the repo admin.
-    ```bash
-    gcloud init
-    ```
-3. Select your Google project (repo admin should provide you with the project ID)
+
+### Step 1. Setup Google Cloud SDK
+
+Install Google Cloud SDK for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+
+For Mac, we suggest installing via Homebrew:
+
+```bash
+brew install google-cloud-sdk
+```
+
+Once installation is complete, sign in to your Google account. Ensure you've been granted access to the Google project from the repo admin. 
+
+### Step 2. Sign in to Google Cloud
+```bash
+gcloud init
+```
+
+Select your Google project (repo admin should provide you with the project ID)
 ![google-project](./img/google-project.png)
-4. When prompted to configure a default Compute Region and Zone, select `n`. 
+
+When prompted to configure a default Compute Region and Zone, select `n`. 
 ![region-zone](./img/region-zone.png)
+
+## Setup Instructions - Makefile
+
+### Step 1. Setup Python environment
+
+Set up Python environment:
+
+```{bash}
+# Create a new Python environment
+conda env create --f environment.yaml
+```
+
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
+
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+```
+
+### Step 3. Start Application
+To start the app and the server:
+
+```{bash}
+# Starts streamlit frontend and API backend
+make run
+```
+
+## Using Makefile to Run Preprocessing Scripts
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
+
+## Using Makefile to Run mlflow Experiments
+Please refer to the [Experiment Instructions](experiments/README.md).
 
 ## Setup Instructions - Docker
 
@@ -77,47 +131,32 @@ docker compose down
 make clean
 ``` 
 
+## Setup Instructions - Local Postgres
 
-## Setup Instructions - Makefile
+Install Postgres for your platform from [here](https://www.postgresql.org)
 
-### Step 1. Setup Python environment
-
-Set up Python environment:
-
-```{bash}
-# Create a new Python environment
-conda env create --f environment.yaml
-```
-
-### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
+For Mac, we suggest installing via Homebrew:
 
 ```bash
-# Database configuration
-PGUSER=postgres
-PGPASSWORD=ZK3RjyBv6twoA9
-PGHOST=localhost
-PGPORT=5433
-PGDATABASE=postgres
-PGTABLE=products_1M
-
-# LLM API key
-OPENAI_API_KEY=<insert-api-key>
+brew install postgresql@17
 ```
 
-### Step 3. Start Application
-To start the app and the server:
+5432
 
-```{bash}
-# Starts streamlit frontend and API backend
-make run
+brew services start postgresql@17
+
+If you just installed Postgres via Homebrew, run:
+
+```bash
+initdb -U $(whoami) -D /usr/local/var/postgresql@17
+brew services start postgresql@17
 ```
+## Setup Instructions - Preprocess
 
-**For local development**
+METADATA_PATH=data/csv/data.csv
 
-For detailed instructions on setting up the local Postgres database with sample data, including embedding generation and database setup, please refer to the [Preprocessing Instructions](src/preprocess/README.md).
 
-### Setup Troubleshooting
+## Setup Troubleshooting
 
 **To test the api through command line**
 
