@@ -3,9 +3,14 @@
 # Exit on error
 set -e
 
+# Source environment variables from .env file if it exists
+if [ -f .env ]; then
+    source .env
+fi
+
 # Configuration
 PROXY_DIR=".cloud_sql_proxy"
-INSTANCE="regal-campus-456918-d2:us-west1:finly-mds"
+INSTANCE=${CLOUD_SQL_INSTANCE:-"pristine-flames-460002-h2:us-west1:postgres"}
 PORT="5433"
 
 # Create proxy directory if it doesn't exist

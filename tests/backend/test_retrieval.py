@@ -28,6 +28,7 @@ from src.backend.retrieval import (
     _faiss_mapping_cache,
 )
 
+GCS_BUCKET_URL = os.getenv("GCS_BUCKET_URL", "https://storage.googleapis.com/mds-finly")
 
 class TestDownloadFromGCS:
     """Test suite for download_from_gcs function"""
@@ -49,7 +50,7 @@ class TestDownloadFromGCS:
         download_from_gcs(source_path, destination)
 
         # Assert
-        expected_url = f"https://storage.googleapis.com/finly-mds/{source_path}"
+        expected_url = f"{GCS_BUCKET_URL}/{source_path}"
         mock_get.assert_called_once_with(expected_url)
         mock_response.raise_for_status.assert_called_once()
         mock_makedirs.assert_called_once_with(

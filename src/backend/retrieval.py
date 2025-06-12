@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # FAISS index configuration
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FAISS_INDEX_DIR = os.path.join(REPO_ROOT, "data", "faiss_indices")
-GCS_BUCKET_URL = "https://storage.googleapis.com/finly-mds"
+GCS_BUCKET_URL = os.getenv("GCS_BUCKET_URL", "https://storage.googleapis.com/mds-finly")
 GCS_INDEX_PREFIX = "faiss_indices"
 
 # Cache for FAISS indices and mappings

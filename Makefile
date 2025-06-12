@@ -1,5 +1,14 @@
 .PHONY: report clean preprocess-all embed db-setup db-load faiss experiments proxy proxy-setup run
 
+# Load environment variables from .env file if it exists
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
+# Set default Cloud SQL instance if not provided
+CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
+
 # Default target
 all: proxy-setup run
 
@@ -35,7 +44,7 @@ proxy:
 		echo "Proxy not set up. Running setup first..."; \
 		$(MAKE) proxy-setup; \
 	else \
-		./.cloud_sql_proxy/cloud_sql_proxy -instances="regal-campus-456918-d2:us-west1:finly-mds"=tcp:5433; \
+		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
 	fi
 
 

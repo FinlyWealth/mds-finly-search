@@ -2,7 +2,7 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-Use **Setup Instructions - Google Cloud** to setup the Google SQL proxy to connect to the database hosted on Google. 
+Use **Setup Instructions - Google Cloud SDK** to setup the Google SQL proxy to connect to the database hosted on Google. 
 
 Use **Setup Instructions - Docker Containers** to run the application.
 
@@ -14,15 +14,16 @@ Use **Setup Instructions - Makefile** to run preprocessing scripts or experiment
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
 - Git (optional, for cloning the repo)
 
-## Setup Instructions - Google Cloud
-1. Install Google Cloud CLI for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
-2. Ensure you've been granted access to Google Cloud from the repo admin
-3. Run the following commands to set up and start the proxy:
-
-```bash
-# If running for the first time, this will also setup the proxy
-make proxy
-```
+## Setup Instructions - Google Cloud SDK
+1. Install Google Cloud SDK for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+2. Once installation is complete, sign in to your Google account. Ensure you've been granted access to the Google project from the repo admin.
+    ```bash
+    gcloud init
+    ```
+3. Select your Google project (repo admin should provide you with the project ID)
+![google-project](./img/google-project.png)
+4. When prompted to configure a default Compute Region and Zone, select `n`. 
+![region-zone](./img/region-zone.png)
 
 ## Setup Instructions - Docker
 
@@ -81,10 +82,15 @@ make clean
 
 ### Step 1. Setup Python environment
 
-Set up Python environment using `environment.yaml`: `conda env create --f environment.yaml`
+Set up Python environment:
+
+```{bash}
+# Create a new Python environment
+conda env create --f environment.yaml
+```
 
 ### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
+Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
 
 ```bash
 # Database configuration
