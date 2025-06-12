@@ -13,7 +13,7 @@ import sys
 import multiprocessing
 from functools import partial
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from config.path import METADATA_PATH, EMBEDDINGS_PATH
+from config.path import CLEAN_CSV_PATH, EMBEDDINGS_PATH
 
 CHUNK_SIZE = 500_000  # Process 500k rows at a time
 
@@ -364,79 +364,13 @@ def process_batch(batch_df, batch_num, output_zip_path, total_batches, image_dir
         print(f"Error in batch {batch_num + 1}: {str(e)}")
         return 0, len(batch_df), None
 
-def zip_product_images(df, output_zip_path="product_images.zip", batch_size=100000, image_dir="data/images"):
-    """Create multiple zip files containing product images from the filtered DataFrame.
-    
-    Creates multiple zip files, with each zip file containing up to batch_size images.
-    Processes batches in parallel.
-    
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Filtered DataFrame containing valid 'Pid' values.
-    output_zip_path : str, optional
-        Base path where the zip files should be saved, by default "product_images.zip".
-    batch_size : int, optional
-        Number of images per zip file, by default 100000.
-    image_dir : str, optional
-        Directory containing the product images, by default "data/images".
-    """
-    # Verify image directory exists
-    if not os.path.exists(image_dir):
-        raise ValueError(f"Image directory not found: {image_dir}")
-    
-    # Calculate number of batches needed
-    total_images = len(df)
-    num_batches = (total_images + batch_size - 1) // batch_size
-    
-    print(f"Processing {total_images} images in {num_batches} batches...")
-    print(f"Looking for images in: {os.path.abspath(image_dir)}")
-    
-    # Create batches
-    batches = []
-    for batch_num in range(num_batches):
-        start_idx = batch_num * batch_size
-        end_idx = min((batch_num + 1) * batch_size, total_images)
-        batch_df = df.iloc[start_idx:end_idx]
-        batches.append((batch_df, batch_num))
-    
-    # Determine number of processes (use 75% of available CPU cores)
-    num_processes = max(1, int(multiprocessing.cpu_count() * 0.75))
-    print(f"Using {num_processes} processes")
-    
-    # Create a partial function with fixed arguments
-    process_func = partial(
-        process_batch,
-        output_zip_path=output_zip_path,
-        total_batches=num_batches,
-        image_dir=image_dir
-    )
-    
-    # Process batches in parallel with timeout
-    try:
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            # Set a timeout of 30 minutes per batch
-            results = pool.starmap(process_func, batches)
-    except Exception as e:
-        print(f"Error during parallel processing: {str(e)}")
-        pool.terminate()
-        raise
-    
-    # Print summary
-    total_successful = sum(r[0] for r in results)
-    total_failed = sum(r[1] for r in results)
-    print(f"\nProcessing complete!")
-    print(f"Total images processed: {total_images}")
-    print(f"Successfully copied: {total_successful}")
-    print(f"Missing images: {total_failed}")
-
 def main():
     # Set device
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu"
     print(f"Device is {device}")
 
     # Load data
-    df = pd.read_csv(METADATA_PATH)
+    df = pd.read_csv(CLEAN_CSV_PATH)
     total_rows = len(df)
     print(f"Total rows in dataset: {total_rows}")
 
@@ -484,7 +418,7 @@ def main():
         )
         
         # Concatenate embeddings
-        print("Concatenating embeddings...")
+        print("\nConcatenating embeddings...")
         fusion_embeddings = concatenate_embeddings(image_embeddings, text_embeddings)
         
         # Save chunk embeddings
@@ -497,8 +431,14 @@ def main():
             chunk_num=chunk_num
         )
 
-    # Uncomment this if you want to zip a subset of product images from the full dataset
-    # zip_product_images(filtered_df)
+        save_path = os.path.join(EMBEDDINGS_PATH, "image_clip_embeddings.npz")
+        save_embeddings(
+            embeddings=image_embeddings,
+            product_ids=product_ids,
+            embedding_type="image_clip",
+            save_path=save_path,
+            chunk_num=chunk_num
+        )
 
 if __name__ == "__main__":
     main() 

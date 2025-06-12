@@ -14,7 +14,7 @@ import time
 import pickle
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import config.db
-from config.path import METADATA_PATH, EMBEDDINGS_PATH
+from config.path import CLEAN_CSV_PATH, EMBEDDINGS_PATH
 
 # Load environment variables
 load_dotenv()
@@ -515,7 +515,7 @@ def main():
     print("\n" + "="*50 + "\n")
     
     print("Loading metadata...")
-    df = pd.read_csv(os.path.join(project_root, METADATA_PATH))
+    df = pd.read_csv(os.path.join(project_root, CLEAN_CSV_PATH))
     print(f"Number of metadata entries: {len(df)}")
     
     # Load all embedding files
@@ -589,7 +589,7 @@ def main():
     print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     print("\nInitializing database...")
-    init_db(embedding_dims, drop=True)
+    init_db(embedding_dims, drop=False)
     
     print("\nInserting embeddings and ts_vector in database...")
     insert_data(embeddings_dict, common_pids, df)

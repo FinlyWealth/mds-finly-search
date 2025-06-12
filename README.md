@@ -2,28 +2,91 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-Use **Setup Instructions - Google Cloud SDK** to setup the Google SQL proxy to connect to the database hosted on Google. 
-
-Use **Setup Instructions - Docker Containers** to run the application.
-
-Use **Setup Instructions - Makefile** to run preprocessing scripts or experiments. 
-
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
-- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (optional, for cloud database access)
 - Git (optional, for cloning the repo)
 
+**Setting up the database (choose one):**
+- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud. 
+
+- [Instructions](#setup-instructions---local-postgres) for setting up a local Postgres database. This method is recommended if you plan to develop with your own embeddings. 
+
+**Running the application or related scripts**
+- [Instructions](#setup-instructions---makefile) for running the search engine application 
+- [Instructions](#using-makefile-to-run-mlflow-experiments) for running experiments.
+- [Instructions](#using-makefile-for-preprocessing-and-generating-indices) for preprocessing scripts to generate indices and load data.
+
+**Deployment**
+- Deployments are done using Docker images. Follow [instructions](#setup-instructions---docker) to build and test Docker images locally.
+- Use GitHub Actions to build and deploy images to Google Cloud.
+
 ## Setup Instructions - Google Cloud SDK
-1. Install Google Cloud SDK for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
-2. Once installation is complete, sign in to your Google account. Ensure you've been granted access to the Google project from the repo admin.
-    ```bash
-    gcloud init
-    ```
-3. Select your Google project (repo admin should provide you with the project ID)
+
+### Step 1. Setup Google Cloud SDK
+
+Install Google Cloud SDK for your platform from [here](https://cloud.google.com/sdk/docs/install-sdk)
+
+For Mac, we suggest installing via Homebrew:
+
+```bash
+brew install google-cloud-sdk
+```
+
+Once installation is complete, sign in to your Google account. Ensure you've been granted access to the Google project from the repo admin. 
+
+### Step 2. Sign in to Google Cloud
+```bash
+gcloud init
+```
+
+Select your Google project (repo admin should provide you with the project ID)
 ![google-project](./img/google-project.png)
-4. When prompted to configure a default Compute Region and Zone, select `n`. 
+
+When prompted to configure a default Compute Region and Zone, select `n`. 
 ![region-zone](./img/region-zone.png)
+
+## Setup Instructions - Makefile
+
+### Step 1. Setup Python environment
+
+Set up Python environment:
+
+```{bash}
+# Create a new Python environment
+conda env create --f environment.yaml
+```
+
+### Step 2. Configure Environment Variables
+Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
+
+```bash
+# Database configuration
+PGUSER=postgres
+PGPASSWORD=ZK3RjyBv6twoA9
+PGHOST=localhost
+PGPORT=5433
+PGDATABASE=postgres
+PGTABLE=products_1M
+
+# LLM API key
+OPENAI_API_KEY=<insert-api-key>
+```
+
+### Step 3. Start Application
+To start the app and the server:
+
+```{bash}
+# Starts streamlit frontend and API backend
+make run
+```
+
+## Using Makefile to Run mlflow Experiments
+Please refer to the [Experiment Instructions](experiments/README.md).
+
+## Using Makefile for Preprocessing and Generating Indices
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
 
 ## Setup Instructions - Docker
 
@@ -77,47 +140,41 @@ docker compose down
 make clean
 ``` 
 
+## Setup Instructions - Local Postgres
 
-## Setup Instructions - Makefile
+### Step 1. Install Postgres
+Install Postgres for your platform from [here](https://www.postgresql.org)
 
-### Step 1. Setup Python environment
+For Mac, we suggest installing via Homebrew:
 
-Set up Python environment:
-
-```{bash}
-# Create a new Python environment
-conda env create --f environment.yaml
+```bash
+brew install postgresql@17
+```
+### Step 2. Initialize Postgres
+Initialize the database and sets the username for Postgres to be the same as the current bash user name. 
+```bash
+initdb -U $(whoami) -D /usr/local/var/postgresql@17
+brew services start postgresql@17
 ```
 
-### Step 2. Configure Environment Variables
-Set up the required environment variables for database connection and API access by creating a `.env` text file in the root folder with the following configurations.
+### Step 3. Create Database Credentials
+Add the following to the `.env` file
 
 ```bash
 # Database configuration
-PGUSER=postgres
-PGPASSWORD=ZK3RjyBv6twoA9
-PGHOST=localhost
-PGPORT=5433
+PGUSER=<bash-usename> # From Step 2. 
+PGPASSWORD=ZK3RjyBv6twoA9 # Or any other password you want to use
 PGDATABASE=postgres
-PGTABLE=products_1M
-
-# LLM API key
-OPENAI_API_KEY=<insert-api-key>
+PGTABLE=products
 ```
 
-### Step 3. Start Application
-To start the app and the server:
-
-```{bash}
-# Starts streamlit frontend and API backend
-make run
+### Step 4. Setup Database
+This will create the database using information from Step 3. It will also add the pgvector extension to the database. 
+```bash
+make db-setup
 ```
 
-**For local development**
-
-For detailed instructions on setting up the local Postgres database with sample data, including embedding generation and database setup, please refer to the [Preprocessing Instructions](src/preprocess/README.md).
-
-### Setup Troubleshooting
+## Setup Troubleshooting
 
 **To test the api through command line**
 
