@@ -2,16 +2,25 @@
 
 A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
-- Use **Setup Instructions - Google Cloud SDK** to setup the Google SQL proxy to connect to the database hosted on Google. 
-- Use **Setup Instructions - Makefile** to run the applicaiton, preprocessing scripts or experiments. 
-- Deployments are done using Docker images. Use **Setup Instructions - Docker Containers** to build and test images locally.
-- Use GitHub Actions to build and deploy images to Google Cloud.
-
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
-- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (for cloud database access)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (optional, for cloud database access)
 - Git (optional, for cloning the repo)
+
+**Setting up the database (choose one):**
+- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud. 
+
+- [Instructions](#setup-instructions---local-postgres) for setting up a local Postgres database. This method is recommended if you plan to develop with your own embeddings. 
+
+**Running the application or related scripts**
+- [Instructions](#setup-instructions---makefile) for running the search engine application 
+- [Instructions](#using-makefile-to-run-mlflow-experiments) for running experiments.
+- [Instructions](#using-makefile-for-preprocessing-and-generating-indices) for preprocessing scripts to generate indices and load data.
+
+**Deployment**
+- Deployments are done using Docker images. Follow [instructions](#setup-instructions---docker) to build and test Docker images locally.
+- Use GitHub Actions to build and deploy images to Google Cloud.
 
 ## Setup Instructions - Google Cloud SDK
 
@@ -73,11 +82,11 @@ To start the app and the server:
 make run
 ```
 
-## Using Makefile to Run Preprocessing Scripts
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
-
 ## Using Makefile to Run mlflow Experiments
 Please refer to the [Experiment Instructions](experiments/README.md).
+
+## Using Makefile for Preprocessing and Generating Indices
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
 
 ## Setup Instructions - Docker
 
@@ -133,6 +142,7 @@ make clean
 
 ## Setup Instructions - Local Postgres
 
+### Step 1. Install Postgres
 Install Postgres for your platform from [here](https://www.postgresql.org)
 
 For Mac, we suggest installing via Homebrew:
@@ -140,21 +150,29 @@ For Mac, we suggest installing via Homebrew:
 ```bash
 brew install postgresql@17
 ```
-
-5432
-
-brew services start postgresql@17
-
-If you just installed Postgres via Homebrew, run:
-
+### Step 2. Initialize Postgres
+Initialize the database and sets the username for Postgres to be the same as the current bash user name. 
 ```bash
 initdb -U $(whoami) -D /usr/local/var/postgresql@17
 brew services start postgresql@17
 ```
-## Setup Instructions - Preprocess
 
-CLEAN_CSV_PATH=data/csv/clean/data.csv
+### Step 3. Create Database Credentials
+Add the following to the `.env` file
 
+```bash
+# Database configuration
+PGUSER=<bash-usename> # From Step 2. 
+PGPASSWORD=ZK3RjyBv6twoA9 # Or any other password you want to use
+PGDATABASE=postgres
+PGTABLE=products
+```
+
+### Step 4. Setup Database
+This will create the database using information from Step 3. It will also add the pgvector extension to the database. 
+```bash
+make db-setup
+```
 
 ## Setup Troubleshooting
 
