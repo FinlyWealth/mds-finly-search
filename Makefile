@@ -9,16 +9,20 @@ endif
 # Set default Cloud SQL instance if not provided
 CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 
-# Default target
-all: proxy-setup run
-
-# Individual preprocessing targets
-embed:
-	python src/preprocess/generate_embed.py
-
+# Setup Postgres database
 db-setup:
 	chmod +x scripts/setup_local_db.sh
 	./scripts/setup_local_db.sh
+
+# Train indices and load data
+train: csv embed db-load faiss
+
+# Individual preprocessing targets
+csv:
+	python src/preprocess/clean_data.py
+
+embed:
+	python src/preprocess/generate_embed.py
 
 db-load:
 	python src/preprocess/load_db.py
@@ -47,7 +51,6 @@ proxy:
 		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
 	fi
 
-
 # Start both frontend and backend applications
 run:
 	$(MAKE) proxy & \
@@ -71,3 +74,5 @@ clean:
 	rm -rf **/.pytest_cache
 	rm -rf **/__pycache__
 	rm -rf **/*.pyc
+	@echo "Unsetting environment variables..."
+	@grep -v '^\s*#' .env | grep '=' | cut -d '=' -f 1 | xargs -I {} sh -c 'unset {}; echo "Unset {}";' || true

@@ -589,7 +589,7 @@ def main():
     print(f"\nNumber of products with all required embeddings: {len(common_pids)}")
     
     print("\nInitializing database...")
-    init_db(embedding_dims, drop=True)
+    init_db(embedding_dims, drop=False)
     
     print("\nInserting embeddings and ts_vector in database...")
     insert_data(embeddings_dict, common_pids, df)

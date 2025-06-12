@@ -1,35 +1,42 @@
 import os
 import pandas as pd
 import numpy as np
-from config.path import CLEAN_CSV_PATH
+import sys
 
-# Columns to load
-selected_columns = [
-    "Pid", "Description", "Name", "Category", 
-    "Price", "PriceCurrency", "FinalPrice", "Discount", "isOnSale", "IsInStock", "Brand", 
-    "Manufacturer", "Color", "Gender", "Size", "Condition"
-]
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from config.path import CLEAN_CSV_PATH, RAW_CSV_PATH
 
-# Read CSV file — adjust the path and possibly set low_memory=False if needed
-df = pd.read_csv(CLEAN_CSV_PATH)
+def main():
+    # Columns to load
+    selected_columns = [
+        "Pid", "Description", "Name", "Category", 
+        "Price", "PriceCurrency", "FinalPrice", "Discount", "isOnSale", "IsInStock", "Brand", 
+        "Manufacturer", "Color", "Gender", "Size", "Condition"
+    ]
 
-# Filter allowed currencies
-df = df[df["PriceCurrency"].isin(["USD", "CAD", "GBP"])]
+    # Read CSV file — adjust the path and possibly set low_memory=False if needed
+    df = pd.read_csv(RAW_CSV_PATH)
 
-# Clean and prepare both columns: Replace NaN with empty string and lowercase
-df["Brand_clean"] = df["Brand"].fillna('').str.strip().str.lower()
-df["Manufacturer_clean"] = df["Manufacturer"].fillna('').str.strip().str.lower()
+    # Filter allowed currencies
+    df = df[df["PriceCurrency"].isin(["USD", "CAD", "GBP"])]
 
-# Perform the comparison and create merged column
-df["MergedBrand"] = df["Brand"].where(df["Brand_clean"] == df["Manufacturer_clean"], df["Brand"].combine_first(df["Manufacturer"]))
+    # Clean and prepare both columns: Replace NaN with empty string and lowercase
+    df["Brand_clean"] = df["Brand"].fillna('').str.strip().str.lower()
+    df["Manufacturer_clean"] = df["Manufacturer"].fillna('').str.strip().str.lower()
 
-# Select columns to keep
-columns_to_keep = [
-    "Pid", "Description", "Name", "Category", "Price", "PriceCurrency", "FinalPrice", 
-    "Discount", "isOnSale", "IsInStock", "Color", "Gender", "Size", "Condition", "MergedBrand"
-]
+    # Perform the comparison and create merged column
+    df["MergedBrand"] = df["Brand"].where(df["Brand_clean"] == df["Manufacturer_clean"], df["Brand"].combine_first(df["Manufacturer"]))
 
-df_filtered = df[columns_to_keep]
+    # Select columns to keep
+    columns_to_keep = [
+        "Pid", "Description", "Name", "Category", "Price", "PriceCurrency", "FinalPrice", 
+        "Discount", "isOnSale", "IsInStock", "Color", "Gender", "Size", "Condition", "MergedBrand"
+    ]
 
-# Save to Parquet
-df_filtered.to_csv(CLEAN_CSV_PATH)
+    df_filtered = df[columns_to_keep]
+
+    # Save to Parquet
+    df_filtered.to_csv(CLEAN_CSV_PATH)
+
+if __name__ == '__main__':
+    main()

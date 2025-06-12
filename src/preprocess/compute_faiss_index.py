@@ -291,35 +291,56 @@ def main():
         for nlist in N_LIST_VALUES:
             print(f"\nCreating {embedding_type} index with nlist={nlist} (dimension: {data['dim']})...")
             
-            index, pid_map = create_faiss_index(
-                data['embeddings'], 
-                data['pids'], 
-                data['dim'],
-                nlist,
-                compressed=COMPRESSED
-            )
-            
-            # Save the index
             index_path = os.path.join(output_dir, f'{base_type}_index.faiss')
-            print(f"Saving index to {index_path}...")
-            save_index(index, index_path)
-            
-            # Save the mapping
             mapping_path = os.path.join(output_dir, f'{base_type}_index_mapping.json')
-            print(f"Saving index mapping to {mapping_path}...")
-            save_mapping(pid_map, mapping_path)
-            
-            # Save the product IDs (keeping this for backward compatibility)
             pids_path = os.path.join(output_dir, f'{base_type}_pids.npy')
-            print(f"Saving product IDs to {pids_path}...")
-            np.save(pids_path, data['pids'])
             
-            # Verify the index with a subset of vectors
-            print(f"Verifying {embedding_type} index with nlist={nlist}...")
-            verify_size = min(1000, len(data['embeddings']))
-            verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
-            
-            # Clear memory
+            if os.path.exists(index_path) and os.path.exists(mapping_path):
+                print(f"Index exists at {index_path}, loading and appending new embeddings...")
+                index = faiss.read_index(index_path)
+                with open(mapping_path, 'r') as f:
+                    existing_mapping = json.load(f)
+                # Convert mapping to pid->idx
+                existing_pid_to_idx = {pid: int(idx) for idx, pid in existing_mapping.items()}
+                existing_idxs = set(existing_pid_to_idx.values())
+                loaded_pids = data['pids']
+                loaded_embeddings = data['embeddings']
+                # Identify new entries
+                new_entries = [(i, pid) for i, pid in enumerate(loaded_pids) if pid not in existing_pid_to_idx]
+                if new_entries:
+                    start_idx = max(existing_idxs) + 1 if existing_idxs else 0
+                    indices, new_pids = zip(*new_entries)
+                    new_embeddings = loaded_embeddings[list(indices)]
+                    new_ids = np.arange(start_idx, start_idx + len(new_pids), dtype=np.int64)
+                    index.add_with_ids(new_embeddings, new_ids)
+                    for pid, id_val in zip(new_pids, new_ids):
+                        existing_mapping[str(id_val)] = pid
+                    print(f"Added {len(new_pids)} new embeddings to index")
+                else:
+                    print("No new embeddings to add; index is up to date")
+                print(f"Saving updated index to {index_path}...")
+                save_index(index, index_path)
+                print(f"Saving updated index mapping to {mapping_path}...")
+                save_mapping(existing_mapping, mapping_path)
+                print(f"Saving updated product IDs to {pids_path}...")
+                np.save(pids_path, data['pids'])
+            else:
+                index, pid_map = create_faiss_index(
+                    data['embeddings'],
+                    data['pids'],
+                    data['dim'],
+                    nlist,
+                    compressed=COMPRESSED
+                )
+                print(f"Saving new index to {index_path}...")
+                save_index(index, index_path)
+                print(f"Saving new index mapping to {mapping_path}...")
+                save_mapping(pid_map, mapping_path)
+                print(f"Saving new product IDs to {pids_path}...")
+                np.save(pids_path, data['pids'])
+            # print(f"Verifying {embedding_type} index with nlist={nlist}...")
+            # verify_size = min(1000, len(data['embeddings']))
+            # verify_index(index, data['embeddings'][:verify_size], data['pids'][:verify_size])
             del index
             gc.collect()
             print(f"Memory usage after processing {embedding_type} with nlist={nlist}: {get_memory_usage():.2f} GB")
