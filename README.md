@@ -1,6 +1,8 @@
 # FinlyWealth Product Search Engine
 
-A scalable, multimodal product search engine developed for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
+Contributors: Jenson Chang, Chukwunonso Ebele-Muolokwu, Da (Catherine) Meng, Jingyuan Wang
+
+The goal of this project is to design and implement a fast, scalable multimodal search engine that captures the semantic meaning of user queries, allowing users to search using text, images, or both to find the most relevant products for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
 
 **Prerequisites**
 - [Docker](https://docs.docker.com/get-docker/)
