@@ -1,0 +1,101 @@
+## Data Product
+
+The FinlyWealth Product Search Engine is a sophisticated multimodal retrieval system designed to increase product discovery in e-commerce environments. This data product addresses the fundamental challenge of enabling users to find relevant products from vast catalogs using natural language queries and visual inputs, processing over 1 million products with sub-200ms response times.
+
+## Why This Product Exists
+
+Finly's credit card search systems sufferred from several critical limitations:
+
+-   **Keyword Dependency**: Users search must contain keywords in the actual product and should not have spelling errors 
+-   **Limited Semantic Understanding**: Inability to interpret user intent beyond literal matches
+-   **Visual Search Gap**: No capability to search using images or visual similarity
+
+### Strategic Value Proposition
+
+To solve the afore mentioned issues, we developed a Search Engine to:
+
+1.  **Enable Intuitive Discovery**: Allow users to search using natural language descriptions like "comfortable running shoes for winter" rather than exact product specifications
+2.  **Bridge Visual-Textual Gap**: Support image-based queries where users can upload photos to find similar products
+3.  **Improve Conversion Rates**: Deliver more relevant results through AI-powered understanding of user intent
+4.  **Scale Efficiently**: Handle millions of products while maintaining fast response times
+5.  **Competitive Differentiation**: Provide advanced search capabilities that set FinlyWealth apart in the affiliate marketing space
+
+## Product Interface Architecture
+
+### Preprocessing Pipeline
+
+The system employs a sophisticated data preprocessing pipeline consisting of several key scripts:
+
+#### 1. Embedding Generation
+
+-   **Purpose**: Converts product text and images into high-dimensional vector representations
+-   **Models Used**:
+    -   CLIP (`openai/clip-vit-base-patch32`) [@openaiclip] for multimodal embeddings
+    -   MiniLM (`sentence-transformers/all-MiniLM-L6-v2`) [@Wang2020MiniLMDS] for text-specific embeddings
+-   **Output**: Fusion embeddings combining both text and image understanding
+
+#### 2. FAISS Index Construction
+
+-   **Purpose**: Creates optimized vector search indices for fast similarity retrieval
+-   **Technology**: Facebook AI Similarity Search (FAISS) [@faiss] with IVF clustering
+
+#### 3. Database Loading
+
+-   **Purpose**: Populates PostgreSQL database with product metadata and embeddings
+-   **Features**: Utilizes pgvector extension for native vector operations
+
+### Frontend Interface
+
+The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
+
+**Key Features:** - **Multimodal Input**: Supports both text queries and image uploads - **Rich Results Display**: Product cards with images, prices, and detailed metadata - **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning
+**User Experience Design:** - Progressive result loading (20 results initially, expandable) - Visual feedback for user interactions (Precision)
+
+### Backend API
+
+The Flask-based [@flask] REST API serves as the core processing engine:
+
+**Endpoints:** - `POST /api/search`: Main search functionality supporting text, image, and multimodal queries - `GET /api/ready`: Health check and initialization status - `POST /api/feedback`: User feedback collection for continuous improvement
+
+**Processing Pipeline:**
+
+Our processing pipeline initiates with *Query Analysis* to determine the input type, whether text, image, or a combination. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT or Google Gemini, optimizes the relevance of the retrieved information. Finally, Result Formatting structures the output, incorporating essential metadata and analytics.
+
+## Pros and Cons Analysis
+
+### Advantages
+
+1.  **Multimodal Capability**: Unique ability to process both text and image queries simultaneously
+2.  **Hybrid Search Architecture**: Combines vector similarity with traditional full-text search for improved recall
+3.  **Scalable Design**: FAISS indices enable sub-second search across millions of products
+4.  **Flexible Model Integration**: Supports multiple embedding models and LLM providers
+
+### Disadvantages and Limitations
+
+#### Technical Constraints
+
+1.  **Model Dependencies**: Relies on pre-trained models that may not be domain-specific. No training done
+2.  **Memory Requirements**: Large embedding matrices require significant RAM and storage for optimal performance
+3.  **Single-Language Support**: Currently optimized only for English queries
+4.  **Update Propagation**: Adding new products requires recomputing embeddings and rebuilding indices
+
+## Potential Improvements and Implementation Challenges
+
+In the upcoming iteration of the product, the following can be explored to get better outputs
+
+#### 1. Advanced Keyword Extraction with KeyBERT
+
+**Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score - **Benefits**: Better understanding of product attributes and user intent - **Implementation Challenge**: Requires additional compute resources for keyword processing
+
+#### 2. Premium Embedding Models
+
+**Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models - **Benefits**: Superior semantic understanding and cross-domain generalization - **Implementation Challenge**: Significantly higher API costs and embedding size
+
+#### 3. LLM Prompt Engineering with Real Customer Data
+
+**Improvement**: Develop sophisticated prompts using actual user search patterns and feedback - **Benefits**: More contextually aware result reranking - **Implementation Challenge**: Privacy concerns and data collection complexity
+
+#### 4. Managed Vector Database Migration
+
+**Improvement**: Transition to Pinecone or similar managed vector database services - **Benefits**: Reduced operational overhead, better scalability, advanced features - **Implementation Challenge**: Migration complexity and ongoing costs - **Cost-Benefit Analysis**: Higher operational costs but reduced engineering overhead
+
