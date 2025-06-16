@@ -6,7 +6,7 @@ The FinlyWealth Product Search Engine is a sophisticated multimodal retrieval sy
 
 Finly's credit card search systems sufferred from several critical limitations:
 
--   **Keyword Dependency**: Users search must contain keywords in the actual product and should not have spelling errors 
+-   **Keyword Dependency**: Users search must contain keywords in the actual product and should not have spelling errors
 -   **Limited Semantic Understanding**: Inability to interpret user intent beyond literal matches
 -   **Visual Search Gap**: No capability to search using images or visual similarity
 
@@ -48,8 +48,7 @@ The system employs a sophisticated data preprocessing pipeline consisting of sev
 
 The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
 
-**Key Features:** - **Multimodal Input**: Supports both text queries and image uploads - **Rich Results Display**: Product cards with images, prices, and detailed metadata - **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning
-**User Experience Design:** - Progressive result loading (20 results initially, expandable) - Visual feedback for user interactions (Precision)
+**Key Features:** - **Multimodal Input**: Supports both text queries and image uploads - **Rich Results Display**: Product cards with images, prices, and detailed metadata - **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning **User Experience Design:** - Progressive result loading (20 results initially, expandable) - Visual feedback for user interactions (Precision)
 
 ### Backend API
 
@@ -85,17 +84,25 @@ In the upcoming iteration of the product, the following can be explored to get b
 
 #### 1. Advanced Keyword Extraction with KeyBERT
 
-**Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score - **Benefits**: Better understanding of product attributes and user intent - **Implementation Challenge**: Requires additional compute resources for keyword processing
+- **Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score
+- **Benefits**: Better understanding of product attributes and user intent 
+- **Implementation Challenge**: Requires additional compute resources for keyword processing
 
 #### 2. Premium Embedding Models
 
-**Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models - **Benefits**: Superior semantic understanding and cross-domain generalization - **Implementation Challenge**: Significantly higher API costs and embedding size
+- **Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models 
+- **Benefits**: Superior semantic understanding and cross-domain generalization 
+- **Implementation Challenge**: Significantly higher API costs and embedding size
 
 #### 3. LLM Prompt Engineering with Real Customer Data
 
-**Improvement**: Develop sophisticated prompts using actual user search patterns and feedback - **Benefits**: More contextually aware result reranking - **Implementation Challenge**: Privacy concerns and data collection complexity
+- **Improvement**: Develop sophisticated prompts using actual user search patterns and feedback 
+- **Benefits**: More contextually aware result reranking 
+- **Implementation Challenge**: Privacy concerns and data collection complexity
 
 #### 4. Managed Vector Database Migration
 
-**Improvement**: Transition to Pinecone or similar managed vector database services - **Benefits**: Reduced operational overhead, better scalability, advanced features - **Implementation Challenge**: Migration complexity and ongoing costs - **Cost-Benefit Analysis**: Higher operational costs but reduced engineering overhead
-
+- **Improvement**: Transition to Pinecone or similar managed vector database services 
+- **Benefits**: Reduced operational overhead, better scalability, advanced features 
+- **Implementation Challenge**: Migration complexity and ongoing costs 
+- **Cost-Benefit Analysis**: Higher operational costs but reduced engineering overhead
