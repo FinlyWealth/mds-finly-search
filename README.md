@@ -11,9 +11,11 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 - Git (optional, for cloning the repo)
 
 **Setting up the database (choose one):**
-- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud. 
+- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
 
-- [Instructions](#setup-instructions---local-postgres) for setting up a local Postgres database. This method is recommended if you plan to develop with your own embeddings. 
+- [Instructions](#setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings or if you encounter issues running Postgres locally. Using Docker simplifies setup and ensures a consistent environment.
+
+- [Instructions](#setup-instructions---local-postgres) for setting up a local Postgres database. This method is recommended if you plan to develop with your own embeddings.
 
 **Running the application or related scripts**
 - [Instructions](#setup-instructions---makefile) for running the search engine application 
@@ -60,6 +62,36 @@ PGHOST=localhost
 PGPORT=5433
 PGDATABASE=postgres
 PGTABLE=products_1M
+```
+
+## Setup Instructions - Docker Postgres
+
+### Step 1. Start the Docker container
+
+```bash
+docker compose -f docker-compose.db.yml up -d
+```
+
+### Step 2. Create Database Credentials
+
+Add the following to the `.env` file
+
+```bash
+# Database configuration
+PGUSER=finly-admin
+PG_SUPERUSER=postgres # this need to match the environment POSTGRES_USER in the docker-compose.db.yml file
+PGPASSWORD=postgres # this need to match the environment POSTGRES_PASSWORD in the docker-compose.db.yml file
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=finly
+```
+
+### Step 3. Setup Database
+
+This will create the database using information from Step 3. It will also add the pgvector extension to the database.
+
+```bash
+make db-setup
 ```
 
 ## Setup Instructions - Local Postgres
