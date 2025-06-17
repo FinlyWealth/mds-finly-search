@@ -35,8 +35,8 @@ experiments:
 	python experiments/experiment_pipeline.py
 
 # Render the Quarto document
-report: report/capstone_proposal_report.qmd
-	quarto render report/capstone_proposal_report.qmd
+report: report/final/capstone_final_report.qmd
+	quarto render report/final/capstone_final_report.qmd
 
 # Cloud SQL Proxy commands
 proxy-setup:
