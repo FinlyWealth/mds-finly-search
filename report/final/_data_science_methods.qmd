@@ -58,19 +58,18 @@ This re-ranking step helps elevate more contextually relevant products, especial
 This project focused on improving search performance for natural language queries, where traditional keyword-based methods often fail. We compared three configurations—Text Search (baseline), Text + Embeddings, and Text + Embeddings + LLM—and evaluated them on Recall@20, Precision@20, and Search Time.
 
 •	**Recall@20** is calculated based on whether the specific target product being searched for appears within the top 20 retrieved results. This evaluation reflects whether the system is able to surface the exact intended product, which is particularly important for e-commerce use cases where users often look for a specific item.
-•	**Precision@20** measures the proportion of the top 20 results that are relevant to the query, based on human judgment. It reflects the ranking quality—how many of the returned products are actually useful to the user.
-•	**Search Time** captures the total time taken to process a query and return results. It helps evaluate the responsiveness of the system under different configurations.
 
+•	**Precision@20** measures the proportion of the top 20 results that are relevant to the query, based on human judgment. It reflects the ranking quality—how many of the returned products are actually useful to the user.
+
+•	**Search Time** captures the total time taken to process a query and return results. It helps evaluate the responsiveness of the system under different configurations.
 
 ![Recall@20](../../img/recall_chart.png)
 
 Recall saw the most improvement for natural queries, the primary focus of this project. The baseline Text Search method retrieved only 7% of relevant results, underscoring its limitations for conversational input. By adding semantic embeddings, recall improved significantly to 53%, and further increased to 58% with LLM reranking. This highlights the LLM’s ability to recover more relevant items beyond those matched by keywords or nearest-neighbor search. For basic queries, recall remained comparable across methods.
 
-
 ![Precision@20](../../img/precision_chart.png)
 
 Precision also improved substantially for natural queries, rising from 7% with baseline Text Search to 70% with Text + Embeddings, and 62% with the LLM-enhanced pipeline. The slight drop in precision with the LLM is likely due to the subjective nature of our evaluation process. In the absence of labeled ground truth, relevance was manually assessed by team members using their own judgment. Without standardized annotation guidelines, this introduces variability in what is considered “relevant.” For basic queries, precision was already strong with Text Search (73%) and peaked at 81% with Text + Embeddings, before slightly dipping to 78% with the LLM.
-
 
 ![Average Search time](../../img/search_time_chart.png)
 Search time increased as more complex processing was introduced. The baseline Text Search remained fastest at 0.3 seconds, followed by the embedding-enhanced search at 0.6 seconds. The LLM-based reranking step added significant overhead, bringing total query time to 4.24 seconds. This additional time is due entirely to the reranking process, where the LLM semantically evaluates and reorders the top results. Overall, we are still under the target time of 5 seconds. 

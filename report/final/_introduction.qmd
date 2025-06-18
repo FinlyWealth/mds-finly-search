@@ -6,7 +6,7 @@ Search in the e-commerce domain presents unique challenges due to the wide varie
 
 To address these gaps, this project designed and implemented a fast, scalable multimodal search system that captures semantic meaning of user queries and returns the most relevant products to the users. Architecture components include:
 
-- **Preprocess Script**:  Python scripts runnable via make commands to generate text and image embeddings from raw CSV and image data, and to build FAISS indexes
+- **Preprocess Script**:  Python scripts runnable via make commands to generate text and image embeddings from raw CSV and image data, and to build FAISS indices
 
 - **Frontend**: Streamlit for handling interactive text and image queries, and displaying search results along with summary statistics and response time [@streamlit]
 
@@ -21,5 +21,5 @@ To address these gaps, this project designed and implemented a fast, scalable mu
 The final data product is evaluated using the following success metrics:  
 
 - Recall@20 for retrieval accuracy
-- Latency for query responsiveness (target: under 5 seconds)
+- Time for query responsiveness (target: under 5 seconds)
 - Precision@20 based on manual relevance assessments for qualitative validation

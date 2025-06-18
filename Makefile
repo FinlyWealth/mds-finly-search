@@ -72,9 +72,12 @@ clean:
 	@-pkill -f "streamlit run src/frontend/app.py" || true
 	@-pkill -f "python src/backend/api.py" || true
 	@-pkill -f "cloud_sql_proxy" || true
-	rm -f report/capstone_proposal_report.pdf
-	rm -rf report/capstone_proposal_report_files
+	rm -f report/final/capstone_final_report.pdf
+	rm -rf report/final/capstone_final_report_files
 	rm -f img/faiss_hyperparam.png
+	rm -f img/recall_chart.png
+	rm -f img/precision_chart.png
+	rm -f img/search_time_chart.png
 	rm -f .coverage
 	rm -f coverage.xml
 	rm -rf .pytest_cache
