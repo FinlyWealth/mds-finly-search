@@ -40,9 +40,9 @@ experiments:
 
 # Render the Quarto document
 report:
-	# @echo "Executing notebook to generate charts..."
-	# jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
-	# @echo "Rendering Quarto report..."
+	@echo "Executing notebook to generate charts..."
+	jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
+	@echo "Rendering Quarto report..."
 	quarto render $(REPORT_FILE)
 
 # Cloud SQL Proxy commands
