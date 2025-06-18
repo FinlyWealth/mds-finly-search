@@ -25,6 +25,7 @@ After conducting exploratory data analysis and consulting with our partner, we s
 |                         | `Size`           | Product size (46% missing; ~55 K unique values)          |
 |                         | `Condition`      | Product condition (e.g., new, used; 5 values)            |
 
+Given the timeline for this project, we've selected 1M dataset out of the 15M to build the final data product. 
 
 ### Preprocessing Pipeline
 Our goal was to develop a multimodal search engine capable of delivering relevant product results for a wide range of customer queries. To support this, we designed a system that encodes product data with both text and image understanding and enables scalable retrieval of similar items. The system incorporates TF-IDF for keyword-based matching, CLIP for aligning visual and textual information, MiniLM for efficient semantic text encoding, and FAISS for scalable vector similarity search. This pipeline is then used to convert the 1M product data into indices that can be searched. 
@@ -41,18 +42,23 @@ To enable scalable and efficient retrieval, we used FAISS — a library for fast
 In addition to vector-based methods, we implemented a traditional keyword-based search using TF-IDF, which ranks products based on the relevance to the query. Product descriptions and attributes are processed into *tsvector* format and stored in a PostgreSQL database. A *tsvector* is a specialized data type for full-text search in Postgres that tokenizes text into lexemes (root word forms) and removes stopwords, enabling fast and accurate query matching through the *tsquery* syntax.
 
 ### Search Pipeline
-When a search query is submitted, we process it in two forms: the raw text and its corresponding embedding. The raw text is used for traditional full-text search, while the embedding is used for vector-based retrieval. Each method returns a ranked list of results, which are then combined using a weighted scoring system. To further enhance relevance, we apply a Large Language Model (LLM) to re-rank the top results based on deeper semantic understanding.
+When a search query is submitted, we process it in two forms: the raw text and its corresponding embedding. The raw text is used for traditional full-text search, while the embedding is used for vector-based retrieval. Each method returns a ranked list of results, which are then combined using a weighted scoring system. To further enhance relevance, we apply a Large Language Model (LLM) to rerank the top results based on deeper semantic understanding.
 
-![Workflow for a Search Query](../../img/search_pipeline.png)
+![Workflow for a Search Query using Text only or Text & Image](../../img/text_pipeline.png)
+
+For image-only queries, the full text search and LLM reranking step is skipped since there are no text inputs to use.
+
+![Workflow for a Search Query using Image only](../../img/image_pipeline.png)
 
 #### Large Language Model
-The LLM plays a key role in improving result relevance by re-ranking the initial set of retrieved products. It helps interpret the user’s intent and refines the rankings based on multiple criteria, including:
-	1.	Semantic similarity to the query intent
-	2.	Direct keyword matches
-	3.	Mentions of specific brand names
-	4.	Price relevance compared to similar items
+The LLM plays a key role in improving result relevance by reranking the initial set of retrieved products. It helps interpret the user’s intent and refines the rankings based on multiple criteria, including:
 
-This re-ranking step helps elevate more contextually relevant products, especially for natural language queries.
+1.	Semantic similarity to the query intent
+2.	Direct keyword matches
+3.	Mentions of specific brand names
+4.	Price relevance compared to similar items
+
+This reranking step helps elevate more contextually relevant products, especially for natural language queries.
 
 ### Evaluation
 This project focused on improving search performance for natural language queries, where traditional keyword-based methods often fail. We compared three configurations—Text Search (baseline), Text + Embeddings, and Text + Embeddings + LLM—and evaluated them on Recall@20, Precision@20, and Search Time.

@@ -27,6 +27,10 @@ execute:
 
 {{< include _data_product_results.qmd >}}
 
+## Conclusion and Recommendations
+
+{{< include _conclusion_recommendation.qmd >}}
+
 {{< pagebreak >}}
 
 ## Appendix

@@ -51,6 +51,7 @@ The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
 ![User Interface](../../img/interface.png)
 
 **Key Features:** 
+
 1. **Multimodal Input**: Supports both text queries and image uploads
 
 2. **Rich Results Display**: Product cards with images, prices, and detailed metadata 
@@ -75,9 +76,9 @@ The Flask-based [@flask] REST API serves as the core processing engine:
 
 **Query Workflow:**
 
-**(Insert diagram of the query workflow)**
+![Search Workflow](../../img/search_workflow.png)
 
-Our processing pipeline initiates with *Query Analysis* to determine the input type, whether text, image, or a combination. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT or Google Gemini, optimizes the relevance of the retrieved information. Finally, Result Formatting structures the output, incorporating essential metadata and analytics.
+Our query workflow starts with passing the search query to the API. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT, optimizes the relevance of the retrieved information. Finally, the top retrieval results are sent back to the frontend.
 
 ### Strengths and Limitations
 
