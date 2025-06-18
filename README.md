@@ -8,7 +8,6 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 
 - [FinlyWealth Product Search Engine](#finlywealth-product-search-engine)
   - [Table of Contents](#table-of-contents)
-  - [Quick Start](#quick-start)
   - [Complete Setup Instructions](#complete-setup-instructions)
     - [Prerequisites](#prerequisites)
     - [Setting up the database (choose one)](#setting-up-the-database-choose-one)
@@ -41,53 +40,8 @@ The goal of this project is to design and implement a fast, scalable multimodal 
     - [Step 3. Build Docker Containers](#step-3-build-docker-containers)
     - [Step 4. Start the Application](#step-4-start-the-application)
     - [Step 5. Clean Up](#step-5-clean-up)
-  - [Setup Troubleshooting](#setup-troubleshooting)
+  - [API Commands](#api-commands)
     - [To test the api through command line](#to-test-the-api-through-command-line)
-
-## Quick Start
-
-For the fastest setup using Docker (recommended for most users):
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone FinlyWealth/mds-finly-search
-   cd mds-finly-search
-   ```
-
-2. **Create environment file:**
-
-   ```bash
-   # Create .env file with required configurations
-   cat > .env << EOF
-   # Database configuration for Google Cloud
-   PGUSER=postgres
-   PGPASSWORD=ZK3RjyBv6twoA9
-   PGHOST=localhost
-   PGPORT=5433
-   PGDATABASE=postgres
-   PGTABLE=products_1M
-   
-   # LLM API key (optional, for result reranking)
-   OPENAI_API_KEY=<your-api-key>
-   
-   # Location of product images and FAISS indices
-   GCS_BUCKET_URL=https://storage.googleapis.com/mds-finly
-   EOF
-   ```
-
-3. **Build and run with Docker:**
-
-   ```bash
-   docker compose build
-   docker compose up
-   ```
-
-4. **Access the application:**
-   - Frontend: <http://localhost:8501>
-   - Backend API: <http://localhost:5001>
-
-For detailed setup instructions or alternative installation methods, see the sections below.
 
 ## Complete Setup Instructions
 
@@ -276,12 +230,11 @@ Add the following to the `.env` file
 
 ```bash
 # Database configuration
-PGUSER=finly-admin
-PG_SUPERUSER=postgres # this need to match the environment POSTGRES_USER in the docker-compose.db.yml file
+PGUSER=postgres
 PGPASSWORD=postgres # this need to match the environment POSTGRES_PASSWORD in the docker-compose.db.yml file
 PGHOST=localhost
 PGPORT=5432
-PGDATABASE=finly
+PGDATABASE=postgres
 PGTABLE=products
 ```
 
@@ -376,7 +329,7 @@ docker compose down
 make clean
 ```
 
-## Setup Troubleshooting
+## API Commands
 
 ### To test the api through command line
 
