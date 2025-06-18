@@ -78,22 +78,22 @@ For detailed setup instructions or alternative installation methods, see the sec
 
 ### Setting up the database (choose one)
 
-- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
+- [Instructions](#database-setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
 
-- [Instructions](#setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run preprocess scripts to generate indices and load data.
+- [Instructions](#database-setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run preprocess scripts to generate indices and load data.
 
 ### Run the application (choose one)
 
-- [Instructions](#setup-instructions---makefile) for running the search engine application through make file.
-- [Instructions](#setup-instructions---docker) for running the search engine application through docker container. This method is recommended if you don't want to setup your local environment.
+- [Instructions](#application-setup-instructions---makefile) for running the search engine application through make file.
+- [Instructions](#application-setup-instructions---docker) for running the search engine application through docker container. This method is recommended if you don't want to setup your local environment.
 
 ### Run experiment (optional)
 
-- [Instructions](#using-makefile-to-run-mlflow-experiments) for running experiments.
+- Please refer to the [Experiment Instructions](experiments/README.md) for running experiments.
 
 ### Deployment
 
-- Deployments are done using Docker images. Follow [instructions](#setup-instructions---docker) to build and test Docker images locally.
+- Deployments are done using Docker images. Follow [instructions](#application-setup-instructions---docker) to build and test Docker images locally.
 - Use GitHub Actions to build and deploy images to Google Cloud.
 
 ## Data Structure Requirements
