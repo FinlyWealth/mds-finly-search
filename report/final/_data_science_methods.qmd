@@ -1,0 +1,81 @@
+#### Data Source, Description and Cleaning          
+
+The dataset consists of multimodal product data, including images (14,684,588 JPEG files, approximately 67 GB), textual information (product names and descriptions), and structured metadata (e.g., `Category`, `Brand`, `Color`). The metadata is stored in a 12 GB CSV file containing 15,384,100 rows and 30 columns.
+
+After conducting exploratory data analysis and consulting with our partner, we selected the 16 most relevant columns that capture the key information users care about. We excluded non-English market entries—retaining approximately 70% of the dataset—in line with our partner’s business focus. Additionally, we merged the `Brand` and `Manufacturer` columns into a single `MergedBrand` field to reduce duplication while preserving distinct brand information. We chose to ignore missing values in the metadata columns, as these fields are likely to provide supplementary information, while the product name already contains the primary details.
+
+: Table: Summary of Retained Columns and Their Characteristics {#tbl-keptcolumns}
+
+| **Group**               | **Attribute**    | **Description / Examples**                               |
+|-------------------------|------------------|----------------------------------------------------------|
+| **Identifiers**         | `Pid`            | Unique product ID; links to image filenames              |
+| **Text Fields**         | `Name`           | Product title (0.2% missing)                             |
+|                         | `Description`    | Product description (0.03% missing)                      |
+|                         | `Category`       | Product category (28% missing; ~15 K unique values)      |
+| **Pricing & Availability** | `Price`       | Listed price                                            |
+|                         | `"PriceCurrency"`   | Currency of the price                              |
+|                         | `FinalPrice`     | Final price after discounts                              |
+|                         | `Discount`       | Discount percentage or value                             |
+|                         | `isOnSale`       | Boolean flag                                            |
+|                         | `IsInStock`      | Boolean flag                                            |
+| **Branding**            | `Brand`          | Brand name (53% missing; ~21 K unique values)            |
+|                         | `Manufacturer`   | Manufacturer name (34% missing; ~26 K unique values)     |
+| **Product Features**    | `Color`          | Product color (49% missing; ~170 K unique values)        |
+|                         | `Gender`         | Target gender (54% missing; 3 values: e.g., male/female) |
+|                         | `Size`           | Product size (46% missing; ~55 K unique values)          |
+|                         | `Condition`      | Product condition (e.g., new, used; 5 values)            |
+
+Given the timeline for this project, we've selected 1M dataset out of the 15M to build the final data product. 
+
+### Preprocessing Pipeline
+Our goal was to develop a multimodal search engine capable of delivering relevant product results for a wide range of customer queries. To support this, we designed a system that encodes product data with both text and image understanding and enables scalable retrieval of similar items. The system incorporates TF-IDF for keyword-based matching, CLIP for aligning visual and textual information, MiniLM for efficient semantic text encoding, and FAISS for scalable vector similarity search. This pipeline is then used to convert the 1M product data into indices that can be searched. 
+
+![Process Product Data](../../img/preprocess_pipeline.png)
+
+#### Embedding Processing
+Our embedding strategy was inspired by Liu and Lopez Ramos [@liu2025multimodal], who combined CLIP and a BERT model fine-tuned on e-commerce data to enhance product search relevance. Since we lacked access to labeled, domain-specific data for fine-tuning, we opted for MiniLM [@huggingfaceMinilm]—a smaller, faster transformer model that performs well out-of-the-box and provides solid semantic understanding. We generate embeddings using both CLIP (for image-text alignment) and MiniLM (for textual metadata), then concatenate them into a single unified embedding, which is stored in a vector database for retrieval.
+
+#### Embedding Clustering
+To enable scalable and efficient retrieval, we used FAISS — a library for fast similarity search and clustering of dense vectors. We clustered 1 million products into 4,000 groups, with each product assigned to one cluster. Using IVF (Inverted File Indexing), we indexed these clusters so that at query time, the search is performed only within the top 32 most relevant clusters. This significantly improves retrieval speed, though it comes at the cost of not scanning the entire catalog for each query.
+
+#### Text Processing
+In addition to vector-based methods, we implemented a traditional keyword-based search using TF-IDF, which ranks products based on the relevance to the query. Product descriptions and attributes are processed into *tsvector* format and stored in a PostgreSQL database. A *tsvector* is a specialized data type for full-text search in Postgres that tokenizes text into lexemes (root word forms) and removes stopwords, enabling fast and accurate query matching through the *tsquery* syntax.
+
+### Search Pipeline
+When a search query is submitted, we process it in two forms: the raw text and its corresponding embedding. The raw text is used for traditional full-text search, while the embedding is used for vector-based retrieval. Each method returns a ranked list of results, which are then combined using a weighted scoring system. To further enhance relevance, we apply a Large Language Model (LLM) to rerank the top results based on deeper semantic understanding.
+
+![Workflow for a Search Query using Text only or Text & Image](../../img/text_pipeline.png)
+
+For image-only queries, the full text search and LLM reranking step is skipped since there are no text inputs to use.
+
+![Workflow for a Search Query using Image only](../../img/image_pipeline.png)
+
+#### Large Language Model
+The LLM plays a key role in improving result relevance by reranking the initial set of retrieved products. It helps interpret the user’s intent and refines the rankings based on multiple criteria, including:
+
+1.	Semantic similarity to the query intent
+2.	Direct keyword matches
+3.	Mentions of specific brand names
+4.	Price relevance compared to similar items
+
+This reranking step helps elevate more contextually relevant products, especially for natural language queries.
+
+### Evaluation
+This project focused on improving search performance for natural language queries, where traditional keyword-based methods often fail. We compared three configurations—Text Search (baseline), Text + Embeddings, and Text + Embeddings + LLM—and evaluated them on Recall@20, Precision@20, and Search Time.
+
+•	**Recall@20** is calculated based on whether the specific target product being searched for appears within the top 20 retrieved results. This evaluation reflects whether the system is able to surface the exact intended product, which is particularly important for e-commerce use cases where users often look for a specific item.
+
+•	**Precision@20** measures the proportion of the top 20 results that are relevant to the query, based on human judgment. It reflects the ranking quality—how many of the returned products are actually useful to the user.
+
+•	**Search Time** captures the total time taken to process a query and return results. It helps evaluate the responsiveness of the system under different configurations.
+
+![Recall@20](../../img/recall_chart.png)
+
+Recall saw the most improvement for natural queries, the primary focus of this project. The baseline Text Search method retrieved only 7% of relevant results, underscoring its limitations for conversational input. By adding semantic embeddings, recall improved significantly to 53%, and further increased to 58% with LLM reranking. This highlights the LLM’s ability to recover more relevant items beyond those matched by keywords or nearest-neighbor search. For basic queries, recall remained comparable across methods.
+
+![Precision@20](../../img/precision_chart.png)
+
+Precision also improved substantially for natural queries, rising from 7% with baseline Text Search to 70% with Text + Embeddings, and 62% with the LLM-enhanced pipeline. The slight drop in precision with the LLM is likely due to the subjective nature of our evaluation process. In the absence of labeled ground truth, relevance was manually assessed by team members using their own judgment. Without standardized annotation guidelines, this introduces variability in what is considered “relevant.” For basic queries, precision was already strong with Text Search (73%) and peaked at 81% with Text + Embeddings, before slightly dipping to 78% with the LLM.
+
+![Average Search time](../../img/search_time_chart.png)
+Search time increased as more complex processing was introduced. The baseline Text Search remained fastest at 0.3 seconds, followed by the embedding-enhanced search at 0.6 seconds. The LLM-based reranking step added significant overhead, bringing total query time to 4.24 seconds. This additional time is due entirely to the reranking process, where the LLM semantically evaluates and reorders the top results. Overall, we are still under the target time of 5 seconds. 

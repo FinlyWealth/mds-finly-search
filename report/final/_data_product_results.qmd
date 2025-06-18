@@ -1,0 +1,96 @@
+The data product is comprised of preprocessing scripts, a frontend interface and a backend API.
+
+### Preprocessing Pipeline
+
+The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
+
+- `clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
+- `generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.
+- `load_db.py`:  Loads these generated embeddings and associated product metadata into the PGVector database.
+- `compute_faiss_index.py` : Compute the FAISS indices for faster search.
+
+### Frontend Interface
+
+The Streamlit-based frontend serves as an internal tool for evaluating the quality of search results and testing the underlying API. It supports a range of query types—including text-only, image-only, and multimodal inputs. The interface also provide summary statistics on the retrieved results.
+
+![User Interface](../../img/interface.png)
+
+**Key Features:** 
+
+1. **Multimodal Input**: Supports both text queries and image uploads
+
+2. **Rich Results Display**: Product cards with images, prices, and detailed metadata 
+
+3. **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning 
+
+4. **User Experience Design:** 
+   - Progressive result loading (20 results initially, expandable) 
+   - Visual feedback for user interactions (Precision)
+
+### Backend API
+
+The Flask-based [@flask] REST API serves as the core processing engine:
+
+**Endpoints:** 
+
+- `POST /api/search`: Main search functionality supporting text, image, and multimodal queries 
+
+- `GET /api/ready`: Health check and initialization status 
+ 
+- `POST /api/feedback`: User feedback collection for continuous improvement
+
+**Query Workflow:**
+
+![Search Workflow](../../img/search_workflow.png)
+
+Our query workflow starts with passing the search query to the API. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT, optimizes the relevance of the retrieved information. Finally, the top retrieval results are sent back to the frontend.
+
+### Database and Storage
+The system’s data infrastructure is built on Google Cloud. Product metadata and embeddings are stored in a PostgreSQL database with the pgvector extension on Cloud SQL, primarily for retrieval and indexing purposes. Similarity search is performed using FAISS indices, which are stored on Google Cloud Storage alongside product images. This storage setup is highly scalable, making it easy to accommodate growing volumes of product images and embedding indices as the catalog expands.
+
+### Strengths and Limitations
+
+This section outlines the core strengths and current technical constraints of the search system. While the architecture is designed for flexibility, speed, and multimodal support, certain trade-offs exist due to reliance on pre-trained models and resource requirements. 
+
+#### Key Advantages
+
+1.  **Multimodal Capability**: Unique ability to process both text and image queries simultaneously
+2.  **Hybrid Search Architecture**: Combines vector similarity with traditional full-text search for improved recall
+3.  **Scalable Design**: FAISS indices enable sub-second search across millions of products
+4.  **Flexible Model Integration**: Supports multiple embedding models and LLM providers
+
+#### Technical Constraints
+
+1.  **Model Dependencies**: Relies on pre-trained models that may not be domain-specific. No training done
+2.  **Memory Requirements**: Large embedding matrices require significant RAM and storage for optimal performance
+3.  **Single-Language Support**: Currently optimized only for English queries
+4.  **Update Propagation**: Adding new products requires recomputing embeddings and rebuilding indices
+
+### Potential Improvements and Implementation Challenges
+
+As the system evolves, several enhancements can be explored to boost retrieval accuracy, scalability, and user relevance. This section highlights key opportunities identified through initial experimentation and outlines the potential benefits of each, along with the practical challenges they present. 
+
+#### 1. Advanced Keyword Extraction with KeyBERT
+
+- **Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score
+- **Benefits**: Better understanding of product attributes and user intent 
+- **Implementation Challenge**: Requires additional compute resources for keyword processing
+
+#### 2. Premium Embedding Models
+
+- **Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models 
+- **Benefits**: Superior semantic understanding and cross-domain generalization 
+- **Implementation Challenge**: Significantly higher API costs and embedding size
+
+#### 3. LLM Prompt Engineering with Real Customer Data
+
+- **Improvement**: Develop sophisticated prompts using actual user search patterns and feedback 
+- **Benefits**: More contextually aware result reranking 
+- **Implementation Challenge**: Privacy concerns and data collection complexity
+
+#### 4. Managed Vector Database Migration
+
+- **Improvement**: Transition to Pinecone or similar managed vector database services 
+- **Benefits**: Reduced operational overhead, better scalability, advanced features 
+- **Implementation Challenge**: Migration complexity and ongoing costs 
+- **Cost-Benefit Analysis**: Higher operational costs but reduced engineering overhead

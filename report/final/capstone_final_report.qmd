@@ -19,20 +19,22 @@ execute:
 
 {{< include _introduction.qmd >}}
 
-## Data Science Techniques
+## Data Science Methods
 
-{{< include _data_science_techniques.qmd >}}
+{{< include _data_science_methods.qmd >}}
 
-## Timeline
+## Data Product and Results
 
-{{< include _timeline.qmd >}}
+{{< include _data_product_results.qmd >}}
+
+## Conclusion and Recommendations
+
+{{< include _conclusion_recommendation.qmd >}}
 
 {{< pagebreak >}}
 
 ## Appendix
 
 {{< include _appendix.qmd >}}
-
-{{< pagebreak >}}
 
 ## References

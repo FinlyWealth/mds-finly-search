@@ -20,3 +20,4 @@ data/csv/sample_100k_v2.csv
 data/csv/sample_1M.csv
 data/faiss_indices/
 /data/csv/raw
+data/csv/clean/data.csv

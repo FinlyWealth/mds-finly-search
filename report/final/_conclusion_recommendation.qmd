@@ -1,25 +1,10 @@
----
-title: Conclusion
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .qmd
-      format_name: quarto
-      format_version: '1.0'
-      jupytext_version: 1.16.1
-  kernelspec:
-    display_name: finly
-    language: python
-    name: finly
----
-
-
+### Conclusion
 
 The goal of this project for Finly is to develop a fast and scalable multimodal search engine that enables users to search for relevant products using either text or image queries. Unlike Finly’s original website, which relies on direct keyword matching, our system is designed to capture the semantic meaning of natural language. Given that the product is customer-facing, the response time must remain within five seconds.
 
-To achieve this, we integrated multiple models and tools. For multimodal capability, we leveraged CLIP [@openaiclip] to extract features from both text and images. To capture semantic information, we incorporated MiniLM [@huggingfaceMinilm] along with an LLM-based reranking module [@openai2023gpt35]. To ensure low latency, we implemented FAISS indexing [@faiss] for efficient similarity search. Additionally, we adopted Google Cloud PostgreSQL for data storage to meet the scalability requirements.
+To achieve this, we integrated multiple models and tools. For multimodal capability, we leveraged CLIP [@openaiclip] to extract features from both text and images. To capture semantic information, we incorporated MiniLM [@huggingfaceMinilm] along with an LLM-based reranking module [@openai2023gpt35]. To ensure low latency, we implemented FAISS indexing [@faiss] for efficient similarity search. Additionally, we adopted Google Cloud for data storage to meet the scalability requirements.
 
-## Limitations and Recommendations
+### Recommendations
 
 Our product successfully met all of Finly’s requirements. Based on our performance evaluation, the system achieved a Recall@20 of 0.56, a Precision@20 of 0.64, and an average search time of 4.24 seconds, tested on a dataset of one million products. In addition, we developed a web interface that presents a statistical summary of the retrieved results and integrated a modular evaluation framework for our partner. However, several limitations of the current system should be noted.
 

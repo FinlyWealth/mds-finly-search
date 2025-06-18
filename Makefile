@@ -6,10 +6,27 @@ ifneq (,$(wildcard .env))
     export
 endif
 
+#
+# Cloud SQL Proxy commands
+#
 # Set default Cloud SQL instance if not provided
 CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 
-# Train indices and load data
+proxy-setup:
+	chmod +x scripts/setup_sql_proxy.sh
+	./scripts/setup_sql_proxy.sh
+
+proxy:
+	@if [ ! -f .cloud_sql_proxy/cloud_sql_proxy ]; then \
+		echo "Proxy not set up. Running setup first..."; \
+		$(MAKE) proxy-setup; \
+	else \
+		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
+	fi
+
+#
+# Preprocessing commands
+#
 train: csv embed db-load faiss
 
 # Individual preprocessing targets
@@ -25,28 +42,27 @@ db-load:
 faiss:
 	python src/preprocess/compute_faiss_index.py
 
-# Run experiments and track results on MLflow
+#
+# MLFlow experiment commands
+#
 experiments:
 	python experiments/experiment_pipeline.py
 
-# Render the Quarto document
-report: report/capstone_proposal_report.qmd
-	quarto render report/capstone_proposal_report.qmd
+#
+# Quarto report building commands
+#
+NOTEBOOK = notebook/generate_figures.ipynb
+REPORT_FILE = report/final/capstone_final_report.qmd
 
-# Cloud SQL Proxy commands
-proxy-setup:
-	chmod +x scripts/setup_sql_proxy.sh
-	./scripts/setup_sql_proxy.sh
+report:
+	@echo "Executing notebook to generate charts..."
+	jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
+	@echo "Rendering Quarto report..."
+	quarto render $(REPORT_FILE)
 
-proxy:
-	@if [ ! -f .cloud_sql_proxy/cloud_sql_proxy ]; then \
-		echo "Proxy not set up. Running setup first..."; \
-		$(MAKE) proxy-setup; \
-	else \
-		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
-	fi
-
+#
 # Start both frontend and backend applications
+#
 run:
 	$(MAKE) proxy & \
 	python src/backend/api.py & \
@@ -54,15 +70,20 @@ run:
 	streamlit run src/frontend/app.py & \
 	wait
 
+#
 # Clean up temporary files and shutdown applications
+#
 clean:
 	@echo "Cleaning up..."
 	@-pkill -f "streamlit run src/frontend/app.py" || true
 	@-pkill -f "python src/backend/api.py" || true
 	@-pkill -f "cloud_sql_proxy" || true
-	rm -f report/capstone_proposal_report.pdf
-	rm -rf report/capstone_proposal_report_files
+	rm -f report/final/capstone_final_report.pdf
+	rm -rf report/final/capstone_final_report_files
 	rm -f img/faiss_hyperparam.png
+	rm -f img/recall_chart.png
+	rm -f img/precision_chart.png
+	rm -f img/search_time_chart.png
 	rm -f .coverage
 	rm -f coverage.xml
 	rm -rf .pytest_cache

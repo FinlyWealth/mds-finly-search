@@ -41,7 +41,6 @@ The goal of this project is to design and implement a fast, scalable multimodal 
     - [Step 4. Start the Application](#step-4-start-the-application)
     - [Step 5. Clean Up](#step-5-clean-up)
   - [API Commands](#api-commands)
-    - [To test the api through command line](#to-test-the-api-through-command-line)
 
 ## Complete Setup Instructions
 
@@ -197,10 +196,10 @@ gcloud init
 ```
 
 Select your Google project (repo admin should provide you with the project ID)
-![google-project](./img/google-project.png)
+![google-project](./img/google_project.png)
 
 When prompted to configure a default Compute Region and Zone, select `n`.
-![region-zone](./img/region-zone.png)
+![region-zone](./img/region_zone.png)
 
 ### Step 3. Add the Google Cloud SQL Credentials
 
@@ -331,13 +330,4 @@ make clean
 
 ## API Commands
 
-### To test the api through command line
-
-```{bash}
-# test text search
-curl -X POST http://127.0.0.1:5001/api/search/text -H "Content-Type: application/json" -d '{"query": "red pant"}'
-
-# test image search
-# download any product image and stored as test-img.jpeg
-curl -X POST http://127.0.0.1:5001/api/search/image -H "Content-Type: application/json" -d '{"image_path": "{absolute-path-to-repo}/mds-finly-search/test-img.jpeg"}'
-```
+Please refer to [API documentation](src/backend/README.md) for more details. 
