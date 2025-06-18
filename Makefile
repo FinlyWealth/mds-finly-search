@@ -6,14 +6,27 @@ ifneq (,$(wildcard .env))
     export
 endif
 
+#
+# Cloud SQL Proxy commands
+#
 # Set default Cloud SQL instance if not provided
 CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 
-# Variables
-NOTEBOOK = notebook/generate_figures.ipynb
-REPORT_FILE = report/final/capstone_final_report.qmd
+proxy-setup:
+	chmod +x scripts/setup_sql_proxy.sh
+	./scripts/setup_sql_proxy.sh
 
-# Train indices and load data
+proxy:
+	@if [ ! -f .cloud_sql_proxy/cloud_sql_proxy ]; then \
+		echo "Proxy not set up. Running setup first..."; \
+		$(MAKE) proxy-setup; \
+	else \
+		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
+	fi
+
+#
+# Preprocessing commands
+#
 train: csv embed db-load faiss
 
 # Individual preprocessing targets
@@ -29,31 +42,27 @@ db-load:
 faiss:
 	python src/preprocess/compute_faiss_index.py
 
-# Run experiments and track results on MLflow
+#
+# MLFlow experiment commands
+#
 experiments:
 	python experiments/experiment_pipeline.py
 
-# Render the Quarto document
+#
+# Quarto report building commands
+#
+NOTEBOOK = notebook/generate_figures.ipynb
+REPORT_FILE = report/final/capstone_final_report.qmd
+
 report:
 	@echo "Executing notebook to generate charts..."
 	jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
 	@echo "Rendering Quarto report..."
 	quarto render $(REPORT_FILE)
 
-# Cloud SQL Proxy commands
-proxy-setup:
-	chmod +x scripts/setup_sql_proxy.sh
-	./scripts/setup_sql_proxy.sh
-
-proxy:
-	@if [ ! -f .cloud_sql_proxy/cloud_sql_proxy ]; then \
-		echo "Proxy not set up. Running setup first..."; \
-		$(MAKE) proxy-setup; \
-	else \
-		./.cloud_sql_proxy/cloud_sql_proxy -instances="$(CLOUD_SQL_INSTANCE)"=tcp:5433; \
-	fi
-
+#
 # Start both frontend and backend applications
+#
 run:
 	$(MAKE) proxy & \
 	python src/backend/api.py & \
@@ -61,7 +70,9 @@ run:
 	streamlit run src/frontend/app.py & \
 	wait
 
+#
 # Clean up temporary files and shutdown applications
+#
 clean:
 	@echo "Cleaning up..."
 	@-pkill -f "streamlit run src/frontend/app.py" || true

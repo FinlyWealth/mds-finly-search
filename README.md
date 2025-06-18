@@ -41,7 +41,7 @@ The goal of this project is to design and implement a fast, scalable multimodal 
     - [Step 4. Start the Application](#step-4-start-the-application)
     - [Step 5. Clean Up](#step-5-clean-up)
   - [API Commands](#api-commands)
-    - [To test the api through command line](#to-test-the-api-through-command-line)
+    - [/Search](#search)
 
 ## Complete Setup Instructions
 
@@ -197,10 +197,10 @@ gcloud init
 ```
 
 Select your Google project (repo admin should provide you with the project ID)
-![google-project](./img/google-project.png)
+![google-project](./img/google_project.png)
 
 When prompted to configure a default Compute Region and Zone, select `n`.
-![region-zone](./img/region-zone.png)
+![region-zone](./img/region_zone.png)
 
 ### Step 3. Add the Google Cloud SQL Credentials
 
@@ -331,7 +331,7 @@ make clean
 
 ## API Commands
 
-### To test the api through command line
+### /Search
 
 ```{bash}
 # test text search
