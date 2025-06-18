@@ -9,11 +9,6 @@ endif
 # Set default Cloud SQL instance if not provided
 CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 
-# Setup Postgres database
-db-setup:
-	chmod +x scripts/setup_local_db.sh
-	./scripts/setup_local_db.sh
-
 # Train indices and load data
 train: csv embed db-load faiss
 

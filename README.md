@@ -6,107 +6,70 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Data Structure Requirements](#data-structure-requirements)
-  - [Required Data Format](#required-data-format)
-  - [Optional Columns](#optional-columns)
-  - [Data Organization](#data-organization)
-  - [Data Quality Requirements](#data-quality-requirements)
-  - [Example Data Structure](#example-data-structure)
-  - [Processing Pipeline Steps](#processing-pipeline-steps)
-  - [Environment Configuration](#environment-configuration)
-  - [Troubleshooting Data Issues](#troubleshooting-data-issues)
-- [Setup Instructions - Google Cloud SDK](#setup-instructions---google-cloud-sdk)
-  - [Step 1. Setup Google Cloud SDK](#step-1-setup-google-cloud-sdk)
-  - [Step 2. Sign in to Google Cloud](#step-2-sign-in-to-google-cloud)
-  - [Step 3. Add the Google Cloud SQL Credentials](#step-3-add-the-google-cloud-sql-credentials)
-- [Setup Instructions - Local Postgres](#setup-instructions---local-postgres)
-  - [Step 1. Install Postgres](#step-1-install-postgres)
-  - [Step 2. Initialize Postgres](#step-2-initialize-postgres)
-  - [Step 3. Create Database Credentials](#step-3-create-database-credentials)
-  - [Step 4. Setup Database](#step-4-setup-database)
-- [Setup Instructions - Makefile](#setup-instructions---makefile)
-  - [Step 1. Setup Python environment](#step-1-setup-python-environment)
-  - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables)
-  - [Step 3. Start Application](#step-3-start-application)
-- [Using Makefile to Run mlflow Experiments](#using-makefile-to-run-mlflow-experiments)
-- [Using Makefile for Preprocessing and Generating Indices](#using-makefile-for-preprocessing-and-generating-indices)
-- [Setup Instructions - Docker](#setup-instructions---docker)
-  - [Step 1. Clone the Repository](#step-1-clone-the-repository)
-  - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables-1)
-  - [Step 3. Build Docker Containers](#step-3-build-docker-containers)
-  - [Step 4. Start the Application](#step-4-start-the-application)
-  - [Step 5. Clean Up](#step-5-clean-up)
-- [Setup Troubleshooting](#setup-troubleshooting)
+- [FinlyWealth Product Search Engine](#finlywealth-product-search-engine)
+  - [Table of Contents](#table-of-contents)
+  - [Complete Setup Instructions](#complete-setup-instructions)
+    - [Prerequisites](#prerequisites)
+    - [Setting up the database (choose one)](#setting-up-the-database-choose-one)
+    - [Run the application (choose one)](#run-the-application-choose-one)
+    - [Run experiment (optional)](#run-experiment-optional)
+    - [Deployment](#deployment)
+  - [Data Structure Requirements](#data-structure-requirements)
+    - [Required Data Format](#required-data-format)
+    - [Optional Columns](#optional-columns)
+    - [Data Organization](#data-organization)
+    - [Data Quality Requirements](#data-quality-requirements)
+    - [Processing Pipeline Steps](#processing-pipeline-steps)
+    - [Environment Configuration](#environment-configuration)
+    - [Troubleshooting Data Issues](#troubleshooting-data-issues)
+  - [Database Setup Instructions - Google Cloud SDK](#database-setup-instructions---google-cloud-sdk)
+    - [Step 1. Setup Google Cloud SDK](#step-1-setup-google-cloud-sdk)
+    - [Step 2. Sign in to Google Cloud](#step-2-sign-in-to-google-cloud)
+    - [Step 3. Add the Google Cloud SQL Credentials](#step-3-add-the-google-cloud-sql-credentials)
+  - [Database Setup Instructions - Docker Postgres](#database-setup-instructions---docker-postgres)
+    - [Step 1. Start the Docker container](#step-1-start-the-docker-container)
+    - [Step 2. Create Database Credentials](#step-2-create-database-credentials)
+    - [Step 3. Load Data](#step-3-load-data)
+  - [Application Setup Instructions - Makefile](#application-setup-instructions---makefile)
+    - [Step 1. Setup Python environment](#step-1-setup-python-environment)
+    - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables)
+    - [Step 3. Start Application](#step-3-start-application)
+  - [Application Setup Instructions - Docker](#application-setup-instructions---docker)
+    - [Step 1. Clone the Repository](#step-1-clone-the-repository)
+    - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables-1)
+    - [Step 3. Build Docker Containers](#step-3-build-docker-containers)
+    - [Step 4. Start the Application](#step-4-start-the-application)
+    - [Step 5. Clean Up](#step-5-clean-up)
+  - [API Commands](#api-commands)
+    - [To test the api through command line](#to-test-the-api-through-command-line)
 
-## Quick Start
+## Complete Setup Instructions
 
-For the fastest setup using Docker (recommended for most users):
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone FinlyWealth/mds-finly-search
-   cd mds-finly-search
-   ```
-
-2. **Create environment file:**
-
-   ```bash
-   # Create .env file with required configurations
-   cat > .env << EOF
-   # Database configuration for Google Cloud
-   PGUSER=postgres
-   PGPASSWORD=ZK3RjyBv6twoA9
-   PGHOST=localhost
-   PGPORT=5433
-   PGDATABASE=postgres
-   PGTABLE=products_1M
-   
-   # LLM API key (optional, for result reranking)
-   OPENAI_API_KEY=<your-api-key>
-   
-   # Location of product images and FAISS indices
-   GCS_BUCKET_URL=https://storage.googleapis.com/mds-finly
-   EOF
-   ```
-
-3. **Build and run with Docker:**
-
-   ```bash
-   docker compose build
-   docker compose up
-   ```
-
-4. **Access the application:**
-   - Frontend: <http://localhost:8501>
-   - Backend API: <http://localhost:5001>
-
-For detailed setup instructions or alternative installation methods, see the sections below.
-
-## Prerequisites
+### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (optional, for cloud database access)
 - Git (optional, for cloning the repo)
 
-**Setting up the database (choose one):**
+### Setting up the database (choose one)
 
-- [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
+- [Instructions](#database-setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
 
-- [Instructions](#setup-instructions---local-postgres) for setting up a local Postgres database. This method is recommended if you plan to develop with your own embeddings.
+- [Instructions](#database-setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run preprocess scripts to generate indices and load data.
 
-**Running the application or related scripts**
+### Run the application (choose one)
 
-- [Instructions](#setup-instructions---makefile) for running the search engine application
-- [Instructions](#using-makefile-to-run-mlflow-experiments) for running experiments.
-- [Instructions](#using-makefile-for-preprocessing-and-generating-indices) for preprocessing scripts to generate indices and load data.
+- [Instructions](#application-setup-instructions---makefile) for running the search engine application through make file.
+- [Instructions](#application-setup-instructions---docker) for running the search engine application through docker container. This is to test for deployment. 
 
-**Deployment**
+### Run experiment (optional)
 
-- Deployments are done using Docker images. Follow [instructions](#setup-instructions---docker) to build and test Docker images locally.
+- Please refer to the [Experiment Instructions](experiments/README.md) for running experiments.
+
+### Deployment
+
+- Deployments are done using Docker images. Follow [instructions](#application-setup-instructions---docker) to build and test Docker images locally.
 - Use GitHub Actions to build and deploy images to Google Cloud.
 
 ## Data Structure Requirements
@@ -149,10 +112,10 @@ Your data should be organized in the following directory structure:
 
 ```
 data/
-├── csv/
-│   └── data.csv          # Your raw CSV file goes here
-├── clean/                # Processed data will be saved here
-├── images/               # Product images (optional for image search)
+├── csv
+│   ├── clean            # Cleaned CSV will be saved here
+│   └── raw              # Put raw CSV here
+├── images/              # Product images (optional for image search)
 │   ├── 12345.jpeg       # Images named by Pid
 │   ├── 12346.jpeg
 │   └── ...
@@ -180,7 +143,7 @@ Once your data is properly formatted and placed in the correct directories:
 
    - Filters by supported currencies
    - Merges Brand and Manufacturer columns
-   - Saves cleaned data to `data/clean/data.csv`
+   - Saves cleaned data to `data/csv/clean/data.csv`
 
 2. **Embedding Generation**:
 
@@ -199,8 +162,8 @@ You can customize data paths by setting environment variables in your `.env` fil
 
 ```bash
 # Custom data paths (optional)
-RAW_CSV_PATH=data/raw/my_products.csv
-CLEAN_CSV_PATH=data/clean/my_clean_products.csv
+RAW_CSV_PATH=data/csv/raw/my_products.csv
+CLEAN_CSV_PATH=data/csv/clean/my_clean_products.csv
 EMBEDDINGS_PATH=data/my_embeddings
 ```
 
@@ -213,7 +176,7 @@ EMBEDDINGS_PATH=data/my_embeddings
 - **Large datasets**: The pipeline processes data in chunks of 500,000 rows for memory efficiency
 - **Encoding issues**: Save your CSV with UTF-8 encoding to handle special characters
 
-## Setup Instructions - Google Cloud SDK
+## Database Setup Instructions - Google Cloud SDK
 
 ### Step 1. Setup Google Cloud SDK
 
@@ -253,50 +216,33 @@ PGDATABASE=postgres
 PGTABLE=products_1M
 ```
 
-## Setup Instructions - Local Postgres
+## Database Setup Instructions - Docker Postgres
 
-### Step 1. Install Postgres
-
-Install Postgres for your platform from [here](https://www.postgresql.org)
-
-For Mac, we suggest installing via Homebrew:
+### Step 1. Start the Docker container
 
 ```bash
-brew install postgresql@17
+docker compose -f docker-compose.db.yml up -d
 ```
 
-### Step 2. Initialize Postgres
-
-Initialize the database and sets the username for Postgres to be the same as the current bash user name.
-
-```bash
-initdb -U $(whoami) -D /usr/local/var/postgresql@17
-brew services start postgresql@17
-```
-
-### Step 3. Create Database Credentials
+### Step 2. Create Database Credentials
 
 Add the following to the `.env` file
 
 ```bash
 # Database configuration
-PGUSER=<bash-usename> # From Step 2. 
-PGPASSWORD=ZK3RjyBv6twoA9 # Or any other password you want to use
+PGUSER=postgres
+PGPASSWORD=postgres # this need to match the environment POSTGRES_PASSWORD in the docker-compose.db.yml file
+PGHOST=localhost
+PGPORT=5432
 PGDATABASE=postgres
 PGTABLE=products
 ```
 
-### Step 4. Setup Database
+### Step 3. Load Data
 
-This will create the database using information from Step 3. It will also add the pgvector extension to the database.
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data. You must do this before run the application.
 
-```bash
-make db-setup
-```
-
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data.
-
-## Setup Instructions - Makefile
+## Application Setup Instructions - Makefile
 
 ### Step 1. Setup Python environment
 
@@ -328,15 +274,7 @@ To start the app and the server:
 make run
 ```
 
-## Using Makefile to Run mlflow Experiments
-
-Please refer to the [Experiment Instructions](experiments/README.md).
-
-## Using Makefile for Preprocessing and Generating Indices
-
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
-
-## Setup Instructions - Docker
+## Application Setup Instructions - Docker
 
 ### Step 1. Clone the Repository
 
@@ -349,17 +287,9 @@ cd mds-finly-search
 
 ### Step 2. Configure Environment Variables
 
-Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
+Add the following to the `.env` file.
 
 ```bash
-# Database configuration for Google Cloud
-PGUSER=postgres
-PGPASSWORD=ZK3RjyBv6twoA9
-PGHOST=localhost
-PGPORT=5433
-PGDATABASE=postgres
-PGTABLE=products_1M
-
 # LLM API key
 OPENAI_API_KEY=<insert-api-key>
 
@@ -379,7 +309,7 @@ This step may take several minutes as it downloads and builds all required depen
 
 ### Step 4. Start the Application
 
-Make sure the proxy is running and launch the application.
+Optinal: If using Google Cloud database, run `make proxy` to connect to the database.
 
 ```bash
 docker compose up
@@ -399,9 +329,9 @@ docker compose down
 make clean
 ```
 
-## Setup Troubleshooting
+## API Commands
 
-**To test the api through command line**
+### To test the api through command line
 
 ```{bash}
 # test text search
@@ -410,34 +340,4 @@ curl -X POST http://127.0.0.1:5001/api/search/text -H "Content-Type: application
 # test image search
 # download any product image and stored as test-img.jpeg
 curl -X POST http://127.0.0.1:5001/api/search/image -H "Content-Type: application/json" -d '{"image_path": "{absolute-path-to-repo}/mds-finly-search/test-img.jpeg"}'
-```
-
-**Postgres not installed through homebrew**
-
-In case your postgres is installed at `/Library/PostgreSQL/16`, not through home brew, try the following method to install pgvector.
-
-In the finly conda environment, from any directory:
-
-```{bash}
-git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git
-cd pgvector
-make
-sudo make install
-```
-
-If you see any error like `make: arm64-apple-darwin20.0.0-clang: No such file or directory` when run the `make` command, try to run the following, and then run `make` again:
-
-```{bash}
-export PG_CONFIG=/Library/PostgreSQL/16/bin/pg_config
-```
-
-Now we need to copy the pgvector we installed in the finly conda enviornment into place where our Postgres database is installed.
-
-```{bash}
-# create the postgres extension folder
-sudo mkdir -p /Library/PostgreSQL/16/share/extension
-
-sudo cp /Users/{your_username}/miniforge3/envs/finly/share/extension/vector.control /Library/PostgreSQL/16/share/extension/
-
-sudo cp /Users/{your_username}/miniforge3/envs/finly/lib/vector.dylib /Library/PostgreSQL/16/lib/postgresql/
 ```
