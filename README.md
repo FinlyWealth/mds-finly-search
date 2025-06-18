@@ -107,7 +107,7 @@ For detailed setup instructions or alternative installation methods, see the sec
 ### Run the application (choose one)
 
 - [Instructions](#application-setup-instructions---makefile) for running the search engine application through make file.
-- [Instructions](#application-setup-instructions---docker) for running the search engine application through docker container. This method is recommended if you don't want to setup your local environment.
+- [Instructions](#application-setup-instructions---docker) for running the search engine application through docker container. This is to test for deployment. 
 
 ### Run experiment (optional)
 
@@ -356,7 +356,7 @@ This step may take several minutes as it downloads and builds all required depen
 
 ### Step 4. Start the Application
 
-Make sure the proxy is running and launch the application.
+Optinal: If using Google Cloud database, run `make proxy` to connect to the database.
 
 ```bash
 docker compose up
