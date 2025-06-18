@@ -24,8 +24,8 @@ The Streamlit-based frontend serves as an internal tool for evaluating the quali
 3. **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning 
 
 4. **User Experience Design:** 
-  - Progressive result loading (20 results initially, expandable) 
-  - Visual feedback for user interactions (Precision)
+   - Progressive result loading (20 results initially, expandable) 
+   - Visual feedback for user interactions (Precision)
 
 ### Backend API
 
@@ -44,6 +44,9 @@ The Flask-based [@flask] REST API serves as the core processing engine:
 ![Search Workflow](../../img/search_workflow.png)
 
 Our query workflow starts with passing the search query to the API. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT, optimizes the relevance of the retrieved information. Finally, the top retrieval results are sent back to the frontend.
+
+### Database and Storage
+The system’s data infrastructure is built on Google Cloud. Product metadata and embeddings are stored in a PostgreSQL database with the pgvector extension on Cloud SQL, primarily for retrieval and indexing purposes. Similarity search is performed using FAISS indices, which are stored on Google Cloud Storage alongside product images. This storage setup is highly scalable, making it easy to accommodate growing volumes of product images and embedding indices as the catalog expands.
 
 ### Strengths and Limitations
 
