@@ -35,8 +35,15 @@ def process_csv():
 
     df_filtered = df[columns_to_keep]
 
-    # Save to Parquet
+    # Check if directory exists and create it if not
+    output_dir = os.path.dirname(CLEAN_CSV_PATH)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Created directory: {output_dir}")
+
+    # Save to CSV
     df_filtered.to_csv(CLEAN_CSV_PATH)
+    print(f"Saved cleaned data to: {CLEAN_CSV_PATH}")
 
 def main():
     process_csv()

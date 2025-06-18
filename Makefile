@@ -13,11 +13,6 @@ CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 NOTEBOOK = notebook/generate_figures.ipynb
 REPORT_FILE = report/final/capstone_final_report.qmd
 
-# Setup Postgres database
-db-setup:
-	chmod +x scripts/setup_local_db.sh
-	./scripts/setup_local_db.sh
-
 # Train indices and load data
 train: csv embed db-load faiss
 
