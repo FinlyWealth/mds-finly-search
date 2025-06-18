@@ -2,6 +2,8 @@
 
 A Flask-based REST API for multimodal product search using vector embeddings and hybrid retrieval. The API supports text search, image search, and multimodal search (text + image) with intelligent result reordering using LLM.
 
+![Search Workflow](../../img/search_workflow.png)
+
 ## Table of Contents
 
 - [Product Search API Documentation](#product-search-api-documentation)
