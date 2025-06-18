@@ -44,6 +44,10 @@ The system employs a sophisticated data preprocessing pipeline consisting of sev
 -   **Purpose**: Populates PostgreSQL database with product metadata and embeddings
 -   **Features**: Utilizes pgvector extension for native vector operations -->
 
+## Data Product
+
+The FinlyWealth Data Product is comprised of a frontend interface, a backend, and preprocessing scripts responsible for generating product search embeddings and indices.
+
 #### Frontend Interface
 
 The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
@@ -73,6 +77,15 @@ The Flask-based [@flask] REST API serves as the core processing engine:
 - `GET /api/ready`: Health check and initialization status 
  
 - `POST /api/feedback`: User feedback collection for continuous improvement
+
+#### Preprocessing Pipeline
+
+The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
+
+- `src/preprocess/clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
+- `src/preprocess/generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.
+- `src/preprocess/load_db.py`:  Loads these generated embeddings and associated product metadata into the PGVector database.
+- `src/preprocess/compute_faiss_index.py` : Compute the FAISS indices for faster search.
 
 **Query Workflow:**
 
