@@ -48,16 +48,16 @@ The system employs a sophisticated data preprocessing pipeline consisting of sev
 
 The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
 
-**(Insert frontend screenshot with labels that corresponds to the features below)**
+![User Interface](../../img/interface.png)
 
 **Key Features:** 
-- **Multimodal Input**: Supports both text queries and image uploads
+1. **Multimodal Input**: Supports both text queries and image uploads
 
-- **Rich Results Display**: Product cards with images, prices, and detailed metadata 
+2. **Rich Results Display**: Product cards with images, prices, and detailed metadata 
 
-- **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning 
+3. **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning 
 
-- **User Experience Design:** 
+4. **User Experience Design:** 
   - Progressive result loading (20 results initially, expandable) 
   - Visual feedback for user interactions (Precision)
 
