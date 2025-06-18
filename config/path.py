@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # File paths configuration
-CLEAN_CSV_PATH = os.getenv('CLEAN_CSV_PATH', 'data/clean/data.csv')
-RAW_CSV_PATH = os.getenv('RAW_CSV_PATH', 'data/raw/data.csv')
+CLEAN_CSV_PATH = os.getenv('CLEAN_CSV_PATH', 'data/csv/clean/data.csv')
+RAW_CSV_PATH = os.getenv('RAW_CSV_PATH', 'data/csv/raw/data.csv')
 BENCHMARK_QUERY_CSV = os.getenv('BENCHMARK_QUERY_CSV', 'data/csv/benchmark/benchmark_query_v2.csv')
 EMBEDDINGS_PATH = os.getenv('EMBEDDINGS_PATH', 'data/embeddings')
 

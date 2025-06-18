@@ -25,33 +25,38 @@ After conducting exploratory data analysis and consulting with our partner, we s
 |                         | `Size`           | Product size (46% missing; ~55 K unique values)          |
 |                         | `Condition`      | Product condition (e.g., new, used; 5 values)            |
 
-### Data Science Techniques
-
-Our goal was to build a multimodal search engine that returns relevant product results in response to diverse customer queries. To achieve this, we focused on combining text and image understanding with scalable retrieval techniques. We designed a hybrid retrieval system that combines full text search, multimodal embeddings and LLM reranking to improve the relevance of product search results. This pipeline integrates TF-IDF (Term Frequency-Inverse Document Frequency) for full text search, CLIP for image-text understanding, MiniLM for lightweight semantic understanding, FAISS (Facebook AI Similarity Search) for fast retrieval, and OpenAI GPT3.5 LLM (Large Language Model) for reranking.
-
-#### TF-IDF
-TF-IDF is a keyword-based search method that ranks products based on how uniquely their descriptions match the search query.
-
-#### CLIP and MiniLM Embedding
-We were inspired by [@liu2025multimodal], who combined CLIP and a [@devlin2019bert] model fine-tuned on e-commerce data to improve product search. Since we didn’t have access to labeled domain-specific data for fine-tuning, we chose a smaller, faster transformer model that performs well out-of-the-box that supports semantic understanding.
-
-[@openaiclip] [@huggingfaceMinilm] 
-
-#### FAISS
-FAISS  is a library for efficient similarity search and clustering of dense vectors. It enables fast retrieval from large-scale embedding databases using indexing techniques like IVF (Inverted File Indexing). A preprocessing step is required to build this index so it can be searched through when a user submits a query. 
-
-#### Large Language Model
-A LLM is used to help improve search quality by re-ranking initial product results based on deeper semantic understanding. It interprets the user’s intent and assesses the relevance of each product based on the following:
-
-1. Semantic similarity to the query intent
-2. Direct keyword matches
-3. Brand Name mentions
-4. Price comparison
 
 ### Preprocessing Pipeline
+Our goal was to develop a multimodal search engine capable of delivering relevant product results for a wide range of customer queries. To support this, we designed a system that encodes product data with both text and image understanding and enables scalable retrieval of similar items. The system incorporates TF-IDF for keyword-based matching, CLIP for aligning visual and textual information, MiniLM for efficient semantic text encoding, and FAISS for scalable vector similarity search. This pipeline is then used to convert the 1M product data into indices that can be searched. 
+
+![Process Product Data](../../img/preprocess_pipeline.png)
+
+#### Embedding Processing
+Our embedding strategy was inspired by Liu and Lopez Ramos [@liu2025multimodal], who combined CLIP and a BERT model fine-tuned on e-commerce data to enhance product search relevance. Since we lacked access to labeled, domain-specific data for fine-tuning, we opted for MiniLM [@huggingfaceMinilm]—a smaller, faster transformer model that performs well out-of-the-box and provides solid semantic understanding. We generate embeddings using both CLIP (for image-text alignment) and MiniLM (for textual metadata), then concatenate them into a single unified embedding, which is stored in a vector database for retrieval.
+
+#### Embedding Clustering
+To enable scalable and efficient retrieval, we used FAISS — a library for fast similarity search and clustering of dense vectors. We clustered 1 million products into 4,000 groups, with each product assigned to one cluster. Using IVF (Inverted File Indexing), we indexed these clusters so that at query time, the search is performed only within the top 32 most relevant clusters. This significantly improves retrieval speed, though it comes at the cost of not scanning the entire catalog for each query.
+
+#### Text Processing
+In addition to vector-based methods, we implemented a traditional keyword-based search using TF-IDF, which ranks products based on the relevance to the query. Product descriptions and attributes are processed into *tsvector* format and stored in a PostgreSQL database. A *tsvector* is a specialized data type for full-text search in Postgres that tokenizes text into lexemes (root word forms) and removes stopwords, enabling fast and accurate query matching through the *tsquery* syntax.
 
 ### Search Pipeline
-![Workflow for a Search Query](../../img/search-pipeline.png)
+When a search query is submitted, we process it in two forms: the raw text and its corresponding embedding. The raw text is used for traditional full-text search, while the embedding is used for vector-based retrieval. Each method returns a ranked list of results, which are then combined using a weighted scoring system. To further enhance relevance, we apply a Large Language Model (LLM) to re-rank the top results based on deeper semantic understanding.
 
+![Workflow for a Search Query](../../img/search_pipeline.png)
+
+#### Large Language Model
+The LLM plays a key role in improving result relevance by re-ranking the initial set of retrieved products. It helps interpret the user’s intent and refines the rankings based on multiple criteria, including:
+	1.	Semantic similarity to the query intent
+	2.	Direct keyword matches
+	3.	Mentions of specific brand names
+	4.	Price relevance compared to similar items
+
+This re-ranking step helps elevate more contextually relevant products, especially for natural language queries.
 
 ### Evaluation
+![Recall@20](../../img/recall_chart.png)
+
+![Precision@20](../../img/precision_chart.png)
+
+![Average Search time](../../img/search_time_chart.png)

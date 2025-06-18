@@ -9,6 +9,10 @@ endif
 # Set default Cloud SQL instance if not provided
 CLOUD_SQL_INSTANCE ?= pristine-flames-460002-h2:us-west1:postgres
 
+# Variables
+NOTEBOOK = notebook/generate_figures.ipynb
+REPORT_FILE = report/final/capstone_final_report.qmd
+
 # Setup Postgres database
 db-setup:
 	chmod +x scripts/setup_local_db.sh
@@ -35,8 +39,11 @@ experiments:
 	python experiments/experiment_pipeline.py
 
 # Render the Quarto document
-report: report/final/capstone_final_report.qmd
-	quarto render report/final/capstone_final_report.qmd
+report:
+	# @echo "Executing notebook to generate charts..."
+	# jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
+	# @echo "Rendering Quarto report..."
+	quarto render $(REPORT_FILE)
 
 # Cloud SQL Proxy commands
 proxy-setup:
