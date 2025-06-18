@@ -1,6 +1,8 @@
+### Conclusion
+
 The goal of this project for Finly is to develop a fast and scalable multimodal search engine that enables users to search for relevant products using either text or image queries. Unlike Finly’s original website, which relies on direct keyword matching, our system is designed to capture the semantic meaning of natural language. Given that the product is customer-facing, the response time must remain within five seconds.
 
-To achieve this, we integrated multiple models and tools. For multimodal capability, we leveraged CLIP [@openaiclip] to extract features from both text and images. To capture semantic information, we incorporated MiniLM [@huggingfaceMinilm] along with an LLM-based reranking module [@openai2023gpt35]. To ensure low latency, we implemented FAISS indexing [@faiss] for efficient similarity search. Additionally, we adopted Google Cloud PostgreSQL for data storage to meet the scalability requirements.
+To achieve this, we integrated multiple models and tools. For multimodal capability, we leveraged CLIP [@openaiclip] to extract features from both text and images. To capture semantic information, we incorporated MiniLM [@huggingfaceMinilm] along with an LLM-based reranking module [@openai2023gpt35]. To ensure low latency, we implemented FAISS indexing [@faiss] for efficient similarity search. Additionally, we adopted Google Cloud for data storage to meet the scalability requirements.
 
 ### Recommendations
 

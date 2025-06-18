@@ -1,56 +1,17 @@
-<!-- ## Data Product
-
-The FinlyWealth Product Search Engine is a sophisticated multimodal retrieval system designed to increase product discovery in e-commerce environments. This data product addresses the fundamental challenge of enabling users to find relevant products from vast catalogs using natural language queries and visual inputs, processing over 1 million products with sub-200ms response times.
-
-## Why This Product Exists
-
-Finly's credit card search systems sufferred from several critical limitations:
-
--   **Keyword Dependency**: Users search must contain keywords in the actual product and should not have spelling errors
--   **Limited Semantic Understanding**: Inability to interpret user intent beyond literal matches
--   **Visual Search Gap**: No capability to search using images or visual similarity
-
-### Strategic Value Proposition
-
-To solve the afore mentioned issues, we developed a Search Engine to:
-
-1.  **Enable Intuitive Discovery**: Allow users to search using natural language descriptions like "comfortable running shoes for winter" rather than exact product specifications
-2.  **Bridge Visual-Textual Gap**: Support image-based queries where users can upload photos to find similar products
-3.  **Improve Conversion Rates**: Deliver more relevant results through AI-powered understanding of user intent
-4.  **Scale Efficiently**: Handle millions of products while maintaining fast response times
-5.  **Competitive Differentiation**: Provide advanced search capabilities that set FinlyWealth apart in the affiliate marketing space
-
-### Product Interface Architecture
+The data product is comprised of preprocessing scripts, a frontend interface and a backend API.
 
 ### Preprocessing Pipeline
 
-The system employs a sophisticated data preprocessing pipeline consisting of several key scripts:
+The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
 
-#### 1. Embedding Generation
+- `clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
+- `generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.
+- `load_db.py`:  Loads these generated embeddings and associated product metadata into the PGVector database.
+- `compute_faiss_index.py` : Compute the FAISS indices for faster search.
 
--   **Purpose**: Converts product text and images into high-dimensional vector representations
--   **Models Used**:
-    -   CLIP (`openai/clip-vit-base-patch32`) [@openaiclip] for multimodal embeddings
-    -   MiniLM (`sentence-transformers/all-MiniLM-L6-v2`) [@Wang2020MiniLMDS] for text-specific embeddings
--   **Output**: Fusion embeddings combining both text and image understanding
+### Frontend Interface
 
-#### 2. FAISS Index Construction
-
--   **Purpose**: Creates optimized vector search indices for fast similarity retrieval
--   **Technology**: Facebook AI Similarity Search (FAISS) [@faiss] with IVF clustering
-
-#### 3. Database Loading
-
--   **Purpose**: Populates PostgreSQL database with product metadata and embeddings
--   **Features**: Utilizes pgvector extension for native vector operations -->
-
-## Data Product
-
-The FinlyWealth Data Product is comprised of a frontend interface, a backend, and preprocessing scripts responsible for generating product search embeddings and indices.
-
-#### Frontend Interface
-
-The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
+The Streamlit-based frontend serves as an internal tool for evaluating the quality of search results and testing the underlying API. It supports a range of query types—including text-only, image-only, and multimodal inputs. The interface also provide summary statistics on the retrieved results.
 
 ![User Interface](../../img/interface.png)
 
@@ -66,7 +27,7 @@ The Streamlit-based [@streamlit] frontend provides an intuitive user experience:
   - Progressive result loading (20 results initially, expandable) 
   - Visual feedback for user interactions (Precision)
 
-#### Backend API
+### Backend API
 
 The Flask-based [@flask] REST API serves as the core processing engine:
 
@@ -78,15 +39,6 @@ The Flask-based [@flask] REST API serves as the core processing engine:
  
 - `POST /api/feedback`: User feedback collection for continuous improvement
 
-#### Preprocessing Pipeline
-
-The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
-
-- `src/preprocess/clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
-- `src/preprocess/generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.
-- `src/preprocess/load_db.py`:  Loads these generated embeddings and associated product metadata into the PGVector database.
-- `src/preprocess/compute_faiss_index.py` : Compute the FAISS indices for faster search.
-
 **Query Workflow:**
 
 ![Search Workflow](../../img/search_workflow.png)
@@ -94,6 +46,8 @@ The preprocessing pipeline's involves data cleaning, followed by embedding gener
 Our query workflow starts with passing the search query to the API. This is followed by *Embedding Generation*, which creates appropriate vector representations. Next, a *Hybrid Retrieval* step combines both vector similarity and full-text search for comprehensive results. Subsequently, *LLM Reranking*, utilizing models like OpenAI GPT, optimizes the relevance of the retrieved information. Finally, the top retrieval results are sent back to the frontend.
 
 ### Strengths and Limitations
+
+This section outlines the core strengths and current technical constraints of the search system. While the architecture is designed for flexibility, speed, and multimodal support, certain trade-offs exist due to reliance on pre-trained models and resource requirements. 
 
 #### Key Advantages
 
@@ -111,7 +65,7 @@ Our query workflow starts with passing the search query to the API. This is foll
 
 ### Potential Improvements and Implementation Challenges
 
-In the upcoming iteration of the product, the following can be explored:
+As the system evolves, several enhancements can be explored to boost retrieval accuracy, scalability, and user relevance. This section highlights key opportunities identified through initial experimentation and outlines the potential benefits of each, along with the practical challenges they present. 
 
 #### 1. Advanced Keyword Extraction with KeyBERT
 
