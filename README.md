@@ -13,31 +13,13 @@ The goal of this project is to design and implement a fast, scalable multimodal 
   - [Optional Columns](#optional-columns)
   - [Data Organization](#data-organization)
   - [Data Quality Requirements](#data-quality-requirements)
-  - [Example Data Structure](#example-data-structure)
   - [Processing Pipeline Steps](#processing-pipeline-steps)
   - [Environment Configuration](#environment-configuration)
   - [Troubleshooting Data Issues](#troubleshooting-data-issues)
-- [Setup Instructions - Google Cloud SDK](#setup-instructions---google-cloud-sdk)
-  - [Step 1. Setup Google Cloud SDK](#step-1-setup-google-cloud-sdk)
-  - [Step 2. Sign in to Google Cloud](#step-2-sign-in-to-google-cloud)
-  - [Step 3. Add the Google Cloud SQL Credentials](#step-3-add-the-google-cloud-sql-credentials)
-- [Setup Instructions - Local Postgres](#setup-instructions---local-postgres)
-  - [Step 1. Install Postgres](#step-1-install-postgres)
-  - [Step 2. Initialize Postgres](#step-2-initialize-postgres)
-  - [Step 3. Create Database Credentials](#step-3-create-database-credentials)
-  - [Step 4. Setup Database](#step-4-setup-database)
-- [Setup Instructions - Makefile](#setup-instructions---makefile)
-  - [Step 1. Setup Python environment](#step-1-setup-python-environment)
-  - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables)
-  - [Step 3. Start Application](#step-3-start-application)
-- [Using Makefile to Run mlflow Experiments](#using-makefile-to-run-mlflow-experiments)
-- [Using Makefile for Preprocessing and Generating Indices](#using-makefile-for-preprocessing-and-generating-indices)
-- [Setup Instructions - Docker](#setup-instructions---docker)
-  - [Step 1. Clone the Repository](#step-1-clone-the-repository)
-  - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables-1)
-  - [Step 3. Build Docker Containers](#step-3-build-docker-containers)
-  - [Step 4. Start the Application](#step-4-start-the-application)
-  - [Step 5. Clean Up](#step-5-clean-up)
+- [Database Setup Instructions - Google Cloud SDK](#database-setup-instructions---google-cloud-sdk)
+- [Database Setup Instructions - Docker Postgres](#database-setup-instructions---docker-postgres)
+- [Application Setup Instructions - Makefile](#application-setup-instructions---makefile)
+- [Application Setup Instructions - Docker](#application-setup-instructions---docker)
 - [Setup Troubleshooting](#setup-troubleshooting)
 
 ## Quick Start
@@ -85,26 +67,31 @@ For the fastest setup using Docker (recommended for most users):
 
 For detailed setup instructions or alternative installation methods, see the sections below.
 
-## Prerequisites
+## Complete Setup Instructions
+
+### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/) (if using docker-compose.yaml)
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) (optional, for cloud database access)
 - Git (optional, for cloning the repo)
 
-**Setting up the database (choose one):**
+### Setting up the database (choose one)
 
 - [Instructions](#setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
 
-- [Instructions](#setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings or if you encounter issues running Postgres locally. Using Docker simplifies setup and ensures a consistent environment.
+- [Instructions](#setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run preprocess scripts to generate indices and load data.
 
-**Running the application or related scripts**
+### Run the application (choose one)
 
-- [Instructions](#setup-instructions---makefile) for running the search engine application
+- [Instructions](#setup-instructions---makefile) for running the search engine application through make file.
+- [Instructions](#setup-instructions---docker) for running the search engine application through docker container. This method is recommended if you don't want to setup your local environment.
+
+### Run experiment (optional)
+
 - [Instructions](#using-makefile-to-run-mlflow-experiments) for running experiments.
-- [Instructions](#using-makefile-for-preprocessing-and-generating-indices) for preprocessing scripts to generate indices and load data.
 
-**Deployment**
+### Deployment
 
 - Deployments are done using Docker images. Follow [instructions](#setup-instructions---docker) to build and test Docker images locally.
 - Use GitHub Actions to build and deploy images to Google Cloud.
@@ -213,7 +200,7 @@ EMBEDDINGS_PATH=data/my_embeddings
 - **Large datasets**: The pipeline processes data in chunks of 500,000 rows for memory efficiency
 - **Encoding issues**: Save your CSV with UTF-8 encoding to handle special characters
 
-## Setup Instructions - Google Cloud SDK
+## Database Setup Instructions - Google Cloud SDK
 
 ### Step 1. Setup Google Cloud SDK
 
@@ -253,7 +240,7 @@ PGDATABASE=postgres
 PGTABLE=products_1M
 ```
 
-## Setup Instructions - Docker Postgres
+## Database Setup Instructions - Docker Postgres
 
 ### Step 1. Start the Docker container
 
@@ -273,19 +260,22 @@ PGPASSWORD=postgres # this need to match the environment POSTGRES_PASSWORD in th
 PGHOST=localhost
 PGPORT=5432
 PGDATABASE=finly
+PGTABLE=products
 ```
 
 ### Step 3. Setup Database
 
-This will create the database using information from Step 3. It will also add the pgvector extension to the database.
+This will create the database using information from Step 2. It will also add the pgvector extension to the database.
 
 ```bash
 make db-setup
 ```
 
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data.
+### Step 4. Load Data
 
-## Setup Instructions - Makefile
+Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data. You must do this before run the application.
+
+## Application Setup Instructions - Makefile
 
 ### Step 1. Setup Python environment
 
@@ -317,15 +307,7 @@ To start the app and the server:
 make run
 ```
 
-## Using Makefile to Run mlflow Experiments
-
-Please refer to the [Experiment Instructions](experiments/README.md).
-
-## Using Makefile for Preprocessing and Generating Indices
-
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md).
-
-## Setup Instructions - Docker
+## Application Setup Instructions - Docker
 
 ### Step 1. Clone the Repository
 
@@ -338,17 +320,9 @@ cd mds-finly-search
 
 ### Step 2. Configure Environment Variables
 
-Set up the required environment variables for database connection and API access by creating a `.env` file in the root folder with the following configurations.
+Add the following to the `.env` file.
 
 ```bash
-# Database configuration for Google Cloud
-PGUSER=postgres
-PGPASSWORD=ZK3RjyBv6twoA9
-PGHOST=localhost
-PGPORT=5433
-PGDATABASE=postgres
-PGTABLE=products_1M
-
 # LLM API key
 OPENAI_API_KEY=<insert-api-key>
 
@@ -390,7 +364,7 @@ make clean
 
 ## Setup Troubleshooting
 
-**To test the api through command line**
+### To test the api through command line
 
 ```{bash}
 # test text search
