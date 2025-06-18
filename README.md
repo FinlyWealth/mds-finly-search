@@ -30,8 +30,7 @@ The goal of this project is to design and implement a fast, scalable multimodal 
   - [Database Setup Instructions - Docker Postgres](#database-setup-instructions---docker-postgres)
     - [Step 1. Start the Docker container](#step-1-start-the-docker-container)
     - [Step 2. Create Database Credentials](#step-2-create-database-credentials)
-    - [Step 3. Setup Database](#step-3-setup-database)
-    - [Step 4. Load Data](#step-4-load-data)
+    - [Step 3. Load Data](#step-3-load-data)
   - [Application Setup Instructions - Makefile](#application-setup-instructions---makefile)
     - [Step 1. Setup Python environment](#step-1-setup-python-environment)
     - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables)
@@ -286,15 +285,7 @@ PGDATABASE=finly
 PGTABLE=products
 ```
 
-### Step 3. Setup Database
-
-This will create the database using information from Step 2. It will also add the pgvector extension to the database.
-
-```bash
-make db-setup
-```
-
-### Step 4. Load Data
+### Step 3. Load Data
 
 Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data. You must do this before run the application.
 
