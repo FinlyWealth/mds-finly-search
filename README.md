@@ -6,21 +6,44 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Data Structure Requirements](#data-structure-requirements)
-  - [Required Data Format](#required-data-format)
-  - [Optional Columns](#optional-columns)
-  - [Data Organization](#data-organization)
-  - [Data Quality Requirements](#data-quality-requirements)
-  - [Processing Pipeline Steps](#processing-pipeline-steps)
-  - [Environment Configuration](#environment-configuration)
-  - [Troubleshooting Data Issues](#troubleshooting-data-issues)
-- [Database Setup Instructions - Google Cloud SDK](#database-setup-instructions---google-cloud-sdk)
-- [Database Setup Instructions - Docker Postgres](#database-setup-instructions---docker-postgres)
-- [Application Setup Instructions - Makefile](#application-setup-instructions---makefile)
-- [Application Setup Instructions - Docker](#application-setup-instructions---docker)
-- [Setup Troubleshooting](#setup-troubleshooting)
+- [FinlyWealth Product Search Engine](#finlywealth-product-search-engine)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Complete Setup Instructions](#complete-setup-instructions)
+    - [Prerequisites](#prerequisites)
+    - [Setting up the database (choose one)](#setting-up-the-database-choose-one)
+    - [Run the application (choose one)](#run-the-application-choose-one)
+    - [Run experiment (optional)](#run-experiment-optional)
+    - [Deployment](#deployment)
+  - [Data Structure Requirements](#data-structure-requirements)
+    - [Required Data Format](#required-data-format)
+    - [Optional Columns](#optional-columns)
+    - [Data Organization](#data-organization)
+    - [Data Quality Requirements](#data-quality-requirements)
+    - [Processing Pipeline Steps](#processing-pipeline-steps)
+    - [Environment Configuration](#environment-configuration)
+    - [Troubleshooting Data Issues](#troubleshooting-data-issues)
+  - [Database Setup Instructions - Google Cloud SDK](#database-setup-instructions---google-cloud-sdk)
+    - [Step 1. Setup Google Cloud SDK](#step-1-setup-google-cloud-sdk)
+    - [Step 2. Sign in to Google Cloud](#step-2-sign-in-to-google-cloud)
+    - [Step 3. Add the Google Cloud SQL Credentials](#step-3-add-the-google-cloud-sql-credentials)
+  - [Database Setup Instructions - Docker Postgres](#database-setup-instructions---docker-postgres)
+    - [Step 1. Start the Docker container](#step-1-start-the-docker-container)
+    - [Step 2. Create Database Credentials](#step-2-create-database-credentials)
+    - [Step 3. Setup Database](#step-3-setup-database)
+    - [Step 4. Load Data](#step-4-load-data)
+  - [Application Setup Instructions - Makefile](#application-setup-instructions---makefile)
+    - [Step 1. Setup Python environment](#step-1-setup-python-environment)
+    - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables)
+    - [Step 3. Start Application](#step-3-start-application)
+  - [Application Setup Instructions - Docker](#application-setup-instructions---docker)
+    - [Step 1. Clone the Repository](#step-1-clone-the-repository)
+    - [Step 2. Configure Environment Variables](#step-2-configure-environment-variables-1)
+    - [Step 3. Build Docker Containers](#step-3-build-docker-containers)
+    - [Step 4. Start the Application](#step-4-start-the-application)
+    - [Step 5. Clean Up](#step-5-clean-up)
+  - [Setup Troubleshooting](#setup-troubleshooting)
+    - [To test the api through command line](#to-test-the-api-through-command-line)
 
 ## Quick Start
 
@@ -136,10 +159,10 @@ Your data should be organized in the following directory structure:
 
 ```
 data/
-├── csv/
-│   └── data.csv          # Your raw CSV file goes here
-├── clean/                # Processed data will be saved here
-├── images/               # Product images (optional for image search)
+├── csv
+│   ├── clean            # Cleaned CSV will be saved here
+│   └── raw              # Put raw CSV here
+├── images/              # Product images (optional for image search)
 │   ├── 12345.jpeg       # Images named by Pid
 │   ├── 12346.jpeg
 │   └── ...
@@ -167,7 +190,7 @@ Once your data is properly formatted and placed in the correct directories:
 
    - Filters by supported currencies
    - Merges Brand and Manufacturer columns
-   - Saves cleaned data to `data/clean/data.csv`
+   - Saves cleaned data to `data/csv/clean/data.csv`
 
 2. **Embedding Generation**:
 
@@ -186,8 +209,8 @@ You can customize data paths by setting environment variables in your `.env` fil
 
 ```bash
 # Custom data paths (optional)
-RAW_CSV_PATH=data/raw/my_products.csv
-CLEAN_CSV_PATH=data/clean/my_clean_products.csv
+RAW_CSV_PATH=data/csv/raw/my_products.csv
+CLEAN_CSV_PATH=data/csv/clean/my_clean_products.csv
 EMBEDDINGS_PATH=data/my_embeddings
 ```
 
