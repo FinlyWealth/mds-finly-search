@@ -15,4 +15,3 @@ Second, the reranking module was applied only to the top 30 retrieved products d
 Third, due to the absence of labeled customer interaction data, our current similarity search relies solely on fusion embeddings of text and image inputs, without any model fine-tuning. Prior academic research suggests that adding a projection layer on top of the fusion embedding can improve performance. Once Finly acquires sufficient labeled data, the pipeline can be adapted to include such a layer along with an appropriately designed loss function.
 
 Lastly, because of our limited computing resources, embeddings were only generated for one million products, rather than the entire product catalog. This can be easily addressed by rerunning our reproducible indexing pipeline once Finly has access to adequate computational infrastructure.
-
