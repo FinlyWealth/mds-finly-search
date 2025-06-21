@@ -6,8 +6,7 @@ from unittest.mock import MagicMock
 import sys
 import os
 import time
-from src.preprocess import load_db
-from src.preprocess.load_db import (
+from src.indexing.load_db import (
     get_base_embedding_type,
     get_embedding_paths,
     get_enabled_embedding_types,
@@ -127,7 +126,7 @@ def test_init_db(monkeypatch, pg_container, pg_conn):
     # Patch config.db.DB_CONFIG and TABLE_NAME to test container values
     monkeypatch.setattr('config.db.DB_CONFIG', pg_container)
     monkeypatch.setattr('config.db.TABLE_NAME', TABLE_NAME)
-    monkeypatch.setattr('src.preprocess.load_db.get_enabled_embedding_types', get_enabled_embedding_types)
+    monkeypatch.setattr('src.indexing.load_db.get_enabled_embedding_types', get_enabled_embedding_types)
 
     # Now call init_db, it uses the patched config.db values
     init_db(embedding_dims=EMBEDDING_DIMS, drop=True)
@@ -183,7 +182,7 @@ def test_insert_data(pg_container, pg_conn, monkeypatch, sample_metadata_df):
     # Patch DB configuration and table name
     monkeypatch.setattr('config.db.DB_CONFIG', pg_container)
     monkeypatch.setattr('config.db.TABLE_NAME', TABLE_NAME)
-    monkeypatch.setattr('src.preprocess.load_db.get_enabled_embedding_types', get_enabled_embedding_types)
+    monkeypatch.setattr('src.indexing.load_db.get_enabled_embedding_types', get_enabled_embedding_types)
 
     # Initialize the table
     init_db(embedding_dims=EMBEDDING_DIMS, drop=True)
@@ -242,14 +241,14 @@ def test_load_db_main(sample_metadata_df, fake_embeddings_dir, monkeypatch, caps
     filenames, tmp_path = fake_embeddings_dir
 
     # Mock get_embedding_paths to simulate expected embedding types
-    monkeypatch.setattr('src.preprocess.load_db.get_embedding_paths', lambda: {
+    monkeypatch.setattr('src.indexing.load_db.get_embedding_paths', lambda: {
         "fusion": "fusion_embeddings_chunk_0.npz",
         "image": "image_embeddings_chunk_0.npz",
         "text": "text_embeddings.npz"
     })
 
     # Mock get_base_embedding_type to just return the name (since it's identity in test)
-    monkeypatch.setattr('src.preprocess.load_db.get_base_embedding_type', lambda name: name)
+    monkeypatch.setattr('src.indexing.load_db.get_base_embedding_type', lambda name: name)
 
     # Mock get_chunked_files to return the list of .npz files
     def mock_get_chunked_files(name):
@@ -258,10 +257,10 @@ def test_load_db_main(sample_metadata_df, fake_embeddings_dir, monkeypatch, caps
         if name == "image":
             return [f"{name}_embeddings_chunk_0.npz"]
         return f"{name}_embeddings.npz"
-    monkeypatch.setattr('src.preprocess.load_db.get_chunked_files', mock_get_chunked_files)
+    monkeypatch.setattr('src.indexing.load_db.get_chunked_files', mock_get_chunked_files)
 
     # Mock get_enabled_embedding_types to return the test types
-    monkeypatch.setattr('src.preprocess.load_db.get_enabled_embedding_types', lambda: ["fusion", "image", "text"])
+    monkeypatch.setattr('src.indexing.load_db.get_enabled_embedding_types', lambda: ["fusion", "image", "text"])
 
     # Mock pandas.read_csv to return our test DataFrame
     monkeypatch.setattr(pd, "read_csv", lambda _: sample_metadata_df)
@@ -288,8 +287,8 @@ def test_load_db_main(sample_metadata_df, fake_embeddings_dir, monkeypatch, caps
     # Mock init_db and insert_data to verify they're called
     mock_init_db = MagicMock()
     mock_insert_data = MagicMock()
-    monkeypatch.setattr('src.preprocess.load_db.init_db', mock_init_db)
-    monkeypatch.setattr('src.preprocess.load_db.insert_data', mock_insert_data)
+    monkeypatch.setattr('src.indexing.load_db.init_db', mock_init_db)
+    monkeypatch.setattr('src.indexing.load_db.insert_data', mock_insert_data)
 
     # Run the main function
     main()

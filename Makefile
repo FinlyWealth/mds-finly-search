@@ -1,4 +1,4 @@
-.PHONY: report clean preprocess-all embed db-setup db-load faiss experiments proxy proxy-setup run
+.PHONY: report clean index embed db-setup db-load faiss experiments proxy proxy-setup run
 
 # Load environment variables from .env file if it exists
 ifneq (,$(wildcard .env))
@@ -25,22 +25,22 @@ proxy:
 	fi
 
 #
-# Preprocessing commands
+# Indexing commands
 #
-train: csv embed db-load faiss
+index: csv embed db-load faiss
 
-# Individual preprocessing targets
+# Individual indexing targets
 csv:
-	python src/preprocess/clean_data.py
+	python src/indexing/clean_data.py
 
 embed:
-	python src/preprocess/generate_embed.py
+	python src/indexing/generate_embed.py
 
 db-load:
-	python src/preprocess/load_db.py
+	python src/indexing/load_db.py
 
 faiss:
-	python src/preprocess/compute_faiss_index.py
+	python src/indexing/compute_faiss_index.py
 
 #
 # MLFlow experiment commands
@@ -51,7 +51,7 @@ experiments:
 #
 # Quarto report building commands
 #
-NOTEBOOK = notebook/generate_figures.ipynb
+NOTEBOOK = report/final/generate_figures.ipynb
 REPORT_FILE = report/final/capstone_final_report.qmd
 
 report:

@@ -1,12 +1,12 @@
-# Data Preprocessing Pipeline
+# Data Indexing Pipeline
 
-This directory contains the preprocessing pipeline for the FinlyWealth Product Search Engine. The pipeline transforms raw product data into searchable embeddings and indices that power the multimodal search functionality.
+This directory contains the indexing pipeline for the FinlyWealth Product Search Engine. The pipeline transforms raw product data into searchable embeddings and indices that power the multimodal search functionality.
 
-![Process Product Data](../../img/preprocess_pipeline.png)
+![Process Product Data](../../img/index_pipeline.png)
 
 ## Overview
 
-The preprocessing pipeline consists of four main stages:
+The indexing pipeline consists of four main stages:
 
 1. **Data Cleaning** - Process and validate raw CSV data
 2. **Embedding Processing** - Create multimodal embeddings (text + images)
@@ -15,7 +15,7 @@ The preprocessing pipeline consists of four main stages:
 
 ## Prerequisites
 
-Before running the preprocessing pipeline, ensure you have:
+Before running the indexing pipeline, ensure you have:
 
 - ✅ **Database Setup**: Either [Google Cloud SQL](#database-setup) or [Local PostgreSQL](#database-setup)
 - ✅ **Python Environment**: All dependencies installed
@@ -24,10 +24,10 @@ Before running the preprocessing pipeline, ensure you have:
 
 ## Quick Start
 
-Run the complete preprocessing pipeline with a single command:
+Run the complete indexing pipeline with a single command:
 
 ```bash
-make train
+make index
 ```
 
 This executes all four stages in the correct order:
@@ -108,7 +108,7 @@ data/
 ```bash
 make csv
 # or directly:
-python src/preprocess/clean_data.py
+python src/indexing/clean_data.py
 ```
 
 **Output**: Cleaned CSV file ready for embedding generation
@@ -127,7 +127,7 @@ python src/preprocess/clean_data.py
 ```bash
 make embed
 # or directly:
-python src/preprocess/generate_embed.py
+python src/indexing/generate_embed.py
 ```
 
 **Output**: 
@@ -149,7 +149,7 @@ python src/preprocess/generate_embed.py
 ```bash
 make db-load
 # or directly:
-python src/preprocess/load_db.py
+python src/indexing/load_db.py
 ```
 
 **Output**: Database populated with products and search indices
@@ -168,7 +168,7 @@ python src/preprocess/load_db.py
 ```bash
 make faiss
 # or directly:
-python src/preprocess/compute_faiss_index.py
+python src/indexing/compute_faiss_index.py
 ```
 
 **Output**: FAISS index files in `FAISS_INDEX_DIR`
@@ -262,7 +262,7 @@ For large datasets, consider:
 
 ## Next Steps
 
-After successful preprocessing:
+After successful indexing:
 
 1. **Start the application**: `make run`
 2. **Test search functionality**: Use the web interface

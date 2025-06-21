@@ -5,7 +5,7 @@ import urllib.parse
 import numpy as np
 import sys
 import os
-from src.preprocess import load_db
+from src.indexing import load_db
 import numpy as np
 
 @pytest.fixture(scope="module")

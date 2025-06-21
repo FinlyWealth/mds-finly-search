@@ -14,7 +14,6 @@ from tqdm import tqdm
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 sys.path.insert(0, str(root_dir / "src" / "backend"))
-sys.path.insert(0, str(root_dir / "preprocess"))
 
 from embedding import generate_embedding
 from retrieval import hybrid_retrieval, PostgresVectorRetrieval, TextSearchRetrieval, FaissVectorRetrieval, reorder_search_results_by_relevancy

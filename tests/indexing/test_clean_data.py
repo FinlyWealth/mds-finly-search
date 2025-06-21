@@ -43,10 +43,10 @@ def test_process_csv(tmp_path, monkeypatch):
 
     # 4) Reload modules so they re-read os.getenv(...)
     import config.path
-    import src.preprocess.clean_data as clean_mod
+    import src.indexing.clean_data as clean_mod
     importlib.reload(config.path)
     importlib.reload(clean_mod)
-    from src.preprocess.clean_data import process_csv  
+    from src.indexing.clean_data import process_csv  
 
     # 5) Execute
     process_csv()
