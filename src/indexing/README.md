@@ -191,7 +191,7 @@ make db-load
 make faiss
 
 # Run complete pipeline
-make train
+make index
 ```
 
 ## Monitoring and Logs
