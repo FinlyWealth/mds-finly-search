@@ -15,5 +15,5 @@
 - Check the coverage for a specific directory
 
     ```{bash}
-    pytest --cov=preprocess tests/
+    pytest --cov=indexing tests/
     ```

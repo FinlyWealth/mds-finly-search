@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 # Import the functions to test
-from src.preprocess.generate_embed import (
+from src.indexing.generate_embed import (
     save_embeddings,
     calculate_image_clip_embeddings,
     calculate_text_clip_embeddings,

@@ -7,8 +7,7 @@ import tempfile
 import time
 import sys
 import os
-from src.preprocess import load_db
-from src.preprocess.load_db import (
+from src.indexing.load_db import (
     get_base_embedding_type,
     get_embedding_paths,
     get_enabled_embedding_types,
@@ -341,7 +340,7 @@ def test_save_checkpoint(monkeypatch, capsys):
         tmp_path = tmp.name
 
     # Monkeypatch the global CHECKPOINT_FILE used in the function
-    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
+    monkeypatch.setattr('src.indexing.load_db.CHECKPOINT_FILE', tmp_path)
 
     batch_number = 5
     total_batches = 20
@@ -398,7 +397,7 @@ def test_load_checkpoint(monkeypatch, capsys):
         with open(tmp_path, 'wb') as f:
             pickle.dump(checkpoint_data, f)
 
-    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
+    monkeypatch.setattr('src.indexing.load_db.CHECKPOINT_FILE', tmp_path)
     batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert batch_number == 3
@@ -408,7 +407,7 @@ def test_load_checkpoint(monkeypatch, capsys):
     os.remove(tmp_path)
 
     # 2. Test with no checkpoint file
-    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)  # Same path, now deleted
+    monkeypatch.setattr('src.indexing.load_db.CHECKPOINT_FILE', tmp_path)  # Same path, now deleted
     batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert (batch_number, total_batches) == (0, None)
@@ -417,7 +416,7 @@ def test_load_checkpoint(monkeypatch, capsys):
     # 3. Test with corrupt file
     with open(tmp_path, 'wb') as f:
         f.write(b"not a pickle")
-    monkeypatch.setattr('src.preprocess.load_db.CHECKPOINT_FILE', tmp_path)
+    monkeypatch.setattr('src.indexing.load_db.CHECKPOINT_FILE', tmp_path)
     batch_number, total_batches = load_checkpoint()
     captured = capsys.readouterr()
     assert (batch_number, total_batches) == (0, None)

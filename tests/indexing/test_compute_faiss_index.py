@@ -6,7 +6,7 @@ import json
 from unittest.mock import patch, mock_open, MagicMock
 import sys
 import psutil
-from src.preprocess.compute_faiss_index import (
+from src.indexing.compute_faiss_index import (
     get_memory_usage,
     load_embeddings_from_files,
     create_faiss_index,
