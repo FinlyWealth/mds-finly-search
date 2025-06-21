@@ -55,7 +55,7 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 
 - [Instructions](#database-setup-instructions---google-cloud-sdk) for setting up Google SQL proxy to connect to the database hosted on Google Cloud.
 
-- [Instructions](#database-setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run preprocess scripts to generate indices and load data.
+- [Instructions](#database-setup-instructions---docker-postgres) for setting up a Postgres database in Docker. This method is recommended if you want to develop using your own embeddings locally. You will need to run indexing scripts to generate indices and load data.
 
 ### Run the application (choose one)
 
@@ -73,7 +73,7 @@ The goal of this project is to design and implement a fast, scalable multimodal 
 
 ## Data Structure Requirements
 
-If you want to use this pipeline with your own dataset, your data must follow a specific structure to be compatible with the preprocessing and embedding generation steps.
+If you want to use this pipeline with your own dataset, your data must follow a specific structure to be compatible with the indexing scripts.
 
 ### Required Data Format
 
@@ -90,7 +90,7 @@ Your dataset should be provided as a **CSV file** with the following required co
 
 ### Optional Columns
 
-The pipeline can handle additional columns that will be processed and included in the final dataset. You can modify the `src/preprocess/clean_data.py` to remove the columns not available in your dataset:
+The pipeline can handle additional columns that will be processed and included in the final dataset. You can modify the `src/indexing/clean_data.py` to remove the columns not available in your dataset:
 
 | Column Name | Data Type | Description |
 |-------------|-----------|-------------|
@@ -137,7 +137,7 @@ Once your data is properly formatted and placed in the correct directories:
 1. **Data Cleaning**:
 
    ```bash
-   python src/preprocess/clean_data.py
+   python src/indexing/clean_data.py
    ```
 
    - Filters by supported currencies
@@ -147,7 +147,7 @@ Once your data is properly formatted and placed in the correct directories:
 2. **Embedding Generation**:
 
    ```bash
-   python src/preprocess/generate_embed.py
+   python src/indexing/generate_embed.py
    ```
 
    - Generates CLIP embeddings for images (if available)
@@ -239,7 +239,7 @@ PGTABLE=products
 
 ### Step 3. Load Data
 
-Please refer to the [Preprocessing Instructions](src/preprocess/README.md) on how to load the database with product data. You must do this before run the application.
+Please refer to the [Indexing Instructions](src/indexing/README.md) on how to load the database with product data. You must do this before run the application.
 
 ## Application Setup Instructions - Makefile
 
