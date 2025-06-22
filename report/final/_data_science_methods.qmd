@@ -1,4 +1,4 @@
-#### Data Source, Description and Cleaning          
+### Data Source, Description and Cleaning          
 
 The dataset consists of multimodal product data, including images (14,684,588 JPEG files, approximately 67 GB), textual information (product names and descriptions), and structured metadata (e.g., `Category`, `Brand`, `Color`). The metadata is stored in a 12 GB CSV file containing 15,384,100 rows and 30 columns.
 
@@ -30,7 +30,7 @@ Given the timeline for this project, we've selected 1M dataset out of the 15M to
 ### Preprocessing Pipeline
 Our goal was to develop a multimodal search engine capable of delivering relevant product results for a wide range of customer queries. To support this, we designed a system that encodes product data with both text and image understanding and enables scalable retrieval of similar items. The system incorporates TF-IDF for keyword-based matching, CLIP for aligning visual and textual information, MiniLM for efficient semantic text encoding, and FAISS for scalable vector similarity search. This pipeline is then used to convert the 1M product data into indices that can be searched. 
 
-![Process Product Data](../../img/preprocess_pipeline.png)
+![Process Product Data](../../img/index_pipeline.png)
 
 #### Embedding Processing
 Our embedding strategy was inspired by Liu and Lopez Ramos [@liu2025multimodal], who combined CLIP and a BERT model fine-tuned on e-commerce data to enhance product search relevance. Since we lacked access to labeled, domain-specific data for fine-tuning, we opted for MiniLM [@huggingfaceMinilm]—a smaller, faster transformer model that performs well out-of-the-box and provides solid semantic understanding. We generate embeddings using both CLIP (for image-text alignment) and MiniLM (for textual metadata), then concatenate them into a single unified embedding, which is stored in a vector database for retrieval.

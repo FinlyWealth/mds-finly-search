@@ -70,25 +70,25 @@ This section outlines the core strengths and current technical constraints of th
 
 As the system evolves, several enhancements can be explored to boost retrieval accuracy, scalability, and user relevance. This section highlights key opportunities identified through initial experimentation and outlines the potential benefits of each, along with the practical challenges they present. 
 
-#### 1. Advanced Keyword Extraction with KeyBERT
+#### Advanced Keyword Extraction with KeyBERT
 
 - **Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score
 - **Benefits**: Better understanding of product attributes and user intent 
 - **Implementation Challenge**: Requires additional compute resources for keyword processing
 
-#### 2. Premium Embedding Models
+#### Premium Embedding Models
 
 - **Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models 
 - **Benefits**: Superior semantic understanding and cross-domain generalization 
 - **Implementation Challenge**: Significantly higher API costs and embedding size
 
-#### 3. LLM Prompt Engineering with Real Customer Data
+#### LLM Prompt Engineering with Real Customer Data
 
 - **Improvement**: Develop sophisticated prompts using actual user search patterns and feedback 
 - **Benefits**: More contextually aware result reranking 
 - **Implementation Challenge**: Privacy concerns and data collection complexity
 
-#### 4. Managed Vector Database Migration
+#### Managed Vector Database Migration
 
 - **Improvement**: Transition to Pinecone or similar managed vector database services 
 - **Benefits**: Reduced operational overhead, better scalability, advanced features 

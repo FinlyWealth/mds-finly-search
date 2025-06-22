@@ -1,4 +1,4 @@
-### Tools and Libraries
+### Tools and Libraries  {.unnumbered}
 | Library       | Purpose in Project                                                                 |
 |---------------|--------------------------------------------------------------------------------------|
 | [NumPy](https://numpy.org/)  | Efficient numerical operations, especially for vector manipulation and math ops.    |
@@ -11,7 +11,7 @@
 | [PostgreSQL](https://www.postgresql.org/)    | Relational database to store Embeddings. Allows for multiple columns to have ebeddings|
 
 
-### Definitions
+### Definitions  {.unnumbered}
 **CLIP:** Generates embeddings for both text and images, mapping them into a shared embedding space. We are not training any embedding model, instead we use off-the-shelf [CLIP models](https://huggingface.co/docs/transformers/en/model_doc/clip) to generate embeddings.
 
 **Embedding Generation:** The preprocessed query is then transformed into a numerical representation (an embedding) that captures its semantic meaning.
