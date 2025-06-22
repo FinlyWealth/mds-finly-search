@@ -22,5 +22,5 @@ The final data product is evaluated using the following success metrics:
 
 - Recall@20 for retrieval accuracy
 - Precision@20 based on manual relevance assessments for qualitative validation
-- Time for query responsiveness (target: under 5 seconds)
+- Search time (target: under 5 seconds)
 

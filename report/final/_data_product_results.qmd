@@ -1,8 +1,8 @@
 The data product is comprised of preprocessing scripts, a frontend interface and a backend API.
 
-### Preprocessing Pipeline
+### Indexing Pipeline
 
-The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
+The indexing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make index` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
 
 - `clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
 - `generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.

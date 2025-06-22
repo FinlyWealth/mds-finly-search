@@ -1,0 +1,7 @@
+Method,Query Type,Recall@20,Precision@20,Search Time (s)
+Text Search,Basic Query,0.42,0.73,0.3
+Text + Embeddings,Basic Query,0.33,0.81,0.6
+Text + Embeddings + LLM,Basic Query,0.41,0.78,4.24
+Text Search,Natural Query,0.07,0.07,0.3
+Text + Embeddings,Natural Query,0.53,0.7,0.6
+Text + Embeddings + LLM,Natural Query,0.58,0.62,4.24
