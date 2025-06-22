@@ -342,4 +342,3 @@ Please refer to [API documentation](src/backend/README.md) for more details.
 We would like to extend our sincere thanks to [Kevin Shahnazariand](https://www.finlywealth.com/about-us) and [Abid Salahi](https://www.finlywealth.com/about-us), our partners at FinlyWealth, for their collaboration and valuable feedback throughout the project. Their insights were instrumental in shaping the product direction and aligning it with real-world use cases.
 
 We are also grateful to Professor [Varada Kolhatkar](https://www.cs.ubc.ca/people/varada-kolhatkar) from the University of British Columbia for her mentorship and support. Her expertise in NLP and thoughtful feedback greatly enhanced the rigor and quality of our work.
-
