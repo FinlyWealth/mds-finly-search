@@ -11,6 +11,7 @@ import psycopg2
 import time
 import logging
 from datetime import datetime, timedelta
+import traceback
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.backend.embedding import (
@@ -256,6 +257,23 @@ def search():
         logger.info(f"Form data: {request.form}")
         logger.info(f"Files: {request.files}")
 
+        # Log the search event in query_log
+        try:
+            conn = psycopg2.connect(**config.db.DB_CONFIG)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO query_log (session_id, query_text, timestamp)
+                VALUES (%s, %s, %s)
+                """,
+                (session_id, query_text, datetime.utcnow())
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except (psycopg2.OperationalError, psycopg2.Error) as db_error:
+            logger.error(f"Database error while logging search event: {str(db_error)}")
+
         # Handle image query
         if "file" in request.files:
             # uploaded image
@@ -421,7 +439,7 @@ def submit_feedback():
             # First check if a row exists for this session_id
             cur.execute(
                 """
-                SELECT feedback FROM user_feedback 
+                SELECT feedback FROM query_log 
                 WHERE session_id = %s
             """,
                 (session_id,),
@@ -430,13 +448,14 @@ def submit_feedback():
             existing_row = cur.fetchone()
 
             if existing_row:
-                # Update existing row by appending to feedback list
                 existing_feedback = existing_row[0]
+                if existing_feedback is None:
+                    existing_feedback = []
                 existing_feedback.append({"pid": pid, "feedback": feedback})
 
                 cur.execute(
                     """
-                    UPDATE user_feedback 
+                    UPDATE query_log 
                     SET feedback = %s
                     WHERE session_id = %s
                 """,
@@ -447,7 +466,7 @@ def submit_feedback():
                 feedback_list = [{"pid": pid, "feedback": feedback}]
                 cur.execute(
                     """
-                    INSERT INTO user_feedback (query_text, query_image, feedback, session_id)
+                    INSERT INTO query_log (query_text, query_image, feedback, session_id)
                     VALUES (%s, %s, %s, %s)
                 """,
                     (query_text, image_path, Json(feedback_list), session_id),
@@ -465,6 +484,7 @@ def submit_feedback():
 
     except Exception as e:
         # Only return error for non-database related issues
+        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
@@ -483,4 +503,4 @@ if __name__ == "__main__":
         logger.error("Fatal: Application initialization failed. Exiting...")
         sys.exit(1)
 
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)
