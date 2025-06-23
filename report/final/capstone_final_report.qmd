@@ -10,6 +10,7 @@ bibliography: references.bib
 execute:
   echo: false
   warning: false
+project: false
 ---
 
 ## Executive Summary {.unnumbered}
@@ -24,13 +25,9 @@ execute:
 
 {{< include _data_science_methods.qmd >}}
 
-{{< pagebreak >}}
-
 ## Data Product and Results
 
 {{< include _data_product_results.qmd >}}
-
-{{< pagebreak >}}
 
 ## Conclusion and Recommendations
 

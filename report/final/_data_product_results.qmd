@@ -39,6 +39,8 @@ The Flask-based [@flask] REST API serves as the core processing engine:
  
 - `POST /api/feedback`: User feedback collection for continuous improvement
 
+{{< pagebreak >}}
+
 **Query Workflow:**
 
 ![Search Workflow](../../img/search_workflow.png)

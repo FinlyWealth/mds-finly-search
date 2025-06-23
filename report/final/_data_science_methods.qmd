@@ -4,8 +4,6 @@ The dataset consists of multimodal product data, including images (14,684,588 JP
 
 After conducting exploratory data analysis and consulting with our partner, we selected the 16 most relevant columns that capture the key information users care about. We excluded non-English market entries—retaining approximately 70% of the dataset—in line with our partner’s business focus. Additionally, we merged the `Brand` and `Manufacturer` columns into a single `MergedBrand` field to reduce duplication while preserving distinct brand information. We chose to ignore missing values in the metadata columns, as these fields are likely to provide supplementary information, while the product name already contains the primary details (@tbl-keptcolumns).
 
-{{< pagebreak >}}
-
 : Summary of Retained Columns and Their Characteristics {#tbl-keptcolumns}
 
 | **Group**               | **Attribute**    | **Description / Examples**                               |
@@ -102,3 +100,5 @@ Precision also improved substantially for natural queries, rising from 7% with b
 Search time captures the total time taken to process a query and return results. It helps evaluate the responsiveness of the system under different configurations.
 
 Search time increased as more complex processing was introduced. The LLM-based reranking step added significant overhead, bringing total query time to 4.24 seconds. This additional time is due entirely to the reranking process, where the LLM semantically evaluates and reorders the top results. Overall, we are still under the target time of 5 seconds.
+
+{{< pagebreak >}}
