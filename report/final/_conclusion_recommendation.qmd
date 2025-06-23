@@ -1,17 +1,37 @@
-### Conclusion
+---
+title: Conclusion
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .qmd
+      format_name: quarto
+      format_version: '1.0'
+      jupytext_version: 1.16.1
+  kernelspec:
+    display_name: dsci532
+    language: python
+    name: '532'
+---
 
-The goal of this project for Finly is to develop a fast and scalable multimodal search engine that enables users to search for relevant products using either text or image queries. Unlike Finly’s original website, which relies on direct keyword matching, our system is designed to capture the semantic meaning of natural language. Given that the product is customer-facing, the response time must remain within five seconds.
+
+We have developed a fast and scalable multimodal search engine that allows users to retrieve relevant products using text, image, or hybrid queries. In contrast to Finly’s original platform, which relies on direct keyword matching, our system is built to understand the semantic meaning of natural language and handle complex queries effectively. Even with the most computationally intensive model, the system maintains a response time under 5 seconds, meeting the usability standards for customer-facing applications.
 
 To achieve this, we integrated multiple models and tools. For multimodal capability, we leveraged CLIP [@openaiclip] to extract features from both text and images. To capture semantic information, we incorporated MiniLM [@huggingfaceMinilm] along with an LLM-based reranking module [@openai2023gpt35]. To ensure low latency, we implemented FAISS indexing [@faiss] for efficient similarity search. Additionally, we adopted Google Cloud for data storage to meet the scalability requirements.
 
+In our performance evaluation on a dataset of one million products, the system achieved a Recall@20 of 0.56, Precision@20 of 0.64, and an average search time of 4.24 seconds. These results demonstrate that our search engine is both accurate and responsive.
+
 ### Recommendations
 
-Our product successfully met all of Finly’s requirements. Based on our performance evaluation, the system achieved a Recall@20 of 0.56, a Precision@20 of 0.64, and an average search time of 4.24 seconds, tested on a dataset of one million products. In addition, we developed a web interface that presents a statistical summary of the retrieved results and integrated a modular evaluation framework for our partner. However, several limitations of the current system should be noted.
+Our product successfully met all of Finly’s requirements. We also developed a web interface that presents a statistical summary of the retrieved results and integrated a modular evaluation framework for our partner. However, several limitations of the current system should be noted.
 
-First, the precision evaluation was based on the manual annotation of the top 20 retrieved products by our team. Given our limited domain expertise in e-commerce and the subjective interpretation of what constitutes a "relevant" product, the labeling may suffer from inconsistency and potential bias. To improve reliability, we recommend involving an e-commerce expert to standardize annotation guidelines and ensure a more professional and consistent evaluation process.
+- **Evaluation limitations**: The precision evaluation was based on the manual annotation of the top 20 retrieved products by our team. Given our limited domain expertise in e-commerce and the subjective interpretation of what constitutes a "relevant" product, the labeling may suffer from inconsistency and potential bias. To improve reliability, we recommend involving an e-commerce expert to standardize annotation guidelines and ensure a more professional and consistent evaluation process.
 
-Second, the reranking module was applied only to the top 30 retrieved products due to its computational cost. As the product database grows, this fixed threshold may become insufficient for capturing all relevant items. Implementing an adaptive cutoff strategy could be a valuable enhancement for future iterations.
+- **Scalability and infrastructure**: Currently, our reranking module is applied only to the top 30 retrieved products due to its relatively long execution time. We did not conduct experiments to determine the optimal cutoff threshold that balances performance and latency, primarily due to time and resource constraints. However, we believe that implementing an adaptive cutoff strategy could be a valuable direction for future enhancement.
 
-Third, due to the absence of labeled customer interaction data, our current similarity search relies solely on fusion embeddings of text and image inputs, without any model fine-tuning. Prior academic research suggests that adding a projection layer on top of the fusion embedding can improve performance. Once Finly acquires sufficient labeled data, the pipeline can be adapted to include such a layer along with an appropriately designed loss function.
+    Additionally, due to limited computing resources, we generated embeddings for only one million products, rather than the entire product catalog. This limitation can be easily addressed by rerunning our reproducible indexing pipeline once Finly gains access to sufficient computational infrastructure.
 
-Lastly, because of our limited computing resources, embeddings were only generated for one million products, rather than the entire product catalog. This can be easily addressed by rerunning our reproducible indexing pipeline once Finly has access to adequate computational infrastructure.
+- **Data constraints**: Due to the absence of labeled customer interaction data, our current similarity search relies solely on fusion embeddings of text and image inputs, without any model fine-tuning. Prior academic research [@liu2025multimodal] suggests that adding a projection layer on top of the fusion embedding can improve performance. Once Finly acquires sufficient labeled data, the pipeline can be adapted to include such a layer along with an appropriately designed loss function.
+
+Despite the limitations discussed above, our solution offers FinlyWealth a robust, scalable architecture and a reproducible development pipeline. This positions the company well to scale the system further and adapt it to the growing and evolving needs of its e-commerce platform.
+
+
