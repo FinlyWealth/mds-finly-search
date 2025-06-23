@@ -2,7 +2,11 @@
 
 Contributors: Jenson Chang, Chukwunonso Ebele-Muolokwu, Da (Catherine) Meng, Jingyuan Wang
 
-The goal of this project is to design and implement a fast, scalable multimodal search engine that captures the semantic meaning of user queries, allowing users to search using text, images, or both to find the most relevant products for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce.
+The goal of this project is to design and implement a fast, scalable multimodal search engine for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce. The system enables users to search for products using text, images, or a combination of both by capturing the semantic meaning of queries—not just keywords.
+
+To achieve this, we use a hybrid retrieval strategy that combines CLIP and MiniLM embeddings with FAISS for efficient large-scale similarity search. Retrieved results are further refined using an LLM-based reranking module, which reorders candidates to prioritize the most relevant items. The full stack includes a Streamlit frontend, a Flask API backend, and a vector store to support embedding-based retrieval at scale.
+
+![Search Pipeline for a Text Query](img/text_pipeline.png)
 
 ## Table of Contents
 
@@ -41,6 +45,7 @@ The goal of this project is to design and implement a fast, scalable multimodal 
     - [Step 4. Start the Application](#step-4-start-the-application)
     - [Step 5. Clean Up](#step-5-clean-up)
   - [API Commands](#api-commands)
+  - [Acknowledgements](#acknowledgements)
 
 ## Complete Setup Instructions
 
@@ -331,3 +336,9 @@ make clean
 ## API Commands
 
 Please refer to [API documentation](src/backend/README.md) for more details. 
+
+## Acknowledgements
+
+We would like to extend our sincere thanks to [Kevin Shahnazariand](https://www.finlywealth.com/about-us) and [Abid Salahi](https://www.finlywealth.com/about-us), our partners at FinlyWealth, for their collaboration and valuable feedback throughout the project. Their insights were instrumental in shaping the product direction and aligning it with real-world use cases.
+
+We are also grateful to Professor [Varada Kolhatkar](https://www.cs.ubc.ca/people/varada-kolhatkar) from the University of British Columbia for her mentorship and support. Her expertise in NLP and thoughtful feedback greatly enhanced the rigor and quality of our work.
