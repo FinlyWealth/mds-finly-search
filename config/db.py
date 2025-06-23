@@ -15,3 +15,11 @@ DB_CONFIG = {
 
 # Table name configuration
 TABLE_NAME = os.getenv('PGTABLE', 'products_100k')
+
+
+SEARCH_WEIGHTS = {
+    "text_only": [0.5, 0, 0.5],
+    "image_only": [0, 1, 0],
+    "hybrid": [0.5, 0, 0.5],
+
+}

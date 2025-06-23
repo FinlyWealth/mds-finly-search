@@ -305,13 +305,13 @@ def search():
         # Weights: [fusion_embedding, image_clip_embedding, text_search]
         if query_text and query_image:
             # Text+Image search: Use fusion_embedding (CLIP image + MiniLM text) and text search
-            weights = [0.5, 0, 0.5]
+            weights = config.db.SEARCH_WEIGHTS["hybrid"]
         elif query_text:
             # Text-only search: Use fusion_embedding (CLIP text + MiniLM text) and text search
-            weights = [0.5, 0, 0.5]
+            weights = config.db.SEARCH_WEIGHTS["text_only"]
         else:
             # Image-only search: Use only image_clip_embedding
-            weights = [0, 1, 0]  # 100% image CLIP embedding
+            weights = config.db.SEARCH_WEIGHTS["image_only"] # 100% image CLIP embedding
 
         # Print active components with non-zero weights
         logger.info("\nActive retrieval components:")
