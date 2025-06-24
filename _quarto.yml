@@ -1,0 +1,7 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - report/final/capstone_final_report.qmd
+resources:
+  - img/**
