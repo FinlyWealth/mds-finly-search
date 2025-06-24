@@ -140,6 +140,10 @@ def wait_for_api_ready():
 
 # Function to display a product card
 def display_product_card(product, score):
+    """
+    Display a product card in Streamlit with image, basic details, similarity score,
+    feedback buttons, and expandable metadata.
+    """
     with st.container():
         # Product image
         try:

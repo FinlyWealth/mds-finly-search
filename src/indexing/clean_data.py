@@ -6,7 +6,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from config.path import CLEAN_CSV_PATH, RAW_CSV_PATH
 
-def process_csv():
+def process_csv(): 
+    """Load, clean, and preprocess product CSV data for downstream processing."""  
     # Columns to load
     selected_columns = [
         "Pid", "Description", "Name", "Category", 
