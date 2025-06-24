@@ -276,6 +276,7 @@ class FaissVectorRetrieval(SimilarityRetrieval):
 
 
 class TextSearchRetrieval(SimilarityRetrieval):
+    """Text search using PostgreSQL full-text search"""
 
     def __init__(self, method: str, db_config: Dict[str, str]):
         self.method = method  # e.g., 'ts_rank', 'ts_rank_cd'
