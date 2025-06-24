@@ -1,25 +1,29 @@
 As FinlyWealth expands its offerings from personal finance into the e-commerce sector, it faces the challenge of delivering a scalable and effective product search experience across a rapidly growing and diverse catalog. To address this, a team of Master of Data Science students at the University of British Columbia is developing a machine learning-powered multimodal search engine that understands the semantic meaning of user queries, handling both text and image inputs to help users find relevant products more intuitively and efficiently.  
 
-Search in the e-commerce domain presents unique challenges due to the wide variety of ways users express their search intent. Traditional approaches, such as TF-IDF-based text search, work well for simple queries like “iPhone” or “laptop.” However, most user queries are free-form, complex, and infrequent. The existing system relies on basic keyword matching, lacking semantic understanding, support for multimodal inputs, and large-scale performance evaluation.
+Search in the e-commerce domain presents unique challenges due to the wide variety of ways users express their search intent. Traditional approaches, such as TF-IDF-based text search, work well for simple queries like “iPhone” or “laptop.” However, most user queries are free-form, complex, and infrequent. The existing system relies on basic keyword matching, lacks semantic understanding, struggles with spelling mistakes, and does not support multimodal inputs or large-scale performance evaluation.
 
 ### Objective
 
 To address these gaps, this project designed and implemented a fast, scalable multimodal search system that captures semantic meaning of user queries and returns the most relevant products to the users. Architecture components include:
 
-- **Preprocess Script**:  Python scripts runnable via make commands to generate text and image embeddings from raw CSV and image data, and to build FAISS indices
+: Summary of Client Requirements and Our Solutions {#tbl-object}
 
-- **Frontend**: Streamlit for handling interactive text and image queries, and displaying search results along with summary statistics and response time [@streamlit]
+| **Client Requirement**                        | **Our Solution**                                                                 |
+|----------------------------------------------|----------------------------------------------------------------------------------|
+| Support for natural language and multimodal queries | Combined CLIP (image-text) and MiniLM (text-only) embeddings; LLM-based reranking for semantic relevance |
+| Fast response time                            | Indexed embeddings using FAISS for efficient approximate nearest neighbor search |
+| Reusable API endpoints                        | Developed modular backend with Flask APIs                               |
+| Reproducible data pipeline                    | Designed modular indexing, query search, and evaluation pipelines, automated via `make` |
+| Web interface for user interaction            | Built a user-friendly interface using Streamlit                                  |
+| Transparent evaluation and benchmarking       | Proposed evaluation plan: Recall@20, Precision@20 (human-judged), and query time |
 
-- **Backend API**: Flask for query handling and results retrieving [@flask]
+To support scalable data storage, we use PostgreSQL with the pgvector extension, providing an affordable and efficient solution for storing embeddings and associated metadata.
 
-  - **Similarity Engine**: FAISS for approximate nearest neighbor search [@faiss]
+The final data product is evaluated using the following evaluation metrics:  
 
-  - **Post Retrieval Reranking**: GPT-3.5-turbo LLM for reranking the top 30 retrieved candidates based on semantic relevance [@​​openai2023gpt35]
+- Recall@K: Measures how often the intended or relevant product appears in the top K retrieved results
 
-- **Vector Store**: PostgreSQL with pgvector extension for affordable and scalable storage of embeddings and metadata
+- Precision@K: Measures how many of the top K retrieved products are actually relevant, based on manual human relevance assessments
 
-The final data product is evaluated using the following success metrics:  
+- Query time: Measures how long each query takes to return results (target <= 5 seconds)
 
-- Recall@20 for retrieval accuracy
-- Precision@20 based on manual relevance assessments for qualitative validation
-- Time for query responsiveness (target: under 5 seconds)

@@ -5,13 +5,15 @@ format:
   pdf:
     toc: true
     toc-depth: 2
+    number-sections: true
 bibliography: references.bib
 execute:
   echo: false
   warning: false
+project: false
 ---
 
-## Executive Summary
+## Executive Summary {.unnumbered}
 
 {{< include _executive_summary.qmd >}}
 
@@ -33,8 +35,8 @@ execute:
 
 {{< pagebreak >}}
 
-## Appendix
+## Appendix {.unnumbered}
 
 {{< include _appendix.qmd >}}
 
-## References
+## References {.unnumbered}

@@ -1,8 +1,8 @@
 The data product is comprised of preprocessing scripts, a frontend interface and a backend API.
 
-### Preprocessing Pipeline
+### Indexing Pipeline
 
-The preprocessing pipeline's involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make train` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
+The indexing pipeline involves data cleaning, followed by embedding generation, database loading, and finally, FAISS index generation. This process is initiated via the `make index` command, which executes the aforementioned steps to prepare the products for contextual querying. The pipeline executes its steps in the following sequential order:
 
 - `clean_data.py`: Cleans the raw CSV data by removing null values, filtering for English products etc.
 - `generate_embed.py`: Generates embeddings from product names using MiniLM [@Wang2020MiniLMDS] and from images using CLIP [@openaiclip], respectively.
@@ -13,19 +13,19 @@ The preprocessing pipeline's involves data cleaning, followed by embedding gener
 
 The Streamlit-based frontend serves as an internal tool for evaluating the quality of search results and testing the underlying API. It supports a range of query types—including text-only, image-only, and multimodal inputs. The interface also provide summary statistics on the retrieved results.
 
-![User Interface](../../img/interface.png)
+![User Interface](../../img/interface.png){#fig-interface}
 
 **Key Features:** 
 
-1. **Multimodal Input**: Supports both text queries and image uploads
+1. **Multimodal Input**: Supports both text queries and image uploads as seen in as [1] in @fig-interface
 
 2. **Rich Results Display**: Product cards with images, prices, and detailed metadata 
 
-3. **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning 
+3. **Analytics Dashboard**: Live statistics on search results including price ranges, brand distribution, category breakdowns and LLM reasoning as seen as [2] in @fig-interface
 
 4. **User Experience Design:** 
    - Progressive result loading (20 results initially, expandable) 
-   - Visual feedback for user interactions (Precision)
+   - Visual feedback for user interactions (Precision). This is the thumbs up and thumbs down button labelled as [4] as seen in @fig-interface. These results are collected and are used in calculating precision metrics.
 
 ### Backend API
 
@@ -38,6 +38,8 @@ The Flask-based [@flask] REST API serves as the core processing engine:
 - `GET /api/ready`: Health check and initialization status 
  
 - `POST /api/feedback`: User feedback collection for continuous improvement
+
+{{< pagebreak >}}
 
 **Query Workflow:**
 
@@ -70,27 +72,28 @@ This section outlines the core strengths and current technical constraints of th
 
 As the system evolves, several enhancements can be explored to boost retrieval accuracy, scalability, and user relevance. This section highlights key opportunities identified through initial experimentation and outlines the potential benefits of each, along with the practical challenges they present. 
 
-#### 1. Advanced Keyword Extraction with KeyBERT
+#### Advanced Keyword Extraction with KeyBERT
 
 - **Improvement**: Implement KeyBERT for automatic keyword extraction to enrich text embeddings. This was explored and improved the recall score
 - **Benefits**: Better understanding of product attributes and user intent 
 - **Implementation Challenge**: Requires additional compute resources for keyword processing
 
-#### 2. Premium Embedding Models
+#### Premium Embedding Models
 
 - **Improvement**: Upgrade to OpenAI's text-embedding-3-large or similar high-performance models 
 - **Benefits**: Superior semantic understanding and cross-domain generalization 
 - **Implementation Challenge**: Significantly higher API costs and embedding size
 
-#### 3. LLM Prompt Engineering with Real Customer Data
+#### LLM Prompt Engineering with Real Customer Data
 
 - **Improvement**: Develop sophisticated prompts using actual user search patterns and feedback 
 - **Benefits**: More contextually aware result reranking 
 - **Implementation Challenge**: Privacy concerns and data collection complexity
 
-#### 4. Managed Vector Database Migration
+#### Managed Vector Database Migration
 
 - **Improvement**: Transition to Pinecone or similar managed vector database services 
 - **Benefits**: Reduced operational overhead, better scalability, advanced features 
 - **Implementation Challenge**: Migration complexity and ongoing costs 
 - **Cost-Benefit Analysis**: Higher operational costs but reduced engineering overhead
+
