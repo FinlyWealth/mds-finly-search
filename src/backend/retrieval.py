@@ -78,6 +78,27 @@ class PostgresVectorRetrieval(SimilarityRetrieval):
         self.db_config = db_config
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[int, float]:
+        """
+        Retrieve the top-k most similar products from the database based on vector similarity,
+        and return normalized similarity scores.
+
+        This method connects to a PostgreSQL database with pgvector extension, computes 
+        similarity using the `<=>` operator (Euclidean or cosine distance depending on setup),
+        and normalizes the raw scores relative to the maximum score in the result set.
+
+        Parameters
+        ----------
+        query : np.ndarray
+            The embedding vector of the query (e.g., from text, image, or fused input).
+        k : int, optional
+            The number of top similar items to retrieve (default is 10).
+
+        Returns
+        -------
+        Dict[int, float]
+            A dictionary mapping product IDs (`Pid`) to their normalized similarity scores.
+            Normalized scores are in the range [0, 1], with the most similar item having a score of 1.0.
+        """
         conn = psycopg2.connect(**self.db_config)
         cur = conn.cursor()
 
@@ -173,6 +194,27 @@ class FaissVectorRetrieval(SimilarityRetrieval):
         self.db_config = db_config or DB_CONFIG
 
     def score(self, query: np.ndarray, k: int = 10) -> Dict[str, float]:
+        """
+        Retrieve and re-score the top-k most similar items using FAISS followed by 
+        cosine similarity on stored database embeddings.
+    
+        This method first queries a FAISS index to obtain top-k candidate indices, maps 
+        them to product IDs, retrieves their corresponding embeddings from the PostgreSQL 
+        database, and computes cosine similarity scores against the input query. The final 
+        similarity scores are normalized to the range [0, 1].
+    
+        Parameters
+        ----------
+        query : np.ndarray
+            The embedding vector of the query (1D NumPy array).
+        k : int, optional
+            The number of top results to retrieve from the FAISS index (default is 10).
+    
+        Returns
+        -------
+        Dict[str, float]
+            A dictionary mapping product IDs (PIDs) to their normalized cosine similarity scores.
+        """
         # First get the top k indices from FAISS
         distances, indices = self.index.search(query.reshape(1, -1), k)
         raw_scores = distances[0]
@@ -234,13 +276,32 @@ class FaissVectorRetrieval(SimilarityRetrieval):
 
 
 class TextSearchRetrieval(SimilarityRetrieval):
-    """Text search using PostgreSQL full-text search"""
 
     def __init__(self, method: str, db_config: Dict[str, str]):
         self.method = method  # e.g., 'ts_rank', 'ts_rank_cd'
         self.db_config = db_config
 
     def score(self, query: str, k: int = 10) -> Dict[int, float]:
+        """
+        Perform full-text search scoring using PostgreSQL and return normalized scores for top-k matches.
+    
+        This function uses PostgreSQL's full-text search capabilities to compute relevance scores 
+        for documents based on the input query. It applies the specified ranking method 
+        (e.g., `ts_rank` or `ts_rank_cd`) to compute raw scores, and normalizes them to the [0, 1] range 
+        based on the highest score in the result set.
+    
+        Parameters
+        ----------
+        query : str
+            The search query string.
+        k : int, optional
+            The number of top results to return (default is 10).
+    
+        Returns
+        -------
+        Dict[int, float]
+            A dictionary mapping product IDs (`Pid`) to their normalized relevance scores.
+        """
         conn = psycopg2.connect(**self.db_config)
         cur = conn.cursor()
 
