@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>FinlyWealth Search Engine API Usage Demo</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">FinlyWealth Search Engine API Usage Demo</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This notebook demonstrates how to use the FinlyWealth search engine backend API with different retrieval method combinations.</p>
+<div id="cell-2" class="cell" data-execution_count="43">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Dict, List, Optional, Tuple</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Dependencies loaded successfully!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dependencies loaded successfully!</code></pre>
+</div>
+</div>
+<section id="api-setup-and-initialization" class="level1">
+<h1>API Setup and Initialization</h1>
+<p>To prepare the API for use, you will need to set up the Docker container, load the necessary data into the database, and then launch the backend service. This process leverages instructions detailed in the <code>README.md</code> for a seamless setup.</p>
+<section id="prerequisites" class="level2">
+<h2 class="anchored" data-anchor-id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Docker and Docker Compose installed</li>
+<li>Python environment set up</li>
+<li><code>make</code> utility available</li>
+<li><code>.env</code> file configured (see step 2)</li>
+</ul>
+<hr>
+</section>
+<section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting Started</h2>
+<p>Follow these steps to get the API up and running:</p>
+<section id="start-the-database-container" class="level3">
+<h3 class="anchored" data-anchor-id="start-the-database-container">1. Start the Database Container</h3>
+<p>Open your terminal and execute the following command to build and launch the database container in detached mode:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose <span class="at">-f</span> docker-compose.db.yml up <span class="at">-d</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="configure-database-credentials" class="level2">
+<h2 class="anchored" data-anchor-id="configure-database-credentials">2. Configure Database Credentials</h2>
+<p>Create a .env file in the root directory and populate it with the required database credentials. This file is used to securely configure your environment:</p>
+<pre class="env"><code># .env file - Database configuration
+PGUSER=postgres
+PGPASSWORD=postgres
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=postgres
+PGTABLE=products</code></pre>
+</section>
+<section id="load-example-data" class="level2">
+<h2 class="anchored" data-anchor-id="load-example-data">3. Load Example Data</h2>
+<p>Use the make utility to load the example product data and associated images into your database:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> train</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Launch the Backend API</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">Once</span> the database is populated, start the backend API service by running the following Python script:</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span><span class="fu">bash</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/backend/api.py</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">## API Client for Search Operations</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ex">This</span> class provides a convenient interface for interacting with the search API.</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {#cell-8 .cell execution_count=44}</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span> {.python .cell-code}</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="ex">class</span> SearchAPIClient:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""Client for interacting with the FinlyWealth search API."""</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="ex">def</span> __init__<span class="er">(</span><span class="ex">self,</span> base_url: str = <span class="st">"http://localhost:5001"</span><span class="kw">)</span><span class="bu">:</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"""Initialize API client.</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="st">        Args:</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="st">            base_url: Base URL for the API</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="st">        """</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="ex">self.base_url</span> = base_url</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="ex">self.session</span> = requests.Session<span class="er">(</span><span class="kw">)</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="ex">def</span> search_text<span class="er">(</span><span class="ex">self,</span> query: str, search_type: str = <span class="st">"text"</span><span class="kw">)</span> <span class="ex">-</span><span class="op">&gt;</span> Dict:</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        <span class="st">"""Perform text search.</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="st">        Args:</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="st">            query: Search query text</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="st">            search_type: Type of search ("</span><span class="ex">text</span><span class="st">", "</span><span class="ex">image</span><span class="st">", "</span><span class="ex">multimodal</span><span class="st">")</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="st">        Returns:</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="st">            dict: Search results</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="st">        """</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        <span class="ex">try:</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>            <span class="ex">data</span> = {</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>                <span class="st">"query"</span><span class="ex">:</span> query,</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                <span class="st">"search_type"</span><span class="ex">:</span> search_type</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>            <span class="er">}</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>            <span class="ex">response</span> = self.session.post<span class="er">(</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>                <span class="ex">f</span><span class="st">"{self.base_url}/api/search"</span><span class="ex">,</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>                <span class="va">data</span><span class="op">=</span>data,</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>                <span class="va">timeout</span><span class="op">=</span>60</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>            <span class="kw">)</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>            <span class="fu">response.raise_for_status()</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="fu">response.json()</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>        <span class="ex">except</span> requests.exceptions.RequestException as e:</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ex">{</span><span class="st">"error"</span><span class="ex">:</span> f<span class="st">"Request failed: {str(e)}"</span>}</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    <span class="ex">def</span> search_image<span class="er">(</span><span class="ex">self,</span> image_path: str, search_type: str = <span class="st">"image"</span><span class="kw">)</span> <span class="ex">-</span><span class="op">&gt;</span> Dict:</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>        <span class="st">"""Perform image search.</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="st">        Args:</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a><span class="st">            image_path: Path to image file or URL</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a><span class="st">            search_type: Type of search ("</span><span class="ex">text</span><span class="st">", "</span><span class="ex">image</span><span class="st">", "</span><span class="ex">multimodal</span><span class="st">")</span></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="st">        Returns:</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a><span class="st">            dict: Search results</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="st">        """</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>        <span class="ex">try:</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>            <span class="ex">data</span> = {</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>                <span class="st">"image_path"</span><span class="ex">:</span> image_path,</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>                <span class="st">"search_type"</span><span class="ex">:</span> search_type</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>            <span class="er">}</span></span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>            <span class="ex">response</span> = self.session.post<span class="er">(</span></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>                <span class="ex">f</span><span class="st">"{self.base_url}/api/search"</span><span class="ex">,</span></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>                <span class="va">data</span><span class="op">=</span>data,</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>                <span class="va">timeout</span><span class="op">=</span>60</span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>            <span class="kw">)</span></span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>            <span class="fu">response.raise_for_status()</span></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="fu">response.json()</span></span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>        <span class="ex">except</span> requests.exceptions.RequestException as e:</span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ex">{</span><span class="st">"error"</span><span class="ex">:</span> f<span class="st">"Request failed: {str(e)}"</span>}</span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>    <span class="ex">def</span> search_multimodal<span class="er">(</span><span class="ex">self,</span> query: str, image_path: str<span class="kw">)</span> <span class="ex">-</span><span class="op">&gt;</span> Dict:</span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>        <span class="st">"""Perform multimodal search with both text and image.</span></span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a><span class="st">        Args:</span></span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a><span class="st">            query: Search query text</span></span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a><span class="st">            image_path: Path to image file or URL</span></span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a><span class="st">        Returns:</span></span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a><span class="st">            dict: Search results</span></span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a><span class="st">        """</span></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>        <span class="ex">try:</span></span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>            <span class="ex">data</span> = {</span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>                <span class="st">"query"</span><span class="ex">:</span> query,</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>                <span class="st">"image_path"</span><span class="ex">:</span> image_path,</span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a>                <span class="st">"search_type"</span><span class="ex">:</span> <span class="st">"multimodal"</span></span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>            <span class="er">}</span></span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>            <span class="ex">response</span> = self.session.post<span class="er">(</span></span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>                <span class="ex">f</span><span class="st">"{self.base_url}/api/search"</span><span class="ex">,</span></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>                <span class="va">data</span><span class="op">=</span>data,</span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>                <span class="va">timeout</span><span class="op">=</span>60</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>            <span class="kw">)</span></span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>            <span class="fu">response.raise_for_status()</span></span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="fu">response.json()</span></span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>        <span class="ex">except</span> requests.exceptions.RequestException as e:</span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ex">{</span><span class="st">"error"</span><span class="ex">:</span> f<span class="st">"Request failed: {str(e)}"</span>}</span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>    <span class="ex">def</span> check_api_status<span class="er">(</span><span class="ex">self</span><span class="kw">)</span> <span class="ex">-</span><span class="op">&gt;</span> Dict:</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>        <span class="st">"""Check API status and readiness.</span></span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a><span class="st">        Returns:</span></span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a><span class="st">            dict: API status information</span></span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a><span class="st">        """</span></span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a>        <span class="ex">try:</span></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a>            <span class="ex">response</span> = self.session.get<span class="er">(</span><span class="ex">f</span><span class="st">"{self.base_url}/api/ready"</span><span class="ex">,</span> timeout=10<span class="kw">)</span></span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>            <span class="fu">response.raise_for_status()</span></span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="fu">response.json()</span></span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a>        <span class="ex">except</span> requests.exceptions.RequestException as e:</span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ex">{</span><span class="st">"error"</span><span class="ex">:</span> f<span class="st">"Request failed: {str(e)}"</span>}</span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize API client</span></span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a><span class="ex">api_client</span> = SearchAPIClient<span class="er">(</span><span class="kw">)</span></span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a><span class="ex">print</span><span class="er">(</span><span class="st">"API client initialized!"</span><span class="kw">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>API client initialized!</code></pre>
+</div>
+<p>:::</p>
+</section>
+<section id="vannila-request" class="level2">
+<h2 class="anchored" data-anchor-id="vannila-request">Vannila Request</h2>
+<p>This section shows how normal requests can be carried out via the api. These includes - Text only - Image only - Image and text</p>
+</section>
+<section id="text-only-search" class="level2">
+<h2 class="anchored" data-anchor-id="text-only-search">Text Only Search</h2>
+<div id="cell-11" class="cell" data-execution_count="45">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>text_query <span class="op">=</span> <span class="st">"leather shoes"</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> api_client.search_text(text_query, search_type<span class="op">=</span><span class="st">"text"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-12" class="cell" data-execution_count="46">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>results.keys()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="46">
+<pre><code>dict_keys(['average_price', 'brand_distribution', 'category_distribution', 'elapsed_time_sec', 'price_range', 'reasoning', 'results', 'session_id'])</code></pre>
+</div>
+</div>
+<p>THe request returns a dictionary with the following structure</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"average_price"</span>: <span class="fl">23.45</span>,  <span class="co"># Average price of selected items</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"brand_distribution"</span>: {<span class="st">"Nike"</span>: <span class="dv">5</span>, <span class="st">"Adidas"</span>: <span class="dv">3</span>},  <span class="co"># Frequency per brand</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"category_distribution"</span>: {<span class="st">"Shoes"</span>: <span class="dv">4</span>, <span class="st">"Hats"</span>: <span class="dv">2</span>},  <span class="co"># Frequency per category</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"elapsed_time_sec"</span>: <span class="fl">1.23</span>,  <span class="co"># Processing time</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"price_range"</span>: [<span class="fl">10.0</span>, <span class="fl">50.0</span>],  <span class="co"># Min and max prices</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"reasoning"</span>: <span class="st">"Filtered by top-rated shoes"</span>,  <span class="co"># Explanation of logic</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"results"</span>: [...],  <span class="co"># List of results (products, recommendations, etc.)</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"session_id"</span>: <span class="st">"a1b2c3d4"</span>  <span class="co"># Unique identifier for the session</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="output-dictionary-structure" class="level3">
+<h3 class="anchored" data-anchor-id="output-dictionary-structure">Output Dictionary Structure</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 53%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Description</th>
+<th>Example Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>average_price</code></td>
+<td>Average price of the selected products</td>
+<td><code>23.45</code></td>
+</tr>
+<tr class="even">
+<td><code>brand_distribution</code></td>
+<td>Count or percentage breakdown of brands in the selection</td>
+<td><code>{'Nike': 5, 'Adidas': 3}</code></td>
+</tr>
+<tr class="odd">
+<td><code>category_distribution</code></td>
+<td>Count or percentage breakdown by product category</td>
+<td><code>{'Shoes': 4, 'Hats': 2}</code></td>
+</tr>
+<tr class="even">
+<td><code>elapsed_time_sec</code></td>
+<td>Time taken to process the request in seconds</td>
+<td><code>1.23</code></td>
+</tr>
+<tr class="odd">
+<td><code>price_range</code></td>
+<td>Min and max prices observed in the selection</td>
+<td><code>[10.0, 50.0]</code></td>
+</tr>
+<tr class="even">
+<td><code>reasoning</code></td>
+<td>Text explanation of how results were chosen</td>
+<td><code>"Filtered by top-rated shoes"</code></td>
+</tr>
+<tr class="odd">
+<td><code>results</code></td>
+<td>List of resulting product records or summaries</td>
+<td><code>[...]</code></td>
+</tr>
+<tr class="even">
+<td><code>session_id</code></td>
+<td>Unique session identifier</td>
+<td><code>"a1b2c3d4"</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="image-only-search" class="level2">
+<h2 class="anchored" data-anchor-id="image-only-search">Image only Search</h2>
+<div id="cell-15" class="cell" data-execution_count="47">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Image search, we pass the </span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>image_query <span class="op">=</span> <span class="st">"data/images/127.2.DFF8DD86A0648144.935C81483CAB9DD1.810122210719.jpeg"</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>results_image <span class="op">=</span> api_client.search_image(image_query)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-16" class="cell" data-execution_count="48">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>results_image</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="48">
+<pre><code>{'average_price': 94.5,
+ 'brand_distribution': {'Dockers': 50, 'Pazstor': 50},
+ 'category_distribution': {'Apparel &amp; Accessories &gt;Shoes ': 100},
+ 'elapsed_time_sec': 0.192,
+ 'price_range': [80.0, 109.0],
+ 'reasoning': 'Image search only, no LLM reordering performed',
+ 'results': [{'Brand': 'Pazstor',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Barista brown',
+   'Description': 'These oxfords are designed to fit ergonomically offering premium Comfort, Made of Premium soft lambskin Leather. Whole size only, please choose one number above if you usually wear half number (e.g. if your size is 7.5 then go up to 8) Made in Mexico',
+   'Gender': 'male',
+   'Name': "Pazstor Men's Premium Comfort Lambskin Leather Oxfords Classic - Barista brown",
+   'Pid': '127.2.DFF8DD86A0648144.935C81483CAB9DD1.810122210719',
+   'Price': '109.0',
+   'Size': '12',
+   'similarity': 1.0},
+  {'Brand': 'Dockers',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Dark Tan',
+   'Description': "Cool enough for casual adventures and polished enough for the office, these bike toe oxford men's dress shoes from Dockers effortlessly complement your everyday routine.",
+   'Gender': 'male',
+   'Name': "Dockers Men's Trustee Leather Oxfords - Dark Tan",
+   'Pid': '127.2.DFF8DD86A0648144.EEF67CB2003482F3.31042444668',
+   'Price': '80.0',
+   'Size': '10W',
+   'similarity': 0.9625371098518372}],
+ 'session_id': '483f91b6-5e37-4bca-82ed-833f9bcac3b9'}</code></pre>
+</div>
+</div>
+<p>The result has the same output as the Text search</p>
+</section>
+<section id="hybrid-search-without-llm-reranking" class="level2">
+<h2 class="anchored" data-anchor-id="hybrid-search-without-llm-reranking">Hybrid Search without LLM reranking</h2>
+</section>
+<section id="making-search-without-llm-reranking" class="level2">
+<h2 class="anchored" data-anchor-id="making-search-without-llm-reranking">Making search without LLM reranking</h2>
+<ul>
+<li>To make search without LLM reranking, all you have to do is comment out yor API keys in your .env file, in this case I will comment out the api keys in the <code>.env</code> file and rerun the command <code>python src/backend/api.py</code></li>
+</ul>
+<blockquote class="blockquote">
+<p>If you get an error on the <code>python src/backend/api.py</code> command, just run <code>make clean</code> to free the port</p>
+</blockquote>
+<div id="cell-20" class="cell" data-execution_count="55">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Hybrid search, we pass both the image and text</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>image_query <span class="op">=</span> <span class="st">"data/images/127.2.DFF8DD86A0648144.935C81483CAB9DD1.810122210719.jpeg"</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>search_query <span class="op">=</span> <span class="st">"black shoes"</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>results_image <span class="op">=</span> api_client.search_multimodal(query<span class="op">=</span>search_query, image_path<span class="op">=</span>image_query)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>results_image</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="55">
+<pre><code>{'average_price': 143.96,
+ 'brand_distribution': {'8 by YOOX': 6,
+  'Bernardo Footwear': 6,
+  'Clarks': 6,
+  'Converse': 6,
+  'Deer Stags': 6,
+  'Dv Dolce Vita': 6,
+  'Easy Spirit': 6,
+  'I.n.c. International Concepts': 6,
+  'Kenneth Cole Reaction': 6,
+  'Kingsize': 6,
+  'Naturalizer': 12,
+  'Stacy Adams': 6,
+  'Teva': 6,
+  'Trotters': 6,
+  'Vince Camuto': 6,
+  'adidas': 6},
+ 'category_distribution': {'Apparel &amp; Accessories &gt;Shoes ': 100},
+ 'elapsed_time_sec': 1.417,
+ 'price_range': [49.99, 400.0],
+ 'reasoning': 'No API key available, no LLM reordering performed',
+ 'results': [{'Brand': 'Stacy Adams',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'The rich hand burnishing on the Stacy Adams Bryant cap-toe Oxford highlights the intricate lines of broguing and quality of its leather. The sophisticated style and all-day comfort of the Bryant make it the perfect choice for any special occasion.',
+   'Gender': 'male',
+   'Name': "Stacy Adams Men's Bryant Lace-Up Cap-Toe Oxford Dress Shoes - Black",
+   'Pid': '160244.2.C6DCFA4883B330A3.C6E5E12E04D6B496.793926254847',
+   'Price': '193.04',
+   'Size': '11',
+   'similarity': 0.5},
+  {'Brand': 'adidas',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Add a retro staple to your wardrobe with the new Gazelle Athletic Shoe from adidas! The Gazelle Athletic Shoe brings back a vintage design with modern updates, featuring a streamlined profile constructed with smooth nubuck uppers, signature side stripes, and innovative cushioning for premium comfort and support.',
+   'Gender': 'male',
+   'Name': 'Mens adidas Gazelle Athletic Shoe - Black / White',
+   'Pid': '158391.2.6B6A87FA39B97B14.4CCCA107D40A956C.366436',
+   'Price': '129.99',
+   'Size': '11.5',
+   'similarity': 0.4988675},
+  {'Brand': 'Trotters',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Kari is a mid-heel pump that brings together fashion and practicality. This modern block heel delivers stability with a bit of height. Soft nappa leathers and a cushioned footbed make for a sleek custom fit. This is The Pump for the office or date night.',
+   'Gender': 'female',
+   'Name': "Women's Trotters Kari Pumps - Black",
+   'Pid': '160244.2.C6DCFA4883B330A3.5502166FB2EF8F17.887246973721',
+   'Price': '148.42',
+   'Size': '6N',
+   'similarity': 0.28934845},
+  {'Brand': 'Teva',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': "The Women's Teva Universal Originals Sandals perfectly combine comfort and style for all-season wear. These women's Teva sandals feature a hook-and-loop closure to easily adjust the fit, while the Universal strap system ensures your feet stay secure and comfortable. For grip and traction, these Teva sandals feature a rubber outsole making them great on both wet and dry surfaces. With an EVA foam footbed, you'll enjoy cushion with every step too. Be ready for your next adventure with the Teva Original Universal Women's Sandals.Features:Specs:",
+   'Gender': 'None',
+   'Name': "Women's Teva Original Universal Water Sandals Black",
+   'Pid': '228963.156074.5BD1DE98FA94FFB1.BF86A1C21D02D2CB.88727820246',
+   'Price': '55.0',
+   'Size': '7',
+   'similarity': 0.28934845},
+  {'Brand': 'Converse',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Classic, all-American style and comfort combine in the Converse Chuck Taylor All Star Ox. The soft canvas upper comes in a variety of colors for a versatile look.',
+   'Gender': 'female',
+   'Name': "Converse Women's Chuck Taylor All Star Ox Casual Sneakers from Finish Line - Black",
+   'Pid': '127.2.DFF8DD86A0648144.BA472CC551010D32.22866822732',
+   'Price': '60.0',
+   'Size': '8',
+   'similarity': 0.28934845},
+  {'Brand': 'Deer Stags',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'A terrific shoe for the school boy! The quiet Pu outsole offers great traction and the elastic twin gore allows for a personalized fit.',
+   'Gender': 'male',
+   'Name': 'Deer Stags Little and Big Boys Wide Wings Dress Comfort Slip-On - Black',
+   'Pid': '160244.2.C6DCFA4883B330A3.3F7D33250D8F3BF5.703022781208',
+   'Price': '74.25',
+   'Size': '12.5W',
+   'similarity': 0.28774667},
+  {'Brand': 'Easy Spirit',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Stylish yet comfortable, the Clarice dress pump is a must have in your wardrobe. This pump features arch support and a cushioned insole for comfort that goes the distance.  Providing comfort over 35 years, Easy Spirit shoes are designed with benefits that keep you moving.',
+   'Gender': 'female',
+   'Name': "Easy Spirit Women's Clarice Mary Jane Block Heel Dress Pumps - Black",
+   'Pid': '160244.2.C6DCFA4883B330A3.63F1F4F29DF149B7.192733715723',
+   'Price': '132.16',
+   'Size': '10N',
+   'similarity': 0.28774667},
+  {'Brand': 'Bernardo Footwear',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Defy definition. This versatile, handcrafted sandal moves seamlessly from day to night,and season to season, thanks to its soft vegetable re-tanned leather upper withstatement ankle strap and easy block heel.',
+   'Gender': 'female',
+   'Name': 'Bernardo Footwear Bernardo Atlas Pump - Black',
+   'Pid': '127.2.DFF8DD86A0648144.D0FA9802B0BEAE2E.690467273361',
+   'Price': '258.0',
+   'Size': '10',
+   'similarity': 0.28774667},
+  {'Brand': 'Clarks',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Leather',
+   'Description': 'Bringing the best of boots to your most-loved looks, our Lileigh Charm leather ankle boot combines a premium feel with timeless design details. Grounded atop an ultra-wearable stack heel, it comes together with super-soft foam footbeds to deliver all the comfort of your old favorites as soon as you pull them on. Your new wardrobe staple.',
+   'Gender': 'female',
+   'Name': "Clarks Women's Collection Lileigh Charm Boots - Black Leather",
+   'Pid': '127.2.DFF8DD86A0648144.48B8C3DED51D2961.889004130575',
+   'Price': '140.0',
+   'Size': '8.5W',
+   'similarity': 0.286385985},
+  {'Brand': 'Kenneth Cole Reaction',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Take your sneaker game to new heights in the Kenneth Cole Reaction Fiona. You stay comfortable all day while a shimmery glitter and metallic upper puts some sparkle in your step.',
+   'Gender': 'female',
+   'Name': "Kenneth Cole Reaction Women's Fiona Wedge Sneakers - Black",
+   'Pid': '127.2.DFF8DD86A0648144.8FC0D363E14E9A65.196350233332',
+   'Price': '99.0',
+   'Size': '7',
+   'similarity': 0.28478045},
+  {'Brand': 'Dv Dolce Vita',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black',
+   'Description': 'Grounded with equestrian-inspired details, the Dv Dolce Vita blends a sensational silhouette with sensible style in the Elyse over-the-knee boots.',
+   'Gender': 'female',
+   'Name': "Dv Dolce Vita Women's Elyse Over-The-Knee Buckle Block Heel Boot - Black",
+   'Pid': '160244.2.C6DCFA4883B330A3.960B0E6BD93490E0.195857973659',
+   'Price': '147.01',
+   'Size': '6M',
+   'similarity': 0.28478045},
+  {'Brand': 'Vince Camuto',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Leather',
+   'Description': 'A gorgeous addition to tailored skirts, the Vince Camuto Brigitte wide-calf boots dress up or down with sophisticated flair.',
+   'Gender': 'female',
+   'Name': "Vince Camuto Women's Brigitte Wide-Calf Dress Boots - Black Leather",
+   'Pid': '160244.2.C6DCFA4883B330A3.FDF01399EA4DDB17.197651398348',
+   'Price': '212.94',
+   'Size': '8M',
+   'similarity': 0.28478045},
+  {'Brand': 'I.n.c. International Concepts',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Patent',
+   'Description': 'Triple-strapped and zipped in back, the Valan flats deliver an on-the-level fresh look from I.n.c. International Concepts.',
+   'Gender': 'female',
+   'Name': "I.n.c. International Concepts Valan Triple-Strapped Flats, Created for Macy's - Black Patent",
+   'Pid': '127.2.DFF8DD86A0648144.6CCA4EE520DF126A.194145738130',
+   'Price': '79.5',
+   'Size': '5M',
+   'similarity': 0.28180725},
+  {'Brand': 'Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Faux Leather',
+   'Description': "From our Weather Ready collection // Take on the rain in a returning favorite. Water-repellent boots never looked so good. Water-repellent ankle bootie with strappy details and a lug sole. Works in: Light rain. Synthetic water-repellent upper with a closed round toe. Side zip closure. Contour+ Comfort technology for a premium fit and all-day comfort experience. Breathable lining: Well-ventilated for natural comfort. Rubber traction outsole to help with slip resistance. 0.75-inch platform, 3-inch block heel. 3.94-inch boot height; 9.80-inch circumference. Note: Measurements based on size 6M boot. For each half size larger, shaft height increases by 0.12 inches, circumference by 0.20 inches. Why You'Ll Love It: From our Weather Ready collection // Water-repellent series. Utility-inspired styles crafted with top-quality materials and luxe linings to help you stay dry and look great, all day every day.",
+   'Gender': 'female',
+   'Name': 'Naturalizer Madalynn-Strap Water Resistant Lug Sole Booties - Black Faux Leather',
+   'Pid': '127.2.DFF8DD86A0648144.703A9ED3720CDF8D.197943333774',
+   'Price': '169.0',
+   'Size': '6M',
+   'similarity': 0.28113035},
+  {'Brand': 'Kingsize',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Jet black blaze red',
+   'Description': 'Forget about pesky laces. These King. Size No-Tie Sneakers feature elastic laces that fit comfortably over the feet while remaining secure. A memory foam sockliner and padded collar and tongue ensure that every step is supported.  Hook and loop strap. No-tie elastic lace closure',
+   'Gender': 'male',
+   'Name': "KingSize Men's No-Tie Sneakers - Jet black blaze red",
+   'Pid': '127.2.DFF8DD86A0648144.2271FB2E8E5037A8.196392405827',
+   'Price': '49.99',
+   'Size': '10WW',
+   'similarity': 0.27951815},
+  {'Brand': 'Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Smooth Faux Leather',
+   'Description': 'Dressed to impress. A platform pump with a slip-on fit, U-shaped vamp and pretty silhouette accentuates every look. Get there beautifully. Classic platform pump with slip-on fit. Manmade upper with an almond toe. Contour+ technology for a premium fit and all-day comfort experience. Non-slip outsole. 3.75" platform heel. Why You\'Ll Love It: Ingenious elegant utility. All-day heels that scale the height of chic with endless versatility and comfort that is downright clever. Available in an inclusive size range of tough-to-find sizes and widths for a custom-designed fit and feel for all-day wear. The Shoe With the Beautiful Fit. Since 1927.',
+   'Gender': 'female',
+   'Name': 'Naturalizer Berlin Pumps - Black Smooth Faux Leather',
+   'Pid': '127.2.DFF8DD86A0648144.1977F3E71229197C.17116966236',
+   'Price': '99.0',
+   'Size': '8.5M',
+   'similarity': 0.2724582},
+  {'Brand': '8 by YOOX',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, no appliqués, solid color, leather lining, zipper fastening, pointed toe, cuban heel, rubber sole, contains non-textile parts of animal origin, over-the-knee boots , Color: Black , Size: 5',
+   'Gender': 'female',
+   'Name': '8 By Yoox Leather Over The Knee Western Boot Woman Boot Black Size 5 Calfskin',
+   'Pid': '159390.1.5EDD.32ACB85E3C2EAB0F.US-17716155LW-3-AI24',
+   'Price': '400.0',
+   'Size': '5',
+   'similarity': 0.13249962}],
+ 'session_id': '0d851cdc-ce62-4ec7-81ac-3839fb6a10c9'}</code></pre>
+</div>
+</div>
+<div id="cell-21" class="cell" data-execution_count="56">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>results_image[<span class="st">"reasoning"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="56">
+<pre><code>'No API key available, no LLM reordering performed'</code></pre>
+</div>
+</div>
+<p>In this case, since the API KEYS were removed from the <code>.env</code> file No LLM reranking was used in this.</p>
+</section>
+<section id="changing-the-weights-of-the-hybrid-retieval" class="level2">
+<h2 class="anchored" data-anchor-id="changing-the-weights-of-the-hybrid-retieval">Changing the weights of the Hybrid Retieval</h2>
+<p>If we look at the line <code>311</code> and <code>314</code>and <code>308</code> of <code>src/backend/api.py</code> we can see how weight is assigned to the different types of retrieval, The weighting of different retrieval types is configured within the system. You can modify these weights to fine-tune the hybrid search performance.</p>
+<p>To adjust the retrieval weights:</p>
+<blockquote class="blockquote">
+<p>Remeber that the summation of the weights has to add up to one (1).</p>
+</blockquote>
+<section id="text-only-search-1" class="level3">
+<h3 class="anchored" data-anchor-id="text-only-search-1">1. Text only Search</h3>
+<p>The default in the “text-only” search is <code>[0.5, 0, 0.5]</code> This distribution allocates 0.5 to the fusion embeddings (representing a combined score), 0 to CLIP (as it’s not a CLIP-only search), and 0.5 to TF-IDF.</p>
+<p>To increase the emphasis on TF-IDF in a text-only search (e.g., to 0.9) while reducing the weight of fusion embeddings (e.g., to 0.1), navigate to the <code>config/db.py</code> and and modify the <code>SEARCH_WEIGHTS</code> dictionary as follows:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>SEARCH_WEIGHTS <span class="op">=</span> {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"text_only"</span>: [<span class="fl">0.1</span>, <span class="dv">0</span>, <span class="fl">0.9</span>],</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"image_only"</span>: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>],</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"hybrid"</span>: [<span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>],</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>After making these adjustments in <code>config/db.py</code>, you must restart the backend API for the new weights to take effect. Stop the currently running backend process (e.g., by pressing Ctrl+C in your terminal) and then execute the launch command again<code>python src/backend/api.py</code></p>
+</section>
+<section id="hybrid-search" class="level3">
+<h3 class="anchored" data-anchor-id="hybrid-search">1. Hybrid Search</h3>
+<p>This follows the same logic but in this case you will be modifying the <code>hybrid</code> key in the dictionary.i.e</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>SEARCH_WEIGHTS <span class="op">=</span> {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"text_only"</span>: [<span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>],</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"image_only"</span>: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>],</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"hybrid"</span>: [<span class="fl">0.7</span>, <span class="dv">0</span>, <span class="fl">0.3</span>],</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="text-serch-after-a-different-weight-distribution-0.10-0.9" class="level2">
+<h2 class="anchored" data-anchor-id="text-serch-after-a-different-weight-distribution-0.10-0.9">Text serch after a different weight distribution [0.1,0, 0.9]</h2>
+<div id="cell-25" class="cell" data-execution_count="51">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>text_query <span class="op">=</span> <span class="st">"leather shoes"</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> api_client.search_text(text_query, search_type<span class="op">=</span><span class="st">"text"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-26" class="cell" data-execution_count="52">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="52">
+<pre><code>{'average_price': 348.87,
+ 'brand_distribution': {'8 by YOOX': 6,
+  'BARRACUDA': 6,
+  'Bella Vita': 6,
+  'Clarks': 6,
+  "DOUCAL'S": 6,
+  'Dockers': 6,
+  'HOGAN': 6,
+  'Naturalizer': 18,
+  'Pazstor': 6,
+  'SAINT LAURENT': 6,
+  'SANTONI': 6,
+  'STELE': 6,
+  'Soul Naturalizer': 6,
+  "TOD'S": 6,
+  'Vince Camuto': 6},
+ 'category_distribution': {'Apparel &amp; Accessories &gt;Shoes ': 100},
+ 'elapsed_time_sec': 2.524,
+ 'price_range': [80.0, 825.0],
+ 'reasoning': "The reordering is based on the following factors: \n  1. Direct keyword match: Results with 'leather' in the name are ranked higher.\n  2. Brand Name mentions: Results from well-known brands like Clarks, Vince Camuto, and Naturalizer are given priority.\n  3. Semantic similarity to the query intent: Results that closely match the search query 'leather shoes' are ranked higher.\n  4. Price comparison: Lower-priced items are given some weight in the ranking.",
+ 'results': [{'Brand': 'Clarks',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Leather',
+   'Description': 'Bringing the best of boots to your most-loved looks, our Lileigh Charm leather ankle boot combines a premium feel with timeless design details. Grounded atop an ultra-wearable stack heel, it comes together with super-soft foam footbeds to deliver all the comfort of your old favorites as soon as you pull them on. Your new wardrobe staple.',
+   'Gender': 'female',
+   'Name': "Clarks Women's Collection Lileigh Charm Boots - Black Leather",
+   'Pid': '127.2.DFF8DD86A0648144.48B8C3DED51D2961.889004130575',
+   'Price': '140.0',
+   'Size': '8.5W',
+   'similarity': 0.9},
+  {'Brand': 'Bella Vita',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Champagne Leather',
+   'Description': "Let's take sophistication to new heights with the Malani by Bella Vita. This chic style features a contemporary mesh and leather pointed toe, an on-trend kitten heel, and a stylish ankle strap, creating a beautiful silhouette. The heel to toe padded insole provides comfort, while the back zipper closure makes it easy to slip on and off. With an adjustable buckle for a customizable fit, this dress style has everything you need to step out in confidence.",
+   'Gender': 'female',
+   'Name': "Bella Vita Women's Malani Kitten Heel Pumps - Champagne Leather",
+   'Pid': '127.2.DFF8DD86A0648144.1BE43FBEFB2346F4.196371734047',
+   'Price': '120.0',
+   'Size': '9.5WW',
+   'similarity': 0.89072235},
+  {'Brand': 'Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Faux Leather',
+   'Description': "From our Weather Ready collection // Take on the rain in a returning favorite. Water-repellent boots never looked so good. Water-repellent ankle bootie with strappy details and a lug sole. Works in: Light rain. Synthetic water-repellent upper with a closed round toe. Side zip closure. Contour+ Comfort technology for a premium fit and all-day comfort experience. Breathable lining: Well-ventilated for natural comfort. Rubber traction outsole to help with slip resistance. 0.75-inch platform, 3-inch block heel. 3.94-inch boot height; 9.80-inch circumference. Note: Measurements based on size 6M boot. For each half size larger, shaft height increases by 0.12 inches, circumference by 0.20 inches. Why You'Ll Love It: From our Weather Ready collection // Water-repellent series. Utility-inspired styles crafted with top-quality materials and luxe linings to help you stay dry and look great, all day every day.",
+   'Gender': 'female',
+   'Name': 'Naturalizer Madalynn-Strap Water Resistant Lug Sole Booties - Black Faux Leather',
+   'Pid': '127.2.DFF8DD86A0648144.703A9ED3720CDF8D.197943333774',
+   'Price': '169.0',
+   'Size': '6M',
+   'similarity': 0.89072235},
+  {'Brand': 'Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Pewter Faux Leather',
+   'Description': "From our Lite Series // An everyday essential. You simply can't go wrong adding this lug sole loafer to your shoe closet. Bold women's loafers with soft, lightweight lug sole. Synthetic upper with a closed round toe. Contour+ Comfort technology for a premium fit and all-day comfort experience. Flexible and lightweight Eva sole. 0.75-inch platform, 2.25-inch block heel. Linings, insole, insole board, toe box and heel counter. You'Ll Love It: Forever elegant silhouettes with all day wearability, available in an inclusive range of sizes and widths. Designed to the contours of a woman's foot. The Beautiful Fit. Since 1927.",
+   'Gender': 'female',
+   'Name': 'Naturalizer Dakota Lug Sole Penny Loafers - Pewter Faux Leather',
+   'Pid': '127.2.DFF8DD86A0648144.6D6F2F74915259BC.197943265662',
+   'Price': '130.0',
+   'Size': '6.5M',
+   'similarity': 0.89072235},
+  {'Brand': 'Vince Camuto',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Leather',
+   'Description': 'A gorgeous addition to tailored skirts, the Vince Camuto Brigitte wide-calf boots dress up or down with sophisticated flair.',
+   'Gender': 'female',
+   'Name': "Vince Camuto Women's Brigitte Wide-Calf Dress Boots - Black Leather",
+   'Pid': '160244.2.C6DCFA4883B330A3.FDF01399EA4DDB17.197651398348',
+   'Price': '212.94',
+   'Size': '8M',
+   'similarity': 0.89072235},
+  {'Brand': 'Soul Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'White Faux Leather',
+   'Description': "From Soul Naturalizer // Up your style game. This lace-up sneaker came to play. All-day sneakers with wedge sole. Synthetic upper with a closed almond toe. ContourFIT technology: sculpted insole, soft foam lining, arch support with memory foam, sock lining, lightweight and flexible outsole. 0.5-inch platform, 1.5-inch heel. Why You'Ll Love IT: Forever elegant silhouettes with all day wearability, available in an inclusive range of sizes and widths. Designed to the contours of a woman's foot. The Beautiful Fit. Since 1927.",
+   'Gender': 'female',
+   'Name': 'Soul Naturalizer Jackson Lace-Up Wedge Sneakers - Black/White Faux Leather',
+   'Pid': '160244.2.C6DCFA4883B330A3.CE3A18B9819E6564.197943842887',
+   'Price': '103.87',
+   'Size': '9M',
+   'similarity': 0.874263294},
+  {'Brand': 'Naturalizer',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Black Smooth Faux Leather',
+   'Description': 'Dressed to impress. A platform pump with a slip-on fit, U-shaped vamp and pretty silhouette accentuates every look. Get there beautifully. Classic platform pump with slip-on fit. Manmade upper with an almond toe. Contour+ technology for a premium fit and all-day comfort experience. Non-slip outsole. 3.75" platform heel. Why You\'Ll Love It: Ingenious elegant utility. All-day heels that scale the height of chic with endless versatility and comfort that is downright clever. Available in an inclusive size range of tough-to-find sizes and widths for a custom-designed fit and feel for all-day wear. The Shoe With the Beautiful Fit. Since 1927.',
+   'Gender': 'female',
+   'Name': 'Naturalizer Berlin Pumps - Black Smooth Faux Leather',
+   'Pid': '127.2.DFF8DD86A0648144.1977F3E71229197C.17116966236',
+   'Price': '99.0',
+   'Size': '8.5M',
+   'similarity': 0.874263294},
+  {'Brand': "TOD'S",
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, suede effect, buckle, brand logo, solid color, leather lining, zipper fastening, round toe, square heel, pebbled sole, contains non-textile parts of animal origin, suede ankle boots , Color: Cocoa , Size: 5.5',
+   'Gender': 'female',
+   'Name': "Tod's Woman Ankle boots Cocoa Size 5.5 Leather",
+   'Pid': '159390.1.5EDD.7BBA18A7420043AA.US-17281540JK-4-AI24',
+   'Price': '825.0',
+   'Size': '5.5',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'SANTONI',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'suede, no appliqués, solid color, square toe, square heel, contains non-textile parts of animal origin, large sized, sandals , Color: Green , Size: 8',
+   'Gender': 'female',
+   'Name': 'Santoni Woman Sandals Green Size 8 Leather',
+   'Pid': '159390.1.5EDD.4CAF4E9AEF252405.US-17531419UQ-9-AI24',
+   'Price': '795.0',
+   'Size': '8',
+   'similarity': 0.47302655400000004},
+  {'Brand': "DOUCAL'S",
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'glossed-leather, fringes, buckle, solid color, leather lining, round toe, square heel, lug sole, contains non-textile parts of animal origin, loafers , Color: Dark brown , Size: 9.5',
+   'Gender': 'female',
+   'Name': "Doucal's Woman Loafers Dark brown Size 9.5 Leather",
+   'Pid': '159390.1.5EDD.FAA85A244D75A603.US-17865112NW-12-AI24',
+   'Price': '583.0',
+   'Size': '9.5',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'SAINT LAURENT',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, brand logo, solid color, fabric inner, laces, round toeline, flat, rubber sole, contains non-textile parts of animal origin, high-tops &amp; trainers, small sized , Color: White , Size: 9',
+   'Gender': 'male',
+   'Name': 'Saint Laurent Man Sneakers White Size 9 Soft Leather',
+   'Pid': '159390.1.5EDD.24A9ACFFC4796BF7.US-17713413FB-9-AI24',
+   'Price': '667.0',
+   'Size': '9',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'BARRACUDA',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, no appliqués, solid color, leather lining, elasticized gores, round toeline, square heel, lug sole, contains non-textile parts of animal origin , Color: White , Size: 8',
+   'Gender': 'female',
+   'Name': 'Barracuda Woman Ankle boots White Size 8 Soft Leather',
+   'Pid': '159390.1.5EDD.6EDF6DB0919D5BEA.US-17200074AG-9-AI24',
+   'Price': '564.0',
+   'Size': '8',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'STELE',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, nappa leather, no appliqués, solid color, leather backing, narrow toeline, spike heel, covered heel, leather sole, contains non-textile parts of animal origin, stilettos , Color: Garnet , Size: 6',
+   'Gender': 'female',
+   'Name': 'Stele Woman Pumps Garnet Size 6 Soft Leather',
+   'Pid': '159390.1.5EDD.FB6CDCD4695A6FE6.US-17397829VA-5-AI24',
+   'Price': '408.0',
+   'Size': '6',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'HOGAN',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, brand logo, multicolor pattern, leather backing, laces, round toeline, flat, rubber cleated sole, contains non-textile parts of animal origin, large sized , Color: Dark brown , Size: 7',
+   'Gender': 'male',
+   'Name': 'Hogan Man Sneakers Dark brown Size 7 Soft Leather',
+   'Pid': '159390.1.5EDD.DB8589969328F3A2.US-17246234QT-5-AI24',
+   'Price': '525.0',
+   'Size': '7',
+   'similarity': 0.47302655400000004},
+  {'Brand': 'Dockers',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Dark Tan',
+   'Description': "Cool enough for casual adventures and polished enough for the office, these bike toe oxford men's dress shoes from Dockers effortlessly complement your everyday routine.",
+   'Gender': 'male',
+   'Name': "Dockers Men's Trustee Leather Oxfords - Dark Tan",
+   'Pid': '127.2.DFF8DD86A0648144.EEF67CB2003482F3.31042444668',
+   'Price': '80.0',
+   'Size': '10W',
+   'similarity': 0.414425862},
+  {'Brand': 'Pazstor',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'Barista brown',
+   'Description': 'These oxfords are designed to fit ergonomically offering premium Comfort, Made of Premium soft lambskin Leather. Whole size only, please choose one number above if you usually wear half number (e.g. if your size is 7.5 then go up to 8) Made in Mexico',
+   'Gender': 'male',
+   'Name': "Pazstor Men's Premium Comfort Lambskin Leather Oxfords Classic - Barista brown",
+   'Pid': '127.2.DFF8DD86A0648144.935C81483CAB9DD1.810122210719',
+   'Price': '109.0',
+   'Size': '12',
+   'similarity': 0.36997136999999997},
+  {'Brand': '8 by YOOX',
+   'Category': 'Apparel &amp; Accessories &gt;Shoes ',
+   'Color': 'None',
+   'Description': 'leather, no appliqués, solid color, leather lining, zipper fastening, pointed toe, cuban heel, rubber sole, contains non-textile parts of animal origin, over-the-knee boots , Color: Black , Size: 5',
+   'Gender': 'female',
+   'Name': '8 By Yoox Leather Over The Knee Western Boot Woman Boot Black Size 5 Calfskin',
+   'Pid': '159390.1.5EDD.32ACB85E3C2EAB0F.US-17716155LW-3-AI24',
+   'Price': '400.0',
+   'Size': '5',
+   'similarity': 0.055179837}],
+ 'session_id': 'b293e3f0-ac7e-4756-9d65-4ac672b075c7'}</code></pre>
+</div>
+</div>
+<p>The result here looks different from the first seach even though it is the same query</p>
+</section>
+<section id="clean-up" class="level2">
+<h2 class="anchored" data-anchor-id="clean-up">Clean Up</h2>
+<ul>
+<li>Stop the backend on the terminal by <code>Ctrl + C</code> on your keyboard</li>
+<li>Bring down the running containers by running <code>docker compose -f docker-compose.db.yml down --remove-orphans --volumes</code></li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

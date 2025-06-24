@@ -1,0 +1,2577 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>eda_metadata_columns</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+
+
+<div id="8d727a1b-0a7c-40ce-8160-56506b09162d" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In this notebook, we explore the metadata columns to identify additional information that should be included in the text embeddings. We use the cleaned dataset generated by the <code>src/preprocess/clean_data.py</code> script, which processes the raw data. The cleaned dataset can be downloaded from <a href="https://drive.google.com/drive/folders/1LQzeuo9PZ_Y-Xj_QhhzYEYJP8XFZn48K">here</a>.</p>
+<div id="08687937-aa8e-47d0-a903-a77651e2fc01" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_parquet(<span class="st">"../../data/clean/clean_data.parquet"</span>, engine<span class="op">=</span><span class="st">"pyarrow"</span>, columns<span class="op">=</span>[<span class="st">"Pid"</span>, <span class="st">"Category"</span>, <span class="st">"Name"</span>, <span class="st">"MergedBrand"</span>, <span class="st">"Condition"</span>])</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Load time: </span><span class="sc">{:.2f}</span><span class="st"> seconds"</span>.<span class="bu">format</span>(time.time() <span class="op">-</span> start))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Load time: 6.97 seconds</code></pre>
+</div>
+</div>
+<section id="product-name-vs-brand" class="level2">
+<h2 class="anchored" data-anchor-id="product-name-vs-brand">Product Name vs Brand</h2>
+<p>Let’s start by checking the simple string matching to see if the Name column contains the brand information.</p>
+<div id="98549054-4490-4be4-a013-243bd97f5ef9" class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'brand_in_name'</span>] <span class="op">=</span> df.<span class="bu">apply</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> row: <span class="bu">str</span>(row[<span class="st">'MergedBrand'</span>]).lower() <span class="kw">in</span> <span class="bu">str</span>(row[<span class="st">'Name'</span>]).lower(), axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="ff6957d3-d80b-4b76-a19b-5665b0c43b31" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Total number of rows</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>total <span class="op">=</span> <span class="bu">len</span>(df)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Count of True values in brand_in_name</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>count <span class="op">=</span> df[<span class="st">'brand_in_name'</span>].<span class="bu">sum</span>()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Percentage</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>percentage <span class="op">=</span> (count <span class="op">/</span> total) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Count: </span><span class="sc">{</span>count<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Percentage of product names containing the brand: </span><span class="sc">{</span>percentage<span class="sc">:.2f}</span><span class="ss">%"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Count: 5331277
+Percentage of product names containing the brand: 48.35%</code></pre>
+</div>
+</div>
+<p>Using simple string matching, we found that 48% of product names already contain the brand name. However, not all products have brand information available. As shown below, 44% of the products are missing this detail.</p>
+<div id="dfc9e5d5-6a88-4297-be66-455e5f37ae74" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df.isnull().<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(df) <span class="op">*</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pid               0.000000
+Category         37.897004
+Name              0.101166
+MergedBrand      44.491586
+Condition        13.894525
+brand_in_name     0.000000
+dtype: float64</code></pre>
+</div>
+</div>
+<p>Now let’s check among those products whose name don’t contain brand information, how many of them have a missing brand value.</p>
+<div id="4ddf436b-71ea-4b23-8baf-df0579dc11d1" class="cell" data-execution_count="30">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Total rows where brand_in_name is False</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>total_false <span class="op">=</span> df[df[<span class="st">'brand_in_name'</span>] <span class="op">==</span> <span class="va">False</span>]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rows where brand is also NaN</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>false_and_null <span class="op">=</span> total_false[<span class="st">'MergedBrand'</span>].isnull().<span class="bu">sum</span>()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Percentage</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>percentage <span class="op">=</span> (false_and_null <span class="op">/</span> <span class="bu">len</span>(total_false)) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of products don't contain brand information in name:"</span>, <span class="bu">len</span>(total_false))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of products don't contain brand information in name because brand is NaN:"</span>, <span class="bu">len</span>(total_false))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Percentage of missing brand values (NaN) among product names that don't contain the brand: </span><span class="sc">{</span>percentage<span class="sc">:.2f}</span><span class="ss">%"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>df[(df[<span class="st">'brand_in_name'</span>] <span class="op">==</span> <span class="va">False</span>) <span class="op">&amp;</span> (<span class="op">~</span>df[<span class="st">'MergedBrand'</span>].isnull())]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of products don't contain brand information in name: 5694138
+Number of products don't contain brand information in name because brand is NaN: 5694138
+Percentage of missing brand values (NaN) among product names that don't contain the brand: 86.15%</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="30">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">MergedBrand</th>
+<th data-quarto-table-cell-role="th">Condition</th>
+<th data-quarto-table-cell-role="th">brand_in_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>127.2.DFF8DD86A0648144.CC18C6740EDBD90C.812303...</td>
+<td>Home &amp; Garden &gt;Kitchen &amp; Dining &gt;Kitchen Appli...</td>
+<td>Nsw - Cult Of The Lamb</td>
+<td>U &amp; I Entertainment</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">39</td>
+<td>127.2.DFF8DD86A0648144.84B45CDFDD8A8F82.733569...</td>
+<td>Sporting Goods &gt;Indoor Games &gt;Ping Pong &gt;Ping ...</td>
+<td>60'' Portable Table Tennis Ping Pong Folding T...</td>
+<td>Costway</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">42</td>
+<td>127.2.DFF8DD86A0648144.D009B1C8DBE15487.653046...</td>
+<td>Arts &amp; Entertainment &gt;Hobbies &amp; Creative Arts ...</td>
+<td>27 Note Foldable Glockenspiel Xylophone Alumin...</td>
+<td>Costway</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">53</td>
+<td>127.2.DFF8DD86A0648144.4414CEDC31195D37.810057...</td>
+<td>&lt;NA&gt;</td>
+<td>Mosquito Repellent Refillable Wristbands - 4PK...</td>
+<td>Cliganic</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">55</td>
+<td>127.2.DFF8DD86A0648144.1FE97CECEE9445A1.860000...</td>
+<td>Arts &amp; Entertainment &gt;Hobbies &amp; Creative Arts ...</td>
+<td>Celine Computerized Sewing Machine - White</td>
+<td>Eversewn</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">11025410</td>
+<td>239604.1.BBD0.E9597205DD0CA762.UB2-61042</td>
+<td>Luggage &amp; Bags &gt;Backpacks</td>
+<td>Urbo 2 Travelpack - Navy</td>
+<td>LOJEL</td>
+<td>&lt;NA&gt;</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11025411</td>
+<td>239604.1.BBD0.3341870201C6F4E7.UB2-61043</td>
+<td>Luggage &amp; Bags &gt;Backpacks</td>
+<td>Urbo 2 Citybag - Navy</td>
+<td>LOJEL</td>
+<td>&lt;NA&gt;</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">11025412</td>
+<td>239604.1.BBD0.603591056B13FF27.VLC-L1-BLK-01-K...</td>
+<td>Luggage &amp; Bags &gt;Luggage Accessories &gt;Luggage C...</td>
+<td>Voja - Luggage Cover - Black, Large</td>
+<td>LOJEL</td>
+<td>&lt;NA&gt;</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11025413</td>
+<td>239604.1.BBD0.E2F97E6876AD6420.VLC-M1-BLK-01-K...</td>
+<td>Luggage &amp; Bags &gt;Luggage Accessories &gt;Luggage C...</td>
+<td>Voja - Luggage Cover - Black, Medium</td>
+<td>LOJEL</td>
+<td>&lt;NA&gt;</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">11025414</td>
+<td>239604.1.BBD0.A5FD96F75EFF27DB.patch-bundle</td>
+<td>Luggage &amp; Bags</td>
+<td>Letter Patches</td>
+<td>LOJEL</td>
+<td>&lt;NA&gt;</td>
+<td>False</td>
+</tr>
+</tbody>
+</table>
+
+<p>788756 rows × 6 columns</p>
+</div>
+</div>
+</div>
+<p>Now, as we can see, the main reason a product name doesn’t include the brand is that many of those products simply lack brand information. However, there are 788,756 items where the brand is available but not mentioned in the product name. Note that this analysis was based on basic string matching.</p>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>Including the brand in the text embeddings could be helpful, especially for edge cases where the product name is vague or uninformative (as shown below). While we may not see a significant boost in overall accuracy, adding brand information could enhance model performance in such scenarios.</p>
+<div id="5be6974e-41a8-4971-a67c-1df8e4e56e74" class="cell" data-execution_count="31">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df[(df[<span class="st">'Name'</span>] <span class="op">==</span> <span class="st">'95'</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="31">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">MergedBrand</th>
+<th data-quarto-table-cell-role="th">Condition</th>
+<th data-quarto-table-cell-role="th">brand_in_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9618512</td>
+<td>202186.2.499B3C49E28651BB.4F0E795813525035.80I...</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>95</td>
+<td>GIANVITO ROSSI</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9618513</td>
+<td>202186.2.499B3C49E28651BB.A7C6CC406F655F18.80I...</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>95</td>
+<td>GIANVITO ROSSI</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9635133</td>
+<td>202186.2.499B3C49E28651BB.DDF4F457AFAAB9D4.79I...</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>95</td>
+<td>GIANVITO ROSSI</td>
+<td>new</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9638757</td>
+<td>202186.2.499B3C49E28651BB.E0C71962BC15F3C3.77I...</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>95</td>
+<td>MACH &amp; MACH</td>
+<td>new</td>
+<td>False</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="product-condition" class="level2">
+<h2 class="anchored" data-anchor-id="product-condition">Product Condition</h2>
+<p>Now let’s examine the ‘Condition’ column to understand which types of products are listed as ‘used’.</p>
+<div id="e14198b8-a80f-4a5c-8ef1-ae1b3829afd5" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'Condition'</span>].value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="24">
+<pre><code>Condition
+new            3523196
+New            3142284
+Used           2826973
+refurbished        882
+Refurbished        151
+Name: count, dtype: Int64</code></pre>
+</div>
+</div>
+<div id="97499a30-5c60-41d4-ab40-36b3320634eb" class="cell" data-execution_count="33">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of used books: "</span>, <span class="bu">len</span>(df[</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Book'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>]))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of used Music related products: "</span>, <span class="bu">len</span>(df[</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Music'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>]))</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of used Software related products: "</span>, <span class="bu">len</span>(df[</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Software'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>]))</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of used items with NaN category: "</span>, <span class="bu">len</span>(df[</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].isnull() <span class="op">&amp;</span> </span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of used books:  697883
+Number of used Music related products:  278
+Number of used Software related products:  352
+Number of used items with NaN category:  2128459</code></pre>
+</div>
+</div>
+<div id="bb0f39b2-de21-486f-998e-c56046ee1a85" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df[</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].notnull() <span class="op">&amp;</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Book'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Music'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Software'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>) <span class="op">&amp;</span> </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="23">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">MergedBrand</th>
+<th data-quarto-table-cell-role="th">Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9423583</td>
+<td>190499.156074.AE28426A76AAE034.974BD6BDF0FAD82...</td>
+<td>Mature &gt;Erotic &gt;Pole Dancing Kits</td>
+<td>Previously Played - LEGO Marvel Super Heroes (...</td>
+<td>Wb Games</td>
+<td>Used</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="11c25f79-79fa-41ab-9fd2-541a4220c727" class="cell" data-execution_count="34">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>df[</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'Category'</span>].isnull() <span class="op">&amp;</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    (df[<span class="st">'Condition'</span>].<span class="bu">str</span>.lower() <span class="op">==</span> <span class="st">'used'</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="34">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">MergedBrand</th>
+<th data-quarto-table-cell-role="th">Condition</th>
+<th data-quarto-table-cell-role="th">brand_in_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4299732</td>
+<td>178866.156074.2E7F5E21C961BE0.D84BDA13AA68554F...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Buddy Longway, tome 13 : Le Vent Sauv...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4299733</td>
+<td>178866.156074.2E7F5E21C961BE0.8087BD32F4B5D0BD...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Dragon Rider - Red Endpapers Issue, S...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4299734</td>
+<td>178866.156074.2E7F5E21C961BE0.A3E463DAC8A5D9D0...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Carta Executoria de Hidalguia di Don ...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4299735</td>
+<td>178866.156074.2E7F5E21C961BE0.B1289B1E3DA55568...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Will Eisner's The Spirit Portfolio Ei...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4299736</td>
+<td>178866.156074.2E7F5E21C961BE0.B3E937D8F2FF8703...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Das Reich [with ten original serigrap...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9060133</td>
+<td>178866.156074.99167FE934A5BC7F.89B56B2557BCCDD...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] Autographs -- 292 of Britain’s House ...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9060148</td>
+<td>178866.156074.99167FE934A5BC7F.B08EAAB6C08EFE9...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] 21 ALS, 5 TLS and 6 APCS E.P.Conkle D...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9060176</td>
+<td>178866.156074.99167FE934A5BC7F.B31DBEA659669C8...</td>
+<td>&lt;NA&gt;</td>
+<td>The Sunday Times Colour Section (Magazine) 20t...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9060180</td>
+<td>178866.156074.99167FE934A5BC7F.ADE6C8A6D1D5367...</td>
+<td>&lt;NA&gt;</td>
+<td>[Signed] sinbad tome 1 le cratère d'alexandrie...</td>
+<td>&lt;NA&gt;</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9424339</td>
+<td>190499.156074.AE28426A76AAE034.B337B85FB8FB290...</td>
+<td>&lt;NA&gt;</td>
+<td>Previously Played - The Legend Of Zelda: Major...</td>
+<td>Nintendo 3Ds</td>
+<td>Used</td>
+<td>False</td>
+</tr>
+</tbody>
+</table>
+
+<p>2128459 rows × 6 columns</p>
+</div>
+</div>
+</div>
+<section id="conclusion-1" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-1">Conclusion</h3>
+<p>It appears that most used items are books, music-related products, or games. While incorporating the Condition field into text embeddings could potentially improve search accuracy for used books and similar items, it is not considered essential. Instead, we prefer to treat it as a post-search filtering criterion.</p>
+</section>
+</section>
+<section id="metadata-columns-summary" class="level2">
+<h2 class="anchored" data-anchor-id="metadata-columns-summary">Metadata Columns Summary</h2>
+<p>Below is a summary of metadata columns and whether they will be included in the text embeddings.</p>
+<p><strong>✅MergedBrand:</strong> This will be included in the text embeddings. While most product names already contain brand information, explicitly embedding it can help in edge cases where the product name is ambiguous.</p>
+<p><strong>✅Category:</strong> After incorporating category into text embeddings, we observed some improved search results—e.g., the query “Furniture” no longer returns books. However, since 37% of products lack category information and the complexity of categories, we may consider enriching the category manually. For now, including category has already shown positive impact in certain scenarios.</p>
+<p><strong>✅Gender:</strong> Although product images can sometimes convey gender information, having explicit gender data is helpful for items where the image alone is ambiguous about the gender—such as watches or rings.</p>
+<p><strong>❌Condition:</strong> Most used items are books, music-related products, or games. As confirmed with the partner, this field will not be included in the text embeddings. Instead, it will be considered for post-search filtering.</p>
+<p><strong>❌Size:</strong> Due to the high cardinality of the size field and its relatively low importance in common search scenarios, this attribute will also be treated as a post-search filter.</p>
+<p><strong>❌Color:</strong> Since product images already capture color information effectively, we will not include color in the text embeddings.</p>
+<p><strong>⚠️Price:</strong> Price requires separate handling, as general-purpose models like all-MiniLM-L6-v2 are not trained to interpret or enforce numerical conditions effectively. I experimented with adding price to the text embeddings, but the model still fails to effectively capture or interpret the price information.</p>
+<p><strong>The returned result should prioritize the category as the most important factor, followed by price, and then brand.</strong></p>
+</section>
+<section id="product-description" class="level2">
+<h2 class="anchored" data-anchor-id="product-description">Product Description</h2>
+<p>Now let’s take a look at the product description column. We’ll start by performing named entity recognition (NER) on the descriptions. We’ll use the sample dataset for now, as processing the full dataset takes quite a long time. You can download the sample data from <a href="https://drive.google.com/drive/folders/1tRf1Ps0gcMdJOCWQ_7bEMpjPBPnpc8a1">here</a>.</p>
+<section id="named-entity-recognition" class="level3">
+<h3 class="anchored" data-anchor-id="named-entity-recognition">Named Entity Recognition</h3>
+<div id="d055823c-32cc-4c58-8bbd-ed265d9dd66f" class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../../data/csv/sample_100k_v2.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="c0c3721a-cd14-4ecd-af13-54bb44a0eb37" class="cell" data-execution_count="39">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> spacy</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>nlp <span class="op">=</span> spacy.load(<span class="st">"en_core_web_sm"</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to extract named entities and noun phrases</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_entities_and_phrases(text):</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(text, <span class="bu">str</span>):</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [], []</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    doc <span class="op">=</span> nlp(text)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    entities <span class="op">=</span> [ent.text <span class="cf">for</span> ent <span class="kw">in</span> doc.ents]</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    noun_phrases <span class="op">=</span> [chunk.text <span class="cf">for</span> chunk <span class="kw">in</span> doc.noun_chunks]</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> entities, noun_phrases</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="a864e642-5c6f-4314-94d0-52364dcace74" class="cell" data-execution_count="40">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply to DataFrame</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>df[[<span class="st">"named_entities"</span>, <span class="st">"noun_phrases"</span>]] <span class="op">=</span> df[<span class="st">"Description"</span>].<span class="bu">apply</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> x: pd.Series(extract_entities_and_phrases(x))</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="f8e9a7e4-c91a-49b2-844d-c21a8af165c3" class="cell" data-execution_count="41">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_colwidth'</span>, <span class="va">None</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>df[df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Tops'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">"Description"</span>, <span class="st">"named_entities"</span>, <span class="st">"noun_phrases"</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="41">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Description</th>
+<th data-quarto-table-cell-role="th">named_entities</th>
+<th data-quarto-table-cell-role="th">noun_phrases</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>knitted, medium-weight knit, no appliqués, solid color, deep neckline, long sleeves, no pockets , Color: Turquoise , Size: S</td>
+<td>[Size]</td>
+<td>[knitted, medium-weight knit, no appliqués, solid color, deep neckline, long sleeves, no pockets, Color, Turquoise, Size, S]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14</td>
+<td>Add understated elegance to your wardrobe with this plus size top from Style &amp; Co.</td>
+<td>[Style &amp; Co.]</td>
+<td>[understated elegance, your wardrobe, this plus size top, Style, Co.]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">27</td>
+<td>jersey, brand logo, solid color with print, crew neck, short sleeves, no pockets , Color: Black , Size: L</td>
+<td>[Size]</td>
+<td>[jersey, brand logo, solid color, print, crew neck, short sleeves, no pockets, Color, Black, Size, L]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">49</td>
+<td>This graphic Hurley T-shirt will make a perfect year-round wardrobe essential. It features a graphic Hurley logo at chest on a soft jersey.</td>
+<td>[Hurley, Hurley]</td>
+<td>[This graphic Hurley T-shirt, a perfect year-round wardrobe essential, It, a graphic Hurley logo, chest, a soft jersey]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">55</td>
+<td>For an extra layer when the temperatures drop, wear the Antigua Women's Pittsburgh Steelers Figure 1/4 Zip. With Pittsburgh Steelers colors and graphics, you&amp;rsquo;ll be able to show off your team pride throughout the entire season and year. Made with soft fabric, you&amp;rsquo;ll stay comfortable throughout the whole game in the Antigua Women's Pittsburgh Steelers Figure 1/4 Zip.Fabric Content:100% polyester</td>
+<td>[the Antigua Women's Pittsburgh Steelers, 1/4, Pittsburgh, the entire season and year, the Antigua Women's Pittsburgh Steelers, 1/4]</td>
+<td>[an extra layer, the temperatures, the Antigua Women's Pittsburgh Steelers Figure, 1/4 Zip, Pittsburgh Steelers colors, graphics, you&amp;rsquo;ll, your team pride, the entire season, year, soft fabric, you&amp;rsquo;ll, the whole game, the Antigua Women's Pittsburgh Steelers Figure, 1/4 Zip, Fabric Content:100% polyester]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">56</td>
+<td>This short sleeve T-shirt features a crew neckline and chest signatures.</td>
+<td>[]</td>
+<td>[This short sleeve T-shirt, a crew, neckline, chest signatures]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">60</td>
+<td>Magic mirror, on the wall - what is the fairest Disney shirt of all add a little Disney magic to your day with a fun Disney T-Shirt celebrate all of your favorites with designs that feature Beauty Rose.</td>
+<td>[Magic, Disney, Disney, day, Disney, Beauty Rose]</td>
+<td>[Magic mirror, the wall, what, the fairest Disney shirt, all, a little Disney magic, your day, Disney T-Shirt, all, your favorites, designs, that, Beauty Rose]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">67</td>
+<td>sweatshirt fleece, no appliqués, solid color with print, hooded collar, long sleeves, fleece lining, single pocket , Color: White , Size: S</td>
+<td>[Size]</td>
+<td>[sweatshirt fleece, no appliqués, solid color, print, hooded collar, long sleeves, fleece lining, single pocket, Color, White, Size, S]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">73</td>
+<td>Diversify your T-shirt drawer with our ribbed space dye top. Elbow-length sleeves lend an extra touch of polish to this piece. About The Brand: Our brand was designed for and with women like you. Made for your body, your style, and your truth. As your wardrobe's best friend, these mix-and-match pieces work with everything in your closet.</td>
+<td>[Elbow, polish]</td>
+<td>[your T-shirt drawer, our ribbed space dye top, Elbow-length sleeves, an extra touch, polish, this piece, The Brand, Our brand, women, you, your body, your style, your truth, your wardrobe's best friend, these mix-and-match pieces, everything, your closet]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">79</td>
+<td>jersey, brand logo, solid color, classic neckline, long sleeves, button closing, single chest pocket , Color: White , Size: 15 ½</td>
+<td>[Size, 15, ½]</td>
+<td>[jersey, brand logo, solid color, classic neckline, long sleeves, button closing, single chest pocket, Color, White, Size, 15 ½]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="8edcc5cb-61db-4a7b-bc8f-a918acc98dd6" class="cell" data-execution_count="43">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>df[df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Pants'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">"Description"</span>, <span class="st">"named_entities"</span>, <span class="st">"noun_phrases"</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="43">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Description</th>
+<th data-quarto-table-cell-role="th">named_entities</th>
+<th data-quarto-table-cell-role="th">noun_phrases</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>. . . . 2</td>
+<td>[2]</td>
+<td>[]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>corduroy, ribbed, no appliqués, solid color, high waisted, elasticized waist, tapered leg, regular fit, multipockets, this brand runs small , Color: Red , Size: 8</td>
+<td>[Size, 8]</td>
+<td>[no appliqués, solid color, high waisted, elasticized waist, leg, regular fit, multipockets, this brand, Red, Size]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">47</td>
+<td>denim, brand logo, solid color with appliqués, colored wash, high waisted, belt loops, relaxed fit, 1 button, zipper fastening, multipockets, stretch, machine wash or dry clean, do not bleach, do not tumble dry, cropped, straight-leg jeans , Color: Black , Size: 27</td>
+<td>[denim, 1, Size, 27]</td>
+<td>[denim, brand logo, solid color, appliqués, colored wash, high waisted, belt loops, 1 button, zipper fastening, multipockets, stretch, machine wash, cropped, straight-leg jeans, Black, Size]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">52</td>
+<td>The Exaggerated Icon Jogger is for all the icons. This men's pair of joggers feature slanted front pockets, elasticized trim, slanted front pockets, and a back patch pocket. Finished with a large "True Religion" text written down one of the legs.</td>
+<td>[True Religion, one]</td>
+<td>[The Exaggerated Icon Jogger, all the icons, This men's pair, joggers, slanted front pockets, trim, slanted front pockets, a back patch pocket, a large "True Religion" text, the legs]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">57</td>
+<td>jersey, brand logo, solid color, regular fit, without pockets, stretch, cropped, skinny pants , Color: Ivory , Size: 10</td>
+<td>[Size, 10]</td>
+<td>[jersey, brand logo, solid color, regular fit, pockets, stretch, Color, Ivory, Size]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">86</td>
+<td>Move effortlessly throughout your day with these unrestrictive 4-way stretch chino pants from Frank and Oak, featuring a streamlined fit and a stylish cropped leg.</td>
+<td>[4, Frank]</td>
+<td>[your day, these unrestrictive 4-way stretch chino pants, Frank, Oak, a streamlined fit, a stylish cropped leg]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">88</td>
+<td>Step into effortless style and unbeatable comfort with the Women's Mica Denim Crop Drawstring Jogger Pants. These versatile joggers feature a chic cropped design and an adjustable drawstring waist, perfect for customizing your fit. Made from soft, high-quality fabric, they offer the perfect blend of durability and stretch for all-day wear. Whether you're running errands or enjoying a casual day out, these jogger pants will quickly become your go-to wardrobe essential.</td>
+<td>[the Women's Mica Denim Crop Drawstring Jogger Pants, all-day]</td>
+<td>[Step, effortless style, unbeatable comfort, the Women's Mica Denim Crop Drawstring Jogger Pants, These versatile joggers, a chic cropped design, an adjustable drawstring waist, your fit, soft, high-quality fabric, they, the perfect blend, durability, stretch, all-day wear, you, errands, a casual day, these jogger pants, your go]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">152</td>
+<td>This high rise, 30" inseam wide leg jean features a tulip hem made with "Ab" Solution technology, meant to mold, hold, and boost your assets</td>
+<td>[30, Ab" Solution]</td>
+<td>[This high rise, 30" inseam wide leg jean, a tulip hem, "Ab" Solution technology, mold, your assets]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">219</td>
+<td>corduroy, no appliqués, solid color, low waisted, regular fit, multipockets, stretch, straight-leg pants , Color: Camel , Size: 32</td>
+<td>[Size, 32]</td>
+<td>[Color, Camel, Size]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">246</td>
+<td>bootcut pants, woven, solid color, brand logo, embellished, mid rise, regular fit, zipper fastening, button fastenings, multipockets, stretch, machine wash or dry clean, do not bleach, tumble dry , Color: Cream , Size: 4</td>
+<td>[Size, 4]</td>
+<td>[bootcut pants, Cream]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="ec5047ce-eb09-4884-ab51-a5c0164b3747" class="cell" data-execution_count="44">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>df[df[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Shoes'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">"Description"</span>, <span class="st">"named_entities"</span>, <span class="st">"noun_phrases"</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="44">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Description</th>
+<th data-quarto-table-cell-role="th">named_entities</th>
+<th data-quarto-table-cell-role="th">noun_phrases</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">21</td>
+<td>stained effect, brand logo, solid color, rubber lining, buckle fastening, round toeline, flat, rubber sole, flip flops , Color: Pastel pink , Size: 6</td>
+<td>[Size, 6]</td>
+<td>[stained effect, brand logo, solid color, rubber lining, buckle fastening, round toeline, flat, rubber sole, flip flops, Pastel pink]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">24</td>
+<td>A fresh update to one of your favorite women's tennis shoes, you'll heighten every occasion. With easy lace up styling, women's casual sneakers with a clean white platform sole go the extra mile in comfort. Sporty women's sneakers with cushioned back collar. Leather, suede, leather/synthetic metallic, leather/suede, leather/fabric, fabric/leather or synthetic upper with a closed round toe. Contour+ Comfort technology for a premium fit and all-day comfort experience. Removable footbed, non-slip outsole. 1.25" platform heel. Why You'Ll Love It: Designed to the contours of a woman's foot. Available in an inclusive range of sizes and widths for a custom-designed fit and all-day wear. The Beautiful Fit. Est. 1927.</td>
+<td>[one, Sporty, Comfort, all-day, 1.25, Love, all-day, 1927]</td>
+<td>[your favorite women's tennis shoes, you, every occasion, easy lace, styling, women's casual sneakers, a clean white platform sole, the extra mile, comfort, Sporty women's sneakers, cushioned back collar, Leather, suede, leather/synthetic metallic, leather/suede, leather/fabric, fabric/leather, a closed round toe, Contour+ Comfort technology, a premium fit and all-day comfort experience, 1.25" platform heel, You'Ll, It, the contours, a woman's foot, an inclusive range, sizes, widths, a custom-designed fit and all-day wear, The Beautiful Fit. Est]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">30</td>
+<td>chunky loafers, glossed-leather, brand logo, solid color, leather lining, round toe, square heel, rubber sole, contains non-textile parts of animal origin , Color: Black , Size: 8</td>
+<td>[Size, 8]</td>
+<td>[chunky loafers, glossed-leather, brand logo, solid color, leather lining, round toe, square heel, rubber sole, non-textile parts, animal origin, Black, Size]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">31</td>
+<td>canvas, brand logo, solid color, lace-up, round toe, flat, rubber sole, high-top sneakers , Color: Military green , Size: 11</td>
+<td>[Size, 11]</td>
+<td>[canvas, brand logo, solid color, lace-up, round toe, flat, rubber sole, high-top sneakers, Color, Military green]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">61</td>
+<td>Elevate your winter experience with the Men's Pajar Canada Maddox Ice Grip Boots, engineered to tackle the toughest of winter challenges. The waterproof leather and nylon upper provide a dry and flexible fit, ensuring comfort in harsh conditions. With Pajar's signature ice-gripper sole, you'll stride confidently through icy terrain. Seam-sealed and comfort rated to -25°C (-13°F), these boots feature Pajar-Tex waterproof membrane bootie construction for snug warmth, while the premium removable comfort molded insole, crafted with a cozy wool blend, offers breathability and antimicrobial benefits. Face the cold in style and comfort with the rugged sophistication of the Men's Pajar Canada Maddox Ice Grip Boots.</td>
+<td>[winter, the Men's Pajar Canada Maddox Ice Grip Boots, winter, Pajar, Pajar-Tex, the Men's Pajar Canada Maddox Ice Grip Boots]</td>
+<td>[your winter experience, the Men's Pajar Canada Maddox Ice Grip Boots, winter challenges, The waterproof leather, nylon, a dry and flexible fit, comfort, harsh conditions, Pajar's signature ice-gripper sole, you, icy terrain, °, C, F, these boots, Tex, snug warmth, the premium removable comfort, a cozy wool blend, breathability, antimicrobial benefits, the cold, style, comfort, the rugged sophistication, the Men's Pajar Canada Maddox Ice Grip Boots]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">68</td>
+<td>You bring the heat every mission-but when the mission brings the heat right back, the Scorch is here to serve. It's built first for breathability thanks to a lightweight upper patterned with mesh panels*. The Plylolite midsole and the speed lace system work together to make it light, agile and ready when you are-while the outsole is slip resistant and designed for stability. When the heat is on, the Scorch is extra breathable to keep you cool all the way down.Lightweight, strategically patterned upper for maximum air circulation (mesh panels are transparent and may reveal sock color or pattern) Semi-locking YKK Side-Zip Polishable toe Breathable mesh lining Speed lacing for quick adjustments Cushioning open-cell OrthoLite footbed Danner Plyolite EVA midsole offers lasting support and rebound Nylon shank Danner Scorch outsole is slip resistant and designed with a stability control archHeight: 8"Weight: 40 ozInsulation: Non-Insulated</td>
+<td>[Scorch, first, Plylolite, Scorch, Nylon shank Danner Scorch, 40, Non-Insulated]</td>
+<td>[You, the heat, every mission, the mission, the heat, the Scorch, It, breathability thanks, mesh panels, The Plylolite midsole, it, you, the outsole, stability, the heat, the Scorch, you, maximum air circulation, mesh panels, sock color, pattern, quick adjustments, open-cell OrthoLite, Danner Plyolite EVA midsole, lasting support, Nylon shank Danner Scorch outsole, a stability control]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">94</td>
+<td>Break up the monotony with the Run Star Hike Platform Sneaker from Converse! These fashion-forward Chucks feature sturdy denim uppers with SmartFOAM&amp;reg; cushioning, chunky platform midsoles, and&amp;nbsp;two-tone split rubber outsoles for a unique look. Please note: this style runs a half size large.</td>
+<td>[the Run Star Hike Platform Sneaker, half]</td>
+<td>[the monotony, the Run Star Hike Platform Sneaker, Converse, These fashion-forward Chucks, sturdy denim uppers, SmartFOAM&amp;reg, cushioning, chunky platform midsoles, and&amp;nbsp;two-tone, rubber outsoles, a unique look, this style]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">98</td>
+<td>A utilitarian option with stylish versatility, the Garnerr booties from Style &amp; Co take your look from work to weekend with comfort in mind.</td>
+<td>[Garnerr, Style &amp; Co]</td>
+<td>[A utilitarian option, stylish versatility, the Garnerr booties, Style, Co, your look, work, weekend, comfort, mind]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">103</td>
+<td>Get ready for summer fun with the Vanni heeled sandals by Easy Street. This stylish sandal combines an on-trend interwoven, chevron pattern to elevate all your favorite outfits. The block heel is a fashionable touch, while the back zipper ensures easy on and off. You'll enjoy all day style and comfort.</td>
+<td>[summer, Vanni, Easy Street, chevron, all day]</td>
+<td>[summer fun, the Vanni, heeled sandals, Easy Street, This stylish sandal, -trend, , chevron pattern, all your favorite outfits, The block heel, a fashionable touch, the back zipper, You, all day style, comfort]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">115</td>
+<td>leather, studs, brand logo, solid color with appliqués, lined in shearling, buckle fastening, round toe, wedge heel, rubber cleated sole, contains non-textile parts of animal origin, mules , Color: Black , Size: 6</td>
+<td>[Size, 6]</td>
+<td>[leather, studs, brand logo, solid color, appliqués, buckle fastening, round toe, wedge heel, rubber cleated sole, non-textile parts, animal origin, mules, Black, Size]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><strong>The named entities still appear quite messy, making it difficult to extract meaningful information. And we don’t need duplicate information like size, color and brand.</strong></p>
+</section>
+<section id="frequent-words" class="level3">
+<h3 class="anchored" data-anchor-id="frequent-words">Frequent words</h3>
+<p>So instead, I’ll examine the top 500 most frequent words in the description column to see what insights they might reveal.</p>
+<div id="e6a294d1-df52-4b64-8cf0-3deb173c12d9" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> spacy</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>nlp <span class="op">=</span> spacy.load(<span class="st">"en_core_web_sm"</span>)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>all_noun_phrases <span class="op">=</span> []</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> desc <span class="kw">in</span> df[<span class="st">'Description'</span>].dropna():</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    doc <span class="op">=</span> nlp(desc)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    all_noun_phrases.extend([chunk.text.lower() <span class="cf">for</span> chunk <span class="kw">in</span> doc.noun_chunks])</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Count frequency</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>freq <span class="op">=</span> Counter(all_noun_phrases)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="f6031a05-fdec-4d7a-9869-905472f608bd" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> phrase, count <span class="kw">in</span> freq.most_common(<span class="dv">500</span>):</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(phrase, count)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>you 32874
+it 29528
+that 27136
+he 12739
+they 10981
+who 10910
+size 9825
+we 8094
+she 7928
+what 6741
+which 6284
+them 5755
+this book 5729
+this 4825
+color 4764
+solid color 4384
+faster shipping 4367
+better service 4367
+the book 4292
+i 3741
+all 3545
+comfort 3351
+style 3302
+him 3273
+us 3176
+the world 3147
+book 2963
+the perfect way 2777
+women 2770
+no appliqués 2768
+readers 2751
+pages 2717
+brand logo 2707
+condition 2662
+eyes 2637
+collection 2616
+warranty 2597
+24 months 2593
+a step 2592
+harmful uv rays 2581
+life 2572
+the fashion curve 2558
+a discounted price 2557
+smartbuyglasses 2557
+authencity 2463
+her 2419
+non-textile parts 2373
+animal origin 2371
+men 2129
+students 2095
+those 1996
+leather 1826
+everything 1767
+stretch 1748
+black 1722
+access codes 1712
+long sleeves 1708
+some 1688
+measurements 1679
+people 1672
+everyone 1671
+god 1659
+cds 1651
+time 1623
+nbsp 1604
+- 1535
+love 1533
+multipockets 1528
+the author 1516
+you&amp;rsquo;ll 1463
+the story 1408
+children 1392
+anti-scratch coating 1385
+anti-reflective coating 1384
+uv protection coating 1384
+no pockets 1332
+amp 1235
+item 1217
+history 1214
+lens color 1212
+lens material 1191
+others 1184
+signs 1181
+himself 1178
+wear 1166
+part 1160
+notes 1153
+plastic 1116
+anyone 1109
+excellent condition 1095
+good condition 1093
+perfect condition 1072
+unread book 1051
+shell 1046
+leather lining 1044
+something 1042
+textbooks 1034
+supplemental items 1032
+confidence 1012
+features 1010
+the history 1007
+the way 993
+new condition 981
+the text 970
+colors 967
+pockets 950
+jersey 934
+these 934
+a touch 928
+work 927
+each 917
+home 916
+the game 891
+themselves 886
+yourself 884
+america 882
+author 881
+me 873
+step 863
+the pages 842
+fabric 838
+a variety 833
+print 823
+short sleeves 814
+cover 812
+the united states 797
+kids 796
+publisher overstock 792
+art 788
+the reader 782
+dust jacket 782
+nothing 777
+thriftbooks 775
+support 775
+light 765
+your loyalty 764
+a book 761
+upc 760
+use 751
+the end 744
+round toeline 742
+this volume 739
+victory 733
+the field 727
+itself 721
+the spine 718
+round toe 711
+w 707
+white 698
+h 694
+addition 692
+information 687
+spine 687
+very good condition 674
+orders 658
+years 652
+appliqués 644
+machine wash 644
+anything 644
+war 643
+jesus 639
+you&amp;rsquo;re 638
+herself 638
+the work 637
+no doubt 637
+publisher 631
+books 625
+writing 624
+your favorite team 618
+highlighting 616
+durability 614
+things 609
+this item 607
+the life 604
+graphics 602
+the first time 602
+the day 600
+your wardrobe 599
+death 598
+crewneck 591
+denim 584
+ease 584
+friends 583
+day 580
+his life 576
+model 576
+your pride 574
+science 570
+the bible 568
+order 567
+the authors 564
+plain weave 562
+small remainder mark 560
+excess inventory 560
+the power 556
+the brand 553
+place 553
+power 552
+nature 551
+mind 550
+stories 547
+fans 546
+date 545
+a man 545
+hand wash 543
+rubber sole 540
+lining 538
+your team&amp;rsquo;s colors 533
+your feet 531
+the front 530
+leather backing 526
+two-tone 526
+a series 526
+used book 519
+english 516
+the heart 507
+fun 506
+year 501
+this collection 494
+an extra layer 492
+zipper closure 490
+jeans 488
+the time 486
+your team pride 485
+the city 485
+someone 485
+performance 483
+warmth 483
+your life 481
+earth 481
+mid rise 480
+all-day comfort 479
+hem 478
+soft fabric 477
+your look 477
+the future 477
+water 476
+the war 474
+plenty 471
+elegance 470
+110° 469
+techniques 469
+europe 468
+the truth 468
+blue 468
+family 468
+parents 466
+black plastic frames 463
+research 462
+companion materials 459
+a collection 454
+round collar 454
+the body 454
+zipper fastening 452
+imported 452
+the people 451
+the past 451
+s 450
+practice 450
+our top priority 448
+great books 447
+a way 444
+hundreds 444
+music 439
+square heel 438
+london 438
+detail 437
+italy 433
+rubber cleated sole 430
+pants 429
+a world 426
+the man 426
+politics 425
+sophistication 422
+sizes 420
+materials 418
+minor shelf wear 416
+the cover 416
+questions 416
+the course 414
+christ 414
+her life 413
+used items 412
+logo 412
+literature 410
+their lives 410
+supplementary materials 409
+cotton 409
+nike 409
+your love 408
+the temperatures 408
+night 407
+closure 407
+culture 406
+faith 406
+the development 405
+each chapter 403
+the back 400
+the lives 400
+topics 399
+button closing 398
+china 398
+the entire season 397
+the result 396
+photographs 395
+the whole game 395
+the country 395
+tortoiseshell plastic frames 395
+details 394
+both 394
+illustrations 393
+school 391
+the role 391
+england 390
+teachers 390
+used books 389
+whom 388
+design 388
+shoulder 387
+the subject 386
+examples 386
+any outfit 386
+suede 384
+new, never-used condition 384
+your style 383
+your home 379
+ideas 378
+religion 378
+button fastenings 376
+language 374
+thousands 372
+material 372
+lightweight knit 372
+effect 371
+the look 371
+c 369
+the year 368
+laces 368
+100% cotton 367
+the sun 367
+l 366
+no one 365
+a wide range 364
+moisture 364
+hardcover 363
+technology 363
+the church 362
+food 362
+widths 361
+philosophy 361
+success 361
+depth 361
+midnight blue 361
+a time 360
+this edition 360
+you'll 359
+new york 359
+m 359
+a story 355
+this product 353
+an introduction 353
+paris 353
+peace 352
+your favorite college team 352
+any occasion 352
+some shelf 350
+the art 350
+stock 350
+limited writing 347
+sweatshirt fleece 346
+france 346
+words 346
+skin 346
+hope 345
+ship 344
+freedom 344
+tips 343
+/highlighting 343
+grey 341
+the stories 341
+the nature 339
+experience 339
+fashion 339
+the state 338
+control 338
+functionality 337
+former library book 334
+the process 334
+poetry 333
+your body 330
+the waist 330
+this work 330
+world war ii 330
+money 330
+text 329
+society 329
+a range 329
+crepe 328
+height 326
+everyday wear 326
+chapters 324
+100% polyester 324
+the uk 323
+stability 321
+used-verygood condition 319
+very limited notes 319
+the use 318
+leather sole 318
+movement 317
+satin 316
+game day 315
+ways 315
+the house 314
+models 314
+one 313
+exercises 311
+the us 310
+terms 310
+all pages 309
+ex 309
+inspiration 308
+maps 307
+knowledge 304
+animals 302
+cover pages 300
+100% 299
+brown 299
+essays 298
+1 button 298
+a woman 298
+the contours 297
+the importance 297
+a lifetime 297
+demand 296
+action 296
+space 294
+access 292
+weight 291
+top 291
+shipping 291
+belt loops 290
+the rest 289
+toe 288
+hand 286
+interviews 286
+dresses 286
+insole 286
+events 285
+business 285
+solid colour 285
+the beautiful fit 285
+apo/fpo addresses 284
+fabric content:100% polyester 284
+age 284
+multicolor pattern 284
+answers 283
+millions 283
+a premium fit and all-day comfort experience 282
+the chest 282
+adults 281
+fact 281
+images 281
+the office 281
+first edition 280
+artists 279
+an inclusive range 278
+education 278
+front 277
+a woman's foot 277
+a place 275
+recipes 275
+justice 274
+library 274
+specs 274
+interest 274
+your closet 273
+scholars 272
+issues 272
+the top 272
+the series 271
+coverage 269
+the age 269
+this text 268
+thigh 268
+green 268
+lace 268
+the case 267
+edge 266
+his wife 265
+advice 264
+his work 263
+christmas 262
+a wealth 262
+c max 262
+beauty 262
+the study 262
+breathability 261
+a pair 261
+tapered leg 261
+multiple locations 261</code></pre>
+</div>
+</div>
+<p>I provided the top 500 most frequent words from the product descriptions to ChatGPT for analysis. It grouped them into meaningful groups, which can help us extract useful insights and enrich the data:</p>
+<p><strong>Material &amp; Build Quality</strong><br>
+These words suggest something about the item’s durability, comfort, craftsmanship, or premium feel:<br>
+<code>leather</code>, <code>cotton</code>, <code>polyester</code>, <code>rubber sole</code>, <code>steel</code>, <code>glass</code>, <code>wood</code>, <code>soft</code>, <code>stretch</code>, <code>lightweight</code>, <code>durable</code>, <code>high-quality</code>, <code>handcrafted</code>, <code>waterproof</code>, <code>scratch-resistant</code></p>
+<p><strong>Intended Use or Target Audience</strong><br>
+These terms indicate who the product is designed for or its typical use scenarios:<br>
+<code>for men</code>, <code>for women</code>, <code>for kids</code>, <code>for home</code>, <code>for gym</code>, <code>daily use</code>, <code>office</code>, <code>travel</code>, <code>casual</code>, <code>formal</code>, <code>reading</code>, <code>workwear</code></p>
+<p><strong>Features / Selling Points</strong><br>
+Highlight specific functionalities or product benefits that might influence a purchase decision:<br>
+<code>machine washable</code>, <code>UV protection</code>, <code>ergonomic</code>, <code>noise-cancelling</code>, <code>wireless</code>, <code>easy to clean</code>, <code>eco-friendly</code>, <code>made in USA</code>, <code>adjustable</code>, <code>foldable</code>, <code>battery operated</code></p>
+<p><strong>Descriptive Adjectives &amp; Vibes</strong><br>
+These adjectives evoke a mood, aesthetic, or style associated with the product:<br>
+<code>elegant</code>, <code>cozy</code>, <code>sleek</code>, <code>trendy</code>, <code>classic</code>, <code>vintage</code>, <code>minimalist</code>, <code>sporty</code>, <code>relaxing</code>, <code>professional</code></p>
+<p>Some others like:<br>
+Condition &amp; Edition: new, used, like new, publisher overstock, former library book, annotated, revised, hardcover, first edition, dust jacket, signed. Mainly for books or media, will ignore for now.<br>
+Themes / Genres / Subject Matter: romance, history, science fiction, philosophy, religion, self-help, memoir, bestseller, spiritual, educational. Minly for books, movie or game, will ignore for now.</p>
+<p>Ideally, if we could perform the same analysis on the entire dataset, we would identify more words for these groups. We could then add all those words as tags and incorporate them into the text embeddings. <strong>However, this won’t be able to capture all the important information for all products.</strong></p>
+<p>Below is the sample code that use the sample data to extract the information mentioned above from the description column as tags, and then incorporate these tags into the text embeddings.</p>
+<div id="73c87a1a-6d60-461d-a4e9-ec5c2cbd25e2" class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../../data/csv/sample_100k_v2.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="2e43dc00-10c9-4153-949f-28953d469e8a" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Use joined patterns for speed</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>MATERIAL_PATTERN <span class="op">=</span> re.<span class="bu">compile</span>(</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r"\b(?:leather|cotton|polyester|rubber|nylon|wood|steel|glass|soft|stretch|durable|lightweight|handcrafted|waterproof|scratch[- ]?resistant|machine[- ]?washable)\b"</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    re.I</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>USE_PATTERN <span class="op">=</span> re.<span class="bu">compile</span>(</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r"\b(?:for (?:men|women|kids)|unisex|everyday use|office|travel|casual|formal|gym|workwear|sleepwear|loungewear)\b"</span>,</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    re.I</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>FEATURE_PATTERN <span class="op">=</span> re.<span class="bu">compile</span>(</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r"\b(?:uv protection|eco[- ]?friendly|wireless|adjustable|foldable|ergonomic|noise[- ]?cancelling|battery[- ]?powered|lightweight|easy to clean|compact|space[- ]?saving|made in [A-Z]{2,})\b"</span>,</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>    re.I</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>VIBE_PATTERN <span class="op">=</span> re.<span class="bu">compile</span>(</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r"\b(?:elegant|cozy|sleek|trendy|classic|vintage|minimalist|sporty|relaxing|professional|bold|modern|artsy|luxurious)\b"</span>,</span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>    re.I</span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_tags_column(df, pattern, col<span class="op">=</span><span class="st">'Description'</span>):</span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df[col].fillna(<span class="st">''</span>).<span class="bu">str</span>.findall(pattern).<span class="bu">apply</span>(</span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: <span class="bu">list</span>(<span class="bu">set</span>(<span class="bu">map</span>(<span class="bu">str</span>.lower, x))) <span class="cf">if</span> <span class="bu">isinstance</span>(x, <span class="bu">list</span>) <span class="cf">else</span> []</span>
+<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="40a50fe9-f91d-44ad-bc8e-e4348c82bbc6" class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'tags_material'</span>] <span class="op">=</span> extract_tags_column(df, MATERIAL_PATTERN)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'tags_use'</span>] <span class="op">=</span> extract_tags_column(df, USE_PATTERN)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'tags_features'</span>] <span class="op">=</span> extract_tags_column(df, FEATURE_PATTERN)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'tags_vibes'</span>] <span class="op">=</span> extract_tags_column(df, VIBE_PATTERN)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="38d382fb-bee6-4516-8f40-0e3b911f08a0" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'all_tags'</span>] <span class="op">=</span> (</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'tags_material'</span>] <span class="op">+</span> </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'tags_use'</span>] <span class="op">+</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'tags_features'</span>] <span class="op">+</span> </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'tags_vibes'</span>]</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>).<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="st">" "</span>.join(<span class="bu">sorted</span>(<span class="bu">set</span>(x))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="6747c9fd-248e-4151-bdfe-9847c2162c7b" class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CombinedInfo'</span>] <span class="op">=</span> df.<span class="bu">apply</span>(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> row: <span class="ss">f"name: </span><span class="sc">{</span>row[<span class="st">'Name'</span>]<span class="sc">}</span><span class="ss">, gender: </span><span class="sc">{</span>row[<span class="st">'Gender'</span>]<span class="sc">}</span><span class="ss">, brand: </span><span class="sc">{</span>row[<span class="st">'MergedBrand'</span>]<span class="sc">}</span><span class="ss">, category: </span><span class="sc">{</span>row[<span class="st">'Category'</span>]<span class="sc">}</span><span class="ss">, tag: </span><span class="sc">{</span>row[<span class="st">'all_tags'</span>]<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(df[df[<span class="st">'all_tags'</span>].astype(<span class="bu">bool</span>)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="18">
+<pre><code>38609</code></pre>
+</div>
+</div>
+<div id="df8b2da2-df27-4311-b184-2b56b25f3ac8" class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>df[df[<span class="st">'all_tags'</span>].astype(<span class="bu">bool</span>)][[<span class="st">'Name'</span>, <span class="st">'all_tags'</span>, <span class="st">'CombinedInfo'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="21">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">all_tags</th>
+<th data-quarto-table-cell-role="th">CombinedInfo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3</td>
+<td>Slickblue Console Sofa Table With 3 Shelves, Metal Frame - Black</td>
+<td>glass steel</td>
+<td>name: Slickblue Console Sofa Table With 3 Shelves, Metal Frame - Black, gender: unisex, brand: Slickblue, category: Furniture &gt;Sofas , tag: glass steel</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>One Handed: A Guide to Piano Music for One Hand (Music Reference Collection)</td>
+<td>compact</td>
+<td>name: One Handed: A Guide to Piano Music for One Hand (Music Reference Collection), gender: nan, brand: nan, category: Media &gt;Books , tag: compact</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">13</td>
+<td>Barrier Free Travel: Utah National Parks for Wheelers and Slow Walkers</td>
+<td>travel</td>
+<td>name: Barrier Free Travel: Utah National Parks for Wheelers and Slow Walkers, gender: nan, brand: nan, category: nan, tag: travel</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>Suzy Levian New York Suzy Levian Sterling Silver Cubic Zirconia Three Row Modern Eternity Band Ring - Silver</td>
+<td>modern</td>
+<td>name: Suzy Levian New York Suzy Levian Sterling Silver Cubic Zirconia Three Row Modern Eternity Band Ring - Silver, gender: female, brand: Suzy Levian New York, category: Apparel &amp; Accessories &gt;Jewelry &gt;Rings , tag: modern</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">21</td>
+<td>Havaianas Woman Thong sandal Pastel pink Size 6 Rubber</td>
+<td>rubber</td>
+<td>name: Havaianas Woman Thong sandal Pastel pink Size 6 Rubber, gender: female, brand: HAVAIANAS, category: Apparel &amp; Accessories &gt;Shoes , tag: rubber</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">99991</td>
+<td>Doucal's Man Ankle boots Dark brown Size 7 Soft Leather</td>
+<td>leather rubber</td>
+<td>name: Doucal's Man Ankle boots Dark brown Size 7 Soft Leather, gender: male, brand: DOUCAL'S, category: Apparel &amp; Accessories &gt;Shoes , tag: leather rubber</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">99992</td>
+<td>Kids Squall Knit Hat - Lands' End - Red - M-L</td>
+<td>cozy soft</td>
+<td>name: Kids Squall Knit Hat - Lands' End - Red - M-L, gender: unisex, brand: Lands' End, category: Apparel &amp; Accessories &gt;Clothing Accessories &gt;Hats , tag: cozy soft</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">99996</td>
+<td>Boys' Jordan Post Slide Sandals Big Orange Blaze/Orange Peel/University Red</td>
+<td>durable lightweight sleek</td>
+<td>name: Boys' Jordan Post Slide Sandals Big Orange Blaze/Orange Peel/University Red, gender: nan, brand: Jordan, category: Apparel &amp; Accessories &gt;Shoes , tag: durable lightweight sleek</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">99997</td>
+<td>Men's '47 Brand Gray Distressed Jacksonville Jaguars Downburst Franklin T-shirt - Gray</td>
+<td>classic vintage</td>
+<td>name: Men's '47 Brand Gray Distressed Jacksonville Jaguars Downburst Franklin T-shirt - Gray, gender: male, brand: '47 Brand, category: Apparel &amp; Accessories , tag: classic vintage</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">99998</td>
+<td>Tod's Woman Sandals Garnet Size 5.5 Soft Leather</td>
+<td>leather</td>
+<td>name: Tod's Woman Sandals Garnet Size 5.5 Soft Leather, gender: female, brand: TOD'S, category: Apparel &amp; Accessories &gt;Shoes , tag: leather</td>
+</tr>
+</tbody>
+</table>
+
+<p>38609 rows × 3 columns</p>
+</div>
+</div>
+</div>
+<div id="1d88f6c6-5e69-4e64-ba8d-5da7c29e79c4" class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df_sample <span class="op">=</span> df.sample(frac<span class="op">=</span><span class="fl">0.1</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="88bcaffa-2976-4411-a640-26a3e29b3ce1" class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df_sample.to_csv("data/csv/processed.csv", index=False)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="keywordphrase-extraction" class="level3">
+<h3 class="anchored" data-anchor-id="keywordphrase-extraction">Keyword/Phrase Extraction</h3>
+<p>Now let’s try the <a href="https://github.com/MaartenGr/KeyBERT">KeyBERT</a> model to extract relevant keywords or phrases. It uses text embeddings to find meaningful terms. The speed is slow though. When we use KeyBERT, we’ll get keywords or keyphrases that represent the most relevant and meaningful parts of the text — based on the actual semantic content, not just frequency.</p>
+<p>KeyBERT uses a pretrained BERT-based embedding model (e.g., MiniLM) and follows this process:</p>
+<ol type="1">
+<li><p>Text Embedding<br>
+It computes a vector for the entire input text (e.g., a product description).</p></li>
+<li><p>Candidate Keyword Extraction<br>
+It extracts candidate keywords or phrases using n-grams in our cases. A candidate keyword (or candidate phrase) is a potential keyword or keyphrase extracted from the input text before scoring and ranking. These are the raw pieces of text that might be relevant — but KeyBERT hasn’t yet determined how relevant they are. KeyBERT filters and scores them to find the most representative keywords of that text.</p></li>
+<li><p>Candidate Embeddings<br>
+It embeds each candidate phrase using the same embedding model.</p></li>
+<li><p>Similarity Scoring<br>
+For each candidate:<br>
+Computes cosine similarity between the candidate and the full-text embedding.</p></li>
+<li><p>Ranking<br>
+Ranks all candidates by similarity score and returns the top ones as keywords.</p></li>
+</ol>
+<div id="63abb288-5997-4ed6-b9fc-717ec896e24d" class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../../data/csv/sample_100k_v2.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="8cd11cbc-46c3-4058-bb5a-47acf2a473cb" class="cell" data-execution_count="47">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>df_sample <span class="op">=</span> df.sample(frac<span class="op">=</span><span class="fl">0.1</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>df_sample.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="47">
+<pre><code>(10000, 17)</code></pre>
+</div>
+</div>
+<div id="3e9a5a13-a77b-4179-9b18-8a43ee9e80d4" class="cell" data-execution_count="48">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Install KeyBERT if you haven't already</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co"># !pip install keybert</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> keybert <span class="im">import</span> KeyBERT</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Initialize the model</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>kw_model <span class="op">=</span> KeyBERT()</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Define a function to extract top keywords from each description</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_keybert_keywords(text, top_n<span class="op">=</span><span class="dv">5</span>):</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(text, <span class="bu">str</span>) <span class="kw">or</span> <span class="kw">not</span> text.strip():</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    keywords <span class="op">=</span> kw_model.extract_keywords(</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>        text,</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>        keyphrase_ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>),  <span class="co"># extract 1-gram and 2-gram phrases</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>        stop_words<span class="op">=</span><span class="st">'english'</span>,</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>        use_maxsum<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>        nr_candidates<span class="op">=</span><span class="dv">20</span>,  <span class="co"># generate the top 20 n-gram candidates, and rank them using MaxSum similarity to choose the final top_n</span></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>        top_n<span class="op">=</span>top_n</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [kw[<span class="dv">0</span>] <span class="cf">for</span> kw <span class="kw">in</span> keywords]</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 4: Apply to your DataFrame</span></span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>df_sample[<span class="st">'tags_from_keybert'</span>] <span class="op">=</span> df_sample[<span class="st">'Description'</span>].<span class="bu">apply</span>(extract_keybert_keywords)</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Process time: </span><span class="sc">{</span>(time.time() <span class="op">-</span> start) <span class="op">/</span> <span class="dv">60</span><span class="sc">:.2f}</span><span class="ss"> minutes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Process time: 44.69 minutes</code></pre>
+</div>
+</div>
+<div id="6b6748f9-9947-4cfa-a042-2b03f65f49d1" class="cell" data-execution_count="51">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: Join all tags into a string for easier viewing</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>df_sample[<span class="st">'tags_from_keybert_str'</span>] <span class="op">=</span> df_sample[<span class="st">'tags_from_keybert'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="st">', '</span>.join(x))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cede2115-854e-4a51-91c2-f51f39c6c47e" class="cell" data-execution_count="52">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_colwidth'</span>, <span class="va">None</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>df_sample[df_sample[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Shoes'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">'Pid'</span>, <span class="st">'Name'</span>, <span class="st">'Category'</span>, <span class="st">'tags_from_keybert_str'</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="52">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">tags_from_keybert_str</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">76434</td>
+<td>158391.2.5542A8E9F71ED4D3.106B68B52D8A3997.439454</td>
+<td>Mens Minnetonka Casey Slipper - Charcoal</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>minnetonka, stitching available, luxurious suede, way casey, slipper features</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">80917</td>
+<td>127.2.DFF8DD86A0648144.3F5EC200C893296E.197943396380</td>
+<td>Franco Sarto Women's Stevie Mid Shaft Boots - Bronze Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>high, chic touch, loved mid, dressy casual, women boots</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">51685</td>
+<td>127.2.DFF8DD86A0648144.FBDE27B7AFFBA569.196371757732</td>
+<td>Easy Street Women's Feena Slingback Pumps - Nude</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>dress occasion, adjustable buckle, heel sleek, easy street, feena</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">39691</td>
+<td>159390.1.5EDD.A616FA04F2C8CF41.US-17898774CI-9-AI24</td>
+<td>Tua By Braccialini Woman Sandals Beige Size 8 Textile fibers</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>lining buckle, parts animal, sole contains, fabric appliqués, beige size</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">32260</td>
+<td>127.2.DFF8DD86A0648144.9F032A3E13FFD1C9.197651056965</td>
+<td>Lucky Brand Women's Carolie Strappy Espadrille Wedge Sandals - Coffee Quart Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>addition jeans, espadrille, asymmetrical straps, wedges lucky, carolie</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">49182</td>
+<td>159390.1.5EDD.8C9A5B4686172176.US-17778370UQ-11-AI24</td>
+<td>Pollini Woman Sandals Tan Size 9 Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>contains non, parts animal, toe geometric, slide sandals, textured leather</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">55325</td>
+<td>127.2.DFF8DD86A0648144.5E60F5EE8E431DC4.194655553469</td>
+<td>BCBGeneration Women's Darmena Kitten Heel Dress Booties - Black</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>bit, bcbgeneration, dress, darmena, pointed toe</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">93780</td>
+<td>158391.2.6B6A87FA39B97B14.5D152E65285A82D2.808755</td>
+<td>Dr. Martens Zebzag Slingback Platform Mule - Ultimate Grey</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>dr martens, zebzag, slingback platform, treat feet, mule features</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">38603</td>
+<td>127.2.DFF8DD86A0648144.2958FBD3A1FE1A66.198756092858</td>
+<td>Nine West Women's Rhonda Pointy Toe Tapered Heel Dress Pumps - Blue Denim</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>slingback strap, style founded, empowers women, pumps features, west rhonda</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14952</td>
+<td>127.2.DFF8DD86A0648144.E9D49C911A7AADFB.195690637367</td>
+<td>White Mountain Women's Bocci Ballet Flat - Beige Boucle Fabric Multi</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>white mountain, accent design, ballet, chic cap, statement bocci</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="d2b1a8fa-01f8-447c-a5b3-34e22ea48266" class="cell" data-execution_count="53">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>df_sample[df_sample[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Tops'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">'Pid'</span>, <span class="st">'Name'</span>, <span class="st">'Category'</span>, <span class="st">'tags_from_keybert_str'</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="53">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">tags_from_keybert_str</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">50074</td>
+<td>161091.2.52965A6F00B51D20.67CB1DDC41BC6569.6259013</td>
+<td>Women's Plus Size Waffle Relaxed Long Sleeve Mock Neck Pullover - Lands' End - Green - 1X</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>stay cozy, raglan, blazer stylish, waffle textured, sleeves ribbed</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">63120</td>
+<td>159390.1.5EDD.E5A11790F33EDD68.US-10284375GO-6-AI24</td>
+<td>The Editor Man Sweatshirt White Size L Cotton, Polyester</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>brand logo, multipockets color, collar long, size, lining zipper</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">41331</td>
+<td>159390.1.5EDD.6325ADAC31DD1B5B.US-10482406RE-7-AI24</td>
+<td>Erika Cavallini Woman Top Ivory Size M Alpaca wool, Virgin Wool, Polyamide</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>sleeves pockets, color detachable, medium weight, ivory, knit appliqués</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">88636</td>
+<td>127.2.DFF8DD86A0648144.107DA92078A4ED86.197178693216</td>
+<td>Democracy Women's Mineral Washed Embroidered Sweatshirt - Dusty Blue</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>hem mineral, finish embroidered, women long, scoop neck, sweatshirt features</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">84936</td>
+<td>202186.2.29701ABDE4D61068.F3D79DB39A80914E.80IM9L024-WDA4MzE1</td>
+<td>Printed Jersey Turtleneck</td>
+<td>Clothing &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>vary, model, placement, wearing size42, print placement</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">31776</td>
+<td>159390.1.5EDD.D8D01AE8D151976B.US-14469151HT-2-AI24</td>
+<td>Bottega Veneta Woman Sweater Black Size 2 Silk</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>pockets dry, solid, bleach tumble, black size, knit appliqués</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">73691</td>
+<td>159390.1.5EDD.B21A7EAEFF191100.US-10212151FU-7-AI24</td>
+<td>Dsquared2 Man T-shirt Light grey Size M Cotton, Viscose</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>collar short, color light, pockets, brand, logo solid</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">84610</td>
+<td>159390.1.5EDD.5E7719B2F2A3E4EC.US-10261615CB-7-AI24</td>
+<td>Some Ware Man T-shirt Black Size XL Organic cotton</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>pattern crew, pockets, print brand, logo multicolor, size xl</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">34451</td>
+<td>159390.1.5EDD.48882FA69169598A.US-10272677QE-9-AI24</td>
+<td>Tommy Jeans Woman Shirt White Size L Viscose</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>dot, closing pockets, sleeves button, color white, crepe brand</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">53929</td>
+<td>159390.1.5EDD.52A53EB6B3D6042E.US-14472700KV-9-AI24</td>
+<td>Brunello Cucinelli Man Turtleneck Burgundy Size 50 Cashmere</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>pockets stretch, wash dry, lightweight, knit appliqués, color burgundy</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="a55edf58-5c52-4e28-84be-ecfcc3fd99b3" class="cell" data-execution_count="54">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>df_sample[df_sample[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Pants'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">'Pid'</span>, <span class="st">'Name'</span>, <span class="st">'Category'</span>, <span class="st">'tags_from_keybert_str'</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="54">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">tags_from_keybert_str</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">89577</td>
+<td>160244.2.C6DCFA4883B330A3.AC19CCD9F9E63E35.696691483958</td>
+<td>Connected Petite Popover Jumpsuit - Dark Plum</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>petite, soft popover, bodice, chic connected, jumpsuit finished</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">84463</td>
+<td>161091.2.52965A6F00B51D20.1B5422A9D74B2B7B.5701309</td>
+<td>Men's Traditional Fit Stretch Jeans - Lands' End - Blue - 31</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>follow footsteps, durable 12, rigger, introduced square, denim breaks</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">39525</td>
+<td>127.2.DFF8DD86A0648144.400F818D3B19973B.755403668516</td>
+<td>Dkny Sport Women's Cargo Bungee-Hem Pants - Black</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>style, cargo, pair bungee, relaxed fit, drawcord waistband</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">13799</td>
+<td>159390.1.5EDD.F161F1005E5C115F.US-13891094SL-3-AI24</td>
+<td>Y's Yohji Yamamoto Woman Pants Black Size 2 Cotton, Bamboo fiber</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>regular fit, solid color, chinos large, unlined zipper, fleece</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">29231</td>
+<td>159390.1.5EDD.CD0860EF397B4AED.US-13587118UW-80-AI24</td>
+<td>Dondup Kid Girl Pants Burgundy Size 12 Polyester, Acetate, Polyamide</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>size 12, multipockets wash, multicolor pattern, jacquard, cleanable iron</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">7144</td>
+<td>127.2.DFF8DD86A0648144.ADBAFFFC1FCE1A5.5056270178630</td>
+<td>Seraphine Women's Denim Maternity Overalls - Black</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>adjustable panels, mama black, expertly tailored, pregnancy, soft stretch</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">99836</td>
+<td>160244.2.C6DCFA4883B330A3.ECA81A1348343BD3.670589702611</td>
+<td>Michael Kors Men's Classic Fit Performance Dress Pants - Navy</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>classic, designed versatile, michael, dress, kors delivers</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">62005</td>
+<td>159390.1.5EDD.8B468F5FBA06BFBF.US-13884640WN-10-AI24</td>
+<td>Golden Goose Kid Boy Pants Slate blue Size 12 Cotton, Polyester</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>wash 30, color print, logo solid, sporty large, fleece</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">94921</td>
+<td>160244.2.C6DCFA4883B330A3.73433896681E666F.194136888042</td>
+<td>Charter Club Plus Size 100% Linen Cropped Pants, Created for Macy's - Bright White</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td>modern pull, ease charter, size cropped, club plus, crisp linen</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">62122</td>
+<td>202186.2.499B3C49E28651BB.1EE08F18DB5D4483.81IM5B006-MDA4NQ2</td>
+<td>NaN</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Pants</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>ChatGPT also suggests using a MiniLM + FAISS-style keyword extraction pipeline — similar in concept to KeyBERT, but more customizable and potentially faster when properly tuned. However, since we don’t plan to fine-tune the model, its out-of-the-box performance doesn’t seem as accurate or reliable as KeyBERT.</p>
+<div id="5333f944-5ba5-408b-97d4-144726cadec9" class="cell" data-execution_count="55">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>df_sample_2 <span class="op">=</span> df.sample(frac<span class="op">=</span><span class="fl">0.001</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> CountVectorizer</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics.pairwise <span class="im">import</span> cosine_similarity</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sentence_transformers <span class="im">import</span> SentenceTransformer</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the MiniLM model</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> SentenceTransformer(<span class="st">'all-MiniLM-L6-v2'</span>)</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_keywords(text, top_n<span class="op">=</span><span class="dv">5</span>, ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">3</span>)):</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(text, <span class="bu">str</span>) <span class="kw">or</span> <span class="bu">len</span>(text.strip()) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Generate candidate keywords/phrases</span></span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>    vectorizer <span class="op">=</span> CountVectorizer(ngram_range<span class="op">=</span>ngram_range, stop_words<span class="op">=</span><span class="st">'english'</span>).fit([text])</span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>    candidates <span class="op">=</span> vectorizer.get_feature_names_out()</span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Embed document and candidates</span></span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>    doc_embedding <span class="op">=</span> model.encode([text], convert_to_tensor<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a>    candidate_embeddings <span class="op">=</span> model.encode(candidates, convert_to_tensor<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute cosine similarity</span></span>
+<span id="cb45-23"><a href="#cb45-23" aria-hidden="true" tabindex="-1"></a>    similarities <span class="op">=</span> cosine_similarity(doc_embedding.cpu().numpy(), candidate_embeddings.cpu().numpy())[<span class="dv">0</span>]</span>
+<span id="cb45-24"><a href="#cb45-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-25"><a href="#cb45-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sort and select top N</span></span>
+<span id="cb45-26"><a href="#cb45-26" aria-hidden="true" tabindex="-1"></a>    top_indices <span class="op">=</span> np.argsort(similarities)[::<span class="op">-</span><span class="dv">1</span>][:top_n]</span>
+<span id="cb45-27"><a href="#cb45-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [candidates[i] <span class="cf">for</span> i <span class="kw">in</span> top_indices]</span>
+<span id="cb45-28"><a href="#cb45-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-29"><a href="#cb45-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage on a DataFrame</span></span>
+<span id="cb45-30"><a href="#cb45-30" aria-hidden="true" tabindex="-1"></a>df_sample_2[<span class="st">"keywords"</span>] <span class="op">=</span> df_sample_2[<span class="st">"Description"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: extract_keywords(x, top_n<span class="op">=</span><span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="d5feef5b-df7a-4b01-aac2-0db9301fdc4d" class="cell" data-execution_count="56">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">'display.max_colwidth'</span>, <span class="va">None</span>)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>df_sample_2[df_sample_2[<span class="st">'Category'</span>].<span class="bu">str</span>.contains(<span class="st">'Shoes'</span>, case<span class="op">=</span><span class="va">False</span>, na<span class="op">=</span><span class="va">False</span>)][[<span class="st">'Pid'</span>, <span class="st">'Name'</span>, <span class="st">'Category'</span>, <span class="st">'keywords'</span>]].head(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="56">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">keywords</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">76434</td>
+<td>158391.2.5542A8E9F71ED4D3.106B68B52D8A3997.439454</td>
+<td>Mens Minnetonka Casey Slipper - Charcoal</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[new casey slipper, casey slipper features, casey slipper, casey slipper minnetonka, way casey slipper]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">80917</td>
+<td>127.2.DFF8DD86A0648144.3F5EC200C893296E.197943396380</td>
+<td>Franco Sarto Women's Stevie Mid Shaft Boots - Bronze Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[calf boot women, mid calf boot, calf boot, women boots high, women boots]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">51685</td>
+<td>127.2.DFF8DD86A0648144.FBDE27B7AFFBA569.196371757732</td>
+<td>Easy Street Women's Feena Slingback Pumps - Nude</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[feena easy street, feena easy, feena, easy street versatile, easy street]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">39691</td>
+<td>159390.1.5EDD.A616FA04F2C8CF41.US-17898774CI-9-AI24</td>
+<td>Tua By Braccialini Woman Sandals Beige Size 8 Textile fibers</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[sandals color beige, textile parts animal, coated fabric, contains non textile, color leather lining]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">32260</td>
+<td>127.2.DFF8DD86A0648144.9F032A3E13FFD1C9.197651056965</td>
+<td>Lucky Brand Women's Carolie Strappy Espadrille Wedge Sandals - Coffee Quart Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[carolie wedges, breezy espadrille heels, espadrille heels, carolie wedges lucky, espadrille heels asymmetrical]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">49182</td>
+<td>159390.1.5EDD.8C9A5B4686172176.US-17778370UQ-11-AI24</td>
+<td>Pollini Woman Sandals Tan Size 9 Leather</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[leather sole contains, color leather, textured leather, heel leather, textured leather appliqués]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">55325</td>
+<td>127.2.DFF8DD86A0648144.5E60F5EE8E431DC4.194655553469</td>
+<td>BCBGeneration Women's Darmena Kitten Heel Dress Booties - Black</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>[bcbgeneration dress bootie, dress bootie darmena, dress bootie, darmena pointed toe, bcbgeneration dress]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="conclusion-2" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-2">Conclusion</h3>
+<p>The keywords generated by KeyBERT appear promising. To enrich the text embeddings, we could apply the KeyBERT model to generate a new keyword tag column and incorporate it into the embedding process.</p>
+<div id="edad1198-91fc-4fac-a8de-44ce7c74375d" class="cell" data-execution_count="57">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>df_sample[<span class="st">'CombinedInfo'</span>] <span class="op">=</span> df_sample.<span class="bu">apply</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> row: <span class="ss">f"name: </span><span class="sc">{</span>row[<span class="st">'Name'</span>]<span class="sc">}</span><span class="ss">, gender: </span><span class="sc">{</span>row[<span class="st">'Gender'</span>]<span class="sc">}</span><span class="ss">, brand: </span><span class="sc">{</span>row[<span class="st">'MergedBrand'</span>]<span class="sc">}</span><span class="ss">, category: </span><span class="sc">{</span>row[<span class="st">'Category'</span>]<span class="sc">}</span><span class="ss">, tag: </span><span class="sc">{</span>row[<span class="st">'tags_from_keybert_str'</span>]<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>df_sample[[<span class="st">'Pid'</span>, <span class="st">'Name'</span>, <span class="st">'Category'</span>, <span class="st">'CombinedInfo'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="57">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Pid</th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Category</th>
+<th data-quarto-table-cell-role="th">CombinedInfo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">75721</td>
+<td>226170.2.82D42C0152FBB491.4B463957A03AAFCE.245VR8SN250XL</td>
+<td>Falken Sincera SN250 A/S 225/45-18 XL 95V Grand Touring All-Season Tire 28294339</td>
+<td>Vehicles &amp; Parts &gt;Vehicle Parts &amp; Accessories &gt;Motor Vehicle Parts &gt;Motor Vehicle Wheel Systems &gt;Motor Vehicle Tires &gt;Automotive Tires</td>
+<td>name: Falken Sincera SN250 A/S 225/45-18 XL 95V Grand Touring All-Season Tire 28294339, gender: nan, brand: Falken, category: Vehicles &amp; Parts &gt;Vehicle Parts &amp; Accessories &gt;Motor Vehicle Parts &gt;Motor Vehicle Wheel Systems &gt;Motor Vehicle Tires &gt;Automotive Tires , tag: sincera, falken, grand touring, sn250 195, tire price</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">80184</td>
+<td>178866.156074.820F1205554371C6.B6C77FD0E98449E6.COM9780295988689USED</td>
+<td>Walls of Algiers: Narratives of the City through Text and Image [first edition]</td>
+<td>NaN</td>
+<td>name: Walls of Algiers: Narratives of the City through Text and Image [first edition], gender: nan, brand: nan, category: nan, tag: ottoman, urban studies, paintings architectural, history walls, algiers serves</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">19864</td>
+<td>178866.156074.99167FE934A5BC7F.B66A9A98420EE68A.bi: 30934116025</td>
+<td>[Signed] The Inaugural Album Carter, Jimmy [Near Fine] [Hardcover]</td>
+<td>Office Supplies &gt;Book Accessories &gt;Book Lights</td>
+<td>name: [Signed] The Inaugural Album Carter, Jimmy [Near Fine] [Hardcover], gender: nan, brand: nan, category: Office Supplies &gt;Book Accessories &gt;Book Lights , tag: cloth title, illustrated endpapers, signed president, beige, quarto 36pp</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">76699</td>
+<td>178866.156074.820F1205554371C6.2778968A7B7BC45B.COM9781887983129USED</td>
+<td>Working With the Poor: New Insights and Learnings from Development Practitioners</td>
+<td>NaN</td>
+<td>name: Working With the Poor: New Insights and Learnings from Development Practitioners, gender: nan, brand: nan, category: nan, tag: development sustainable, spiritual realm, christian practitioners, understanding poverty, transformation urban</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">92991</td>
+<td>159390.1.5EDD.6CB3287A75491FCF.US-15300316SI-4-AI24</td>
+<td>Bikkembergs Infant Boy Baby set Grey Size 6 Cotton, Elastane</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Baby &amp; Toddler Clothing &gt;Baby &amp; Toddler Outfits</td>
+<td>name: Bikkembergs Infant Boy Baby set Grey Size 6 Cotton, Elastane, gender: male, brand: BIKKEMBERGS, category: Apparel &amp; Accessories &gt;Clothing &gt;Baby &amp; Toddler Clothing &gt;Baby &amp; Toddler Outfits , tag: wash 30, pockets, multicolor pattern, size, brand logo</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5002</td>
+<td>159390.1.5EDD.DF5C7E19B754023D.US-11835500WE-3-AI24</td>
+<td>Pedro García Woman Thong sandal Blue Size 5 Textile fibers</td>
+<td>Apparel &amp; Accessories &gt;Shoes</td>
+<td>name: Pedro García Woman Thong sandal Blue Size 5 Textile fibers, gender: female, brand: PEDRO GARCÍA, category: Apparel &amp; Accessories &gt;Shoes , tag: design square, size, cleated sole, appliqués floral, satin</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">30151</td>
+<td>178866.156074.820F1205554371C6.56D766DB4D107543.COM9780993467868USED</td>
+<td>Dip In Brilliant: An Indian Recipe Adventure with a Contemporary Twist</td>
+<td>NaN</td>
+<td>name: Dip In Brilliant: An Indian Recipe Adventure with a Contemporary Twist, gender: nan, brand: nan, category: nan, tag: purchase signed, brilliant, dip, anand new, copy chef</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">93194</td>
+<td>127.2.DFF8DD86A0648144.5789065A624CB8BF.190052019959</td>
+<td>Superior Memory Foam Wedge Pillow with Removable Cover - White</td>
+<td>Home &amp; Garden &gt;Linens &amp; Bedding &gt;Bedding &gt;Pillows</td>
+<td>name: Superior Memory Foam Wedge Pillow with Removable Cover - White, gender: unisex, brand: Superior, category: Home &amp; Garden &gt;Linens &amp; Bedding &gt;Bedding &gt;Pillows , tag: heat sensitive, wedge, makes breathing, relaxation memory, pillow shape</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">73199</td>
+<td>127.2.DFF8DD86A0648144.85179F33E58E00F3.724190605080</td>
+<td>Mepra Serving Set Fork and Spoon Flatware Set, Set of 2 - Silver-tone</td>
+<td>Home &amp; Garden &gt;Kitchen &amp; Dining &gt;Tableware &gt;Flatware &gt;Flatware Sets</td>
+<td>name: Mepra Serving Set Fork and Spoon Flatware Set, Set of 2 - Silver-tone, gender: unisex, brand: Mepra, category: Home &amp; Garden &gt;Kitchen &amp; Dining &gt;Tableware &gt;Flatware &gt;Flatware Sets , tag: double, ergonomic, highest, quality, serration durable</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">74479</td>
+<td>159390.1.5EDD.EF8EBAD924FF7A3B.US-12958508PJ-1-AI24</td>
+<td>Dsquared2 Woman Sweatshirt Pink Size XXS Cotton, Elastane, Polyester</td>
+<td>Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops</td>
+<td>name: Dsquared2 Woman Sweatshirt Pink Size XXS Cotton, Elastane, Polyester, gender: female, brand: DSQUARED2, category: Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops , tag: pockets, solid color, brand logo, sleeves french, size xxs</td>
+</tr>
+</tbody>
+</table>
+
+<p>10000 rows × 4 columns</p>
+</div>
+</div>
+</div>
+<div id="d6e03bea-606f-4bcb-83da-3bdcad9bf7eb" class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>df_sample[<span class="st">'CombinedInfo'</span>].loc[df_sample[<span class="st">'Pid'</span>] <span class="op">==</span> <span class="st">'127.2.DFF8DD86A0648144.5D97B0B9DB1AB9FB.194573409152'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="36">
+<pre><code>29857    name: Lands' End Big &amp; Tall Super-t Long Sleeve T-Shirt with Pocket - Rich burgundy, gender: male, brand: Lands' End, category: Apparel &amp; Accessories &gt;Clothing &gt;Shirts &amp; Tops , tag: end men, jersey knit, cotton stretches, strongest long, tee ll
+Name: CombinedInfo, dtype: object</code></pre>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
