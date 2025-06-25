@@ -18,8 +18,8 @@ TABLE_NAME = os.getenv('PGTABLE', 'products_100k')
 
 
 SEARCH_WEIGHTS = {
-    "text_only": [0.5, 0, 0.5],
+    "text_only": [0, 0, 1],
     "image_only": [0, 1, 0],
-    "hybrid": [0.5, 0, 0.5],
+    "hybrid": [0, 0, 1],
 
 }
