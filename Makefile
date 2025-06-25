@@ -79,7 +79,6 @@ clean:
 	@-pkill -f "streamlit run src/frontend/app.py" || true
 	@-pkill -f "python src/backend/api.py" || true
 	@-pkill -f "cloud_sql_proxy" || true
-	rm -f report/final/capstone_final_report.pdf
 	rm -rf report/final/capstone_final_report_files
 	rm -f img/faiss_hyperparam.png
 	rm -f img/recall_chart.png
@@ -91,5 +90,6 @@ clean:
 	rm -rf **/.pytest_cache
 	rm -rf **/__pycache__
 	rm -rf **/*.pyc
+	rm -rf _site
 	@echo "Unsetting environment variables..."
 	@grep -v '^\s*#' .env | grep '=' | cut -d '=' -f 1 | xargs -I {} sh -c 'unset {}; echo "Unset {}";' || true
