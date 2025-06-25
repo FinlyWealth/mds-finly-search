@@ -4,7 +4,7 @@ Contributors: Jenson Chang, Chukwunonso Ebele-Muolokwu, Da (Catherine) Meng, Jin
 
 The goal of this project is to design and implement a fast, scalable multimodal search engine for [FinlyWealth](https://finlywealth.com/), an affiliate marketing platform expanding into e-commerce. The system enables users to search for products using text, images, or a combination of both by capturing the semantic meaning of queries—not just keywords.
 
-To achieve this, we use a hybrid retrieval strategy that combines CLIP and MiniLM embeddings with FAISS for efficient large-scale similarity search. Retrieved results are further refined using an LLM-based reranking module, which reorders candidates to prioritize the most relevant items. The full stack includes a Streamlit frontend, a Flask API backend, and a vector store to support embedding-based retrieval at scale.
+To achieve this, we use a hybrid retrieval strategy that combines CLIP and MiniLM embeddings with FAISS for efficient large-scale similarity search. Retrieved results are further refined using an LLM-based reranking module, which reorders candidates to prioritize the most relevant items. The full stack includes a Streamlit frontend, a Flask API backend, and a vector store to support embedding-based retrieval at scale. For more information, please refer to our [paper](https://finlywealth.github.io/mds-finly-search/report/final/capstone_final_report.html).
 
 ![Search Pipeline for a Text Query](img/text_pipeline.png)
 
