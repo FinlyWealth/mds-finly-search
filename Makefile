@@ -59,6 +59,7 @@ report:
 	jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
 	@echo "Rendering Quarto report..."
 	quarto render $(REPORT_FILE)
+	mv _site/report/final/capstone_final_report.pdf report/final/capstone_final_report.pdf
 
 #
 # Start both frontend and backend applications
