@@ -45,7 +45,7 @@ jobs:
       - name: Retrieve backend URL
         id: get-backend-url
         run: |
-          echo "API_BASE_URL=$(gcloud run services describe finly-backend \
+          echo "API_BASE_URL=$(gcloud run services describe finly-backend-tfidf \
             --platform=managed \
             --region=$CLOUDSDK_RUN_REGION \
             --format='value(status.url)')" >> $GITHUB_ENV
